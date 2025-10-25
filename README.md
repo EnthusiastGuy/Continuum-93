@@ -61,7 +61,7 @@ Continuum93 is a **fantasy computer** and **emulator** built for retro-style gam
 
 ## Install & Run
 
-You can either download a release (when available) or build from source. For detailed build instructions (dependencies, SDL2/OpenAL on macOS/Linux, content pipeline), see **[BUILDING.md](BUILDING.md)**.
+You can either download a release https://enthusiastguy.itch.io/continuum93 or build from source. Keep in mind that right now, for instance, the relase on Itch is quite behind what you get here, but you can fetch the documentation from there. For detailed build instructions (dependencies, SDL2/OpenAL on macOS/Linux, content pipeline), see **[BUILDING.md](BUILDING.md)**.
 
 ### Windows
 
