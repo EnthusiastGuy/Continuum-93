@@ -1,0 +1,51 @@
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:bin/$(Platform)
+/intermediateDir:obj/$(Platform)
+/platform:DesktopGL
+/config:
+/profile:Reach
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+
+#---------------------------------- Content ---------------------------------#
+
+#begin CRTGeometryDistortionShader.fx
+#/importer:EffectImporter
+#/processor:EffectProcessor
+#/processorParam:DebugMode=Auto
+#/build:CRTGeometryDistortionShader.fx
+
+#begin DefaultEffect.fx
+#/importer:EffectImporter
+#/processor:EffectProcessor
+#/processorParam:DebugMode=Auto
+#/build:DefaultEffect.fx
+
+#begin InterlaceShader.fx
+#/importer:EffectImporter
+#/processor:EffectProcessor
+#/processorParam:DebugMode=Auto
+#/build:InterlaceShader.fx
+
+#begin MonochromeShader.fx
+#/importer:EffectImporter
+#/processor:EffectProcessor
+#/processorParam:DebugMode=Auto
+#/build:MonochromeShader.fx
+
+#begin PaperShader.fx
+#/importer:EffectImporter
+#/processor:EffectProcessor
+#/processorParam:DebugMode=Auto
+#/build:PaperShader.fx
+
+#begin TestEffect.fx
+#/importer:EffectImporter
+#/processor:EffectProcessor
+#/processorParam:DebugMode=Auto
+#/build:TestEffect.fx
+

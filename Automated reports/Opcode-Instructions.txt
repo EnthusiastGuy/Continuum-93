@@ -1,0 +1,97 @@
+78 instructions found (vacant opcodes: 178)
+120 total variations
+
+ Opcode       Instruction
+ Dec   Hex    (+ variations)                  
+----------------------------------------------
+   0   0x00   NOP                             
+   1   0x01   LD                              
+   2   0x02   ADD, ADD16, ADD24, ADD32        
+   3   0x03   SUB, SUB16, SUB24, SUB32        
+   4   0x04   DIV                             
+   5   0x05   MUL                             
+   6   0x06   SL                              
+   7   0x07   SR                              
+   8   0x08   RL                              
+   9   0x09   RR                              
+  10   0x0A   SET                             
+  11   0x0B   RES                             
+  12   0x0C   BIT                             
+  13   0x0D   AND, AND16, AND24, AND32        
+  14   0x0E   OR, OR16, OR24, OR32            
+  15   0x0F   XOR, XOR16, XOR24, XOR32        
+  16   0x10   INV                             
+  17   0x11   EX                              
+  18   0x12   CP                              
+  19   0x13   INC, INC16, INC24, INC32        
+  20   0x14   DEC, DEC16, DEC24, DEC32        
+  21   0x15   CALL                            
+  22   0x16   CALLR                           
+  23   0x17   JP                              
+  24   0x18   JR                              
+> 1 vacant opcode
+  26   0x1A   POP, POP16, POP24, POP32        
+> 1 vacant opcode
+  28   0x1C   PUSH, PUSH16, PUSH24, PUSH32    
+  29   0x1D   INT                             
+  30   0x1E   RAND                            
+  31   0x1F   MIN                             
+  32   0x20   MAX                             
+  33   0x21   DJNZ, DJNZ16, DJNZ24, DJNZ32    
+> 2 vacant opcodes
+  36   0x24   SETF                            
+  37   0x25   RESF                            
+  38   0x26   INVF                            
+  39   0x27   LDF                             
+  40   0x28   REGS                            
+  41   0x29   WAIT                            
+  42   0x2A   VDL                             
+  43   0x2B   VCL                             
+  44   0x2C   FIND                            
+> 3 vacant opcodes
+  48   0x30   IMPLY, IMPLY16, IMPLY24, IMPLY32
+  49   0x31   NAND, NAND16, NAND24, NAND32    
+  50   0x32   NOR, NOR16, NOR24, NOR32        
+  51   0x33   XNOR, XNOR16, XNOR24, XNOR32    
+> 4 vacant opcodes
+  56   0x38   GETBITS                         
+  57   0x39   SETBITS                         
+> 6 vacant opcodes
+  64   0x40   MEMF                            
+  65   0x41   MEMC                            
+> 4 vacant opcodes
+  70   0x46   LDREGS                          
+  71   0x47   STREGS                          
+> 20 vacant opcodes
+  92   0x5C   SDIV                            
+  93   0x5D   SMUL                            
+  94   0x5E   SCP                             
+  95   0x5F   FREGS                           
+  96   0x60   POW                             
+  97   0x61   SQR                             
+  98   0x62   CBR                             
+  99   0x63   ISQR                            
+ 100   0x64   ISGN                            
+> 1 vacant opcode
+ 102   0x66   SIN                             
+ 103   0x67   COS                             
+ 104   0x68   TAN                             
+> 23 vacant opcodes
+ 128   0x80   ABS                             
+ 129   0x81   ROUND                           
+ 130   0x82   FLOOR                           
+ 131   0x83   CEIL                            
+> 28 vacant opcodes
+ 160   0xA0   PLAY                            
+> 29 vacant opcodes
+ 190   0xBE   SETVAR                          
+ 191   0xBF   GETVAR                          
+ 192   0xC0   RGB2HSL                         
+ 193   0xC1   HSL2RGB                         
+ 194   0xC2   RGB2HSB                         
+ 195   0xC3   HSB2RGB                         
+> 56 vacant opcodes
+ 252   0xFC   DEBUG                           
+ 253   0xFD   BREAK                           
+ 254   0xFE   RETIF                           
+ 255   0xFF   RET                             

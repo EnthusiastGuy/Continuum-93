@@ -1,0 +1,40 @@
+﻿GamePadState byte state structure
+
+1 byte:  BBBBCCCC    connected status for each controller (4 bits), any button pressed for each controller (4 bits)
+Controller 1
+1 byte:              DPad up/down/left/right, A, B, X, Y
+1 byte:              LeftThumb up/down/left/right, Right thumb up/down/left/right
+1 byte:              LB, RB, LT, RT, Start, Back, BigButton, None
+1 byte:              Left/right stick press, any of ABXY, any DPad, LB or RB, LT or RT, any left thumb direction, any right thumb direction
+1 byte:              LT Z value (0 - 255) (-1.0, 1.0)
+1 byte:              RT Z value (0 - 255) (-1.0, 1.0)
+1 byte:              Left thumb X value (0 - 255) (-1.0, 1.0)
+1 byte:              Left thumb Y value (0 - 255) (-1.0, 1.0)
+1 byte:              Right thumb X value (0 - 255) (-1.0, 1.0)
+1 byte:              Right thumb Y value (0 - 255) (-1.0, 1.0)
+Controller 2 (same as above)
+Controller 3 (same as above)
+Controller 4 (same as above)
+TOTAL: 41 bytes
+
+
+
+GamePadCapabilities byte state structure
+1 byte:				Has: DPad up/down/left/right, A, B, X, Y;
+1 byte:				Has: LeftThumbStick X, Y, RightThumbStick X, Y; Start, Back, Bigbutton, Voice support;
+1 byte:				Has: LB, RB, LT, RT, left stick press, right stick press, LeftVibratorMotor, RightVibratorMotor;
+1 byte:				GamePad Type (Unknown = 0, GamePad = 1, Wheel = 2, ArcadeStick = 3, FlightStick = 4, DancePad = 5, Guitar = 6, AlternateGuitar = 7, DrumKit = 8, BigButtonPad = 128)
+TOTAL: 17 bytes
+
+? bytes (max 256):	DisplayName (string)\0DisplayName (string)\0DisplayName (string)\0DisplayName (string)
+TOTAL: (max 256 bytes)
+
+
+Example gamepad Display names:
+
+DisplayName[51]: Controller (Xbox 360 Wireless Receiver for Windows)
+DisplayName[14]: PS3 Controller
+DisplayName[9]: STK 7024X
+DisplayName[12]: Hama Scorpad
+DisplayName[19]: Xbox 360 Controller
+DisplayName[14]: PS4 Controller

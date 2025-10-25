@@ -1,0 +1,1 @@
+dotnet publish -c Release -r osx-arm64 --self-contained -p:PublishAot=true

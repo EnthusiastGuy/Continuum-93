@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33424.131
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Continuum Emulator", "Continuum Emulator.csproj", "{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ContinuumUnitTests", "..\ContinuumUnitTests\ContinuumUnitTests.csproj", "{0EEA86E1-4509-4C8D-8355-5826A185E5BF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|ARM32 = Debug|ARM32
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|ARM32 = Release|ARM32
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Debug|ARM32.ActiveCfg = Debug|ARM32
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Debug|ARM32.Build.0 = Debug|ARM32
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Debug|x86.ActiveCfg = Debug|x86
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Debug|x86.Build.0 = Debug|x86
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Release|ARM32.ActiveCfg = Release|ARM32
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Release|ARM32.Build.0 = Release|ARM32
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Release|x86.ActiveCfg = Release|x86
+		{0612A1DE-42C5-49D5-8DFF-2DBE416E918A}.Release|x86.Build.0 = Release|x86
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Debug|ARM32.ActiveCfg = Debug|ARM32
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Debug|ARM32.Build.0 = Debug|ARM32
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Debug|x86.Build.0 = Debug|Any CPU
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Release|ARM32.ActiveCfg = Release|ARM32
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Release|ARM32.Build.0 = Release|ARM32
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Release|x86.ActiveCfg = Release|Any CPU
+		{0EEA86E1-4509-4C8D-8355-5826A185E5BF}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B884A3B-AFE4-4FFF-A28A-D9FF695CC77D}
+	EndGlobalSection
+EndGlobal

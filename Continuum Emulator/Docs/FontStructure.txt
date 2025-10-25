@@ -1,0 +1,57 @@
+﻿Bitmap fonts are image png fonts consisting of 6 rows and 16 columns resulting 96 cells with all printable
+ASCII characters.
+
+The individual cell has the same width/height throughout the whole bitmap font file but it may vary from font
+to font. 
+
+Font structure
+
+
+- 1 byte: font type (default 1), range (1-?)			// 0 is invalid
+- 1 byte: glyph cell width (2-255);			// 0-1 are invalid values
+- 1 byte: glyph cell height (2-255);		// 0-1 are invalid values
+- 1 byte: max glyph width;		// 0 is invalid
+- 1 byte: max glyph height;		// 0 is invalid
+- 1 byte: number of kerning pairs (0-255) (nk value);
+- 96 bytes: width of each character starting with space; // 0 is invalid for either
+- nk multiplied by 3 kerning pair values:
+	- 1 byte first character;
+	- 1 byte second character;
+	- 1 byte offset between these two characters (-128 to 127).
+- (determinable size): actual font data
+
+Example: font glyph size: 16x16, 21 kerning pairs.
+Resulting size: 6 + 96 + 96*2*16 + 21*3 = 3237 bytes.
+
+Kerning example:
+
+"Kernings": {
+	"0046": {
+		"Sequence": "Fa, Fe, Fi, Fo, Fu, Fr, Fw",
+		"Secondary": {"0061": -2, "0065": -1, "0069": -1, "006F": -2, "0075": -1, "0072": -1, "0077": -1}
+	},
+	"004A": {
+		"Sequence": "Ja, Jo",
+		"Secondary": {"0061": -1, "006F": -1}
+	},
+	"004C": {
+		"Sequence": "LT",
+		"Secondary": {"0054": -2}
+	},
+	"0054": {
+		"Sequence": "Ta, Te, Ti, To, Tu, Tr, Tw",
+		"Secondary": {"0061": -1, "0065": -1, "0069": -1, "006F": -1, "0075": -1, "0072": -1, "0077": -1}
+	},
+	"0065": {
+		"Sequence": "el",
+		"Secondary": {"006C": -1}
+	},
+	"0069": {
+		"Sequence": "if, it",
+		"Secondary": {"0066": -1, "0074": -1}
+	},
+	"006C": {
+		"Sequence": "lo",
+		"Secondary": {"006F": -1}
+	}
+}

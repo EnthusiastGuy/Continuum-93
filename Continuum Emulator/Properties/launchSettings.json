@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Continuum Emulator": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
