@@ -1,7 +1,8 @@
-﻿using Continuum93.Emulator.Window;
-using Continuum93.Emulator;
+﻿using Continuum93.Emulator;
+using Continuum93.Emulator.Window;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace Continuum93.Emulator
 {
@@ -84,26 +85,63 @@ namespace Continuum93.Emulator
         // Render the target projection to the actual window
         public static void RenderToWindow(Texture2D projection, int width, int height)
         {
+            var device = _graphicsDeviceManager.GraphicsDevice;
+
+            // Clear everything first so we get the black bars.
+            device.Clear(Color.Black);
+
+            // Use the shared helper so everyone agrees on this rect
+            Rectangle destRect = GetDestinationRectangle(width, height);
+            Rectangle srcRect = new(0, 0, width, height);
+
+            // Actual scale being used horizontally (same vertically because of aspect)
+            float scale = (float)destRect.Width / width;
+
+            float roundedScale = (float)Math.Round(scale);
+            bool isIntegerScale =
+                roundedScale >= 1f &&
+                Math.Abs(scale - roundedScale) < 0.01f;
+
+            SamplerState sampler = isIntegerScale
+                ? SamplerState.PointClamp
+                : SamplerState.LinearClamp;
+
             Begin(
                 SpriteSortMode.Deferred,
                 BlendState.Opaque,
-                SamplerState.PointClamp,
+                sampler,
                 DepthStencilState.None,
                 RasterizerState.CullNone
-                //, effect: InterlaceEffect
             );
 
             _spriteBatch.Draw(
                 projection,
-                new Rectangle(
-                    0, 0,
-                    WindowManager.GetClientWidth(), WindowManager.GetClientHeight()
-                ),     // Destination
-                new Rectangle(0, 0, width, height),     // Source
+                destRect,
+                srcRect,
                 Color.White
             );
 
             End();
+        }
+
+
+        public static Rectangle GetDestinationRectangle(int sourceWidth, int sourceHeight)
+        {
+            int backWidth = WindowManager.GetClientWidth();
+            int backHeight = WindowManager.GetClientHeight();
+
+            // Scale needed in each direction to fit inside the backbuffer
+            float scaleX = (float)backWidth / sourceWidth;
+            float scaleY = (float)backHeight / sourceHeight;
+            float scale = Math.Min(scaleX, scaleY);
+
+            int destWidth = (int)(sourceWidth * scale);
+            int destHeight = (int)(sourceHeight * scale);
+
+            int destX = (backWidth - destWidth) / 2;
+            int destY = (backHeight - destHeight) / 2;
+
+            return new Rectangle(destX, destY, destWidth, destHeight);
         }
 
         public static void DrawBlank()

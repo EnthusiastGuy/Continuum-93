@@ -34,6 +34,10 @@ namespace Continuum93.Emulator
         private byte[] _visibleLayers = [0, 0, 0, 0, 0, 0, 0, 0];
         private Computer _computer;
 
+        // Expose the video projection to be used with the Service mode
+        public Texture2D VideoProjection => _videoProjection;
+
+
         public Graphics(Computer computer)
         {
             _computer = computer;
@@ -161,6 +165,15 @@ namespace Continuum93.Emulator
 
             _videoProjection.SetData(_colorData);
         }
+
+        public void UpdateProjectionOnly()
+        {
+            if (_videoProjection == null)
+                return;
+
+            DrawToProjection();
+        }
+
 
         private void SetColorData()
         {

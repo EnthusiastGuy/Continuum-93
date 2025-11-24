@@ -4,6 +4,13 @@
 
 ---
 
+## 2.1.220 — ?
+**Contributed by:** *EnthusiastGuy*
+
+- Small refactor on the AND instructions. Nothing essential changed, just cleaned up the codebase a bit.
+- In preparation to deprecating Continuum Tools: Implemented an integrated Service Mode overlay (accessible always with F1) with a smooth animated transition
+- The emulator now renders using an aspect-correct destination rectangle with automatic letterboxing/pillarboxing to preserve the 16:9 ratio on any resolution, and it automatically switches between pixel-perfect PointClamp scaling for integer multiples and LinearClamp for non-integer scales to avoid visual artifacts on awkward resolutions.
+
 ## 2.1.212 — 25.10.2025
 
 **Contributed by:** *EnthusiastGuy*

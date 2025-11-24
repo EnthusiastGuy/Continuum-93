@@ -3,6 +3,7 @@ using Continuum93.Emulator.Interrupts;
 using Continuum93.CodeAnalysis;
 using Continuum93.Emulator;
 using Microsoft.Xna.Framework;
+using Continuum93.Emulator.States;
 
 namespace Continuum93.Emulator.Window
 {
@@ -48,7 +49,8 @@ namespace Continuum93.Emulator.Window
                 Renderer.SetPreferredBackBufferSize(newWidth, _newState.ClientHeight);
             }
 
-            _gameWindow.Title = $"Continuum 93    {Version.GetVersion()} {(DebugState.ClientConnected ? "- tools connected" : "")}{(DebugState.StepByStep ? ", debugging" : "")}";
+            _gameWindow.Title = 
+                $"Continuum 93    {Version.GetVersion()} {(State.ServiceMode ? "- Service mode, \"" + State.ServiceKey + "\" exits" : "")} {(DebugState.ClientConnected ? "- tools connected" : "")}{(DebugState.StepByStep ? ", debugging" : "")}";
         }
 
         public static void SetWindowSize(float ratio)
