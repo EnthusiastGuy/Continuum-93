@@ -19,7 +19,7 @@ namespace Continuum93.Emulator
             = [true, true, true, true, true, true, true, true];
         public volatile byte LAYER_VISIBLE_BITS = 0xFF;
 
-        public bool[] LAYER_BUFFER_AUTO_MODE = new bool[8] { true, true, true, true, true, true, true, true };
+        public bool[] LAYER_BUFFER_AUTO_MODE = [true, true, true, true, true, true, true, true];
         public volatile byte LAYER_BUFFER_MODE_BITS = 0xFF;
 
         private Texture2D _videoProjection;

@@ -20,15 +20,15 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.IO;
 using System.Threading;
+using Continuum93.ServiceModule;
 
 namespace Continuum93
 {
-    public class Continuum : Game
+    public sealed class Continuum : Game
     {
-        private SpriteBatch _serviceSpriteBatch;
-
-        private float _serviceAnim;          // 0 = normal, 1 = debug
-        private const float ServiceAnimSpeed = 5.0f; // how fast it moves between states
+        private readonly bool _mouseEnabled;
+        private readonly bool _debugEnabled;
+        private readonly bool _startFullscreen;
 
         public Continuum(string[] args)
         {
@@ -37,11 +37,16 @@ namespace Continuum93
             if (args.Length > 0)
                 UtilsManager.Arguments = args;
 
-            Renderer.RegisterGraphicsDeviceManager(new GraphicsDeviceManager(this) { GraphicsProfile = GraphicsProfile.Reach });
+            Renderer.RegisterGraphicsDeviceManager(new GraphicsDeviceManager(this) { GraphicsProfile = GraphicsProfile.Reach }, this);
             Log.WriteLine("Registered the GDM");
 
             Content.RootDirectory = "Content";
-            if (!SettingsManager.GetBoleanSettingsValue("disableMouse")) { IsMouseVisible = false; }
+
+            _mouseEnabled = !SettingsManager.GetBoleanSettingsValue("disableMouse");
+            _debugEnabled = true;// SettingsManager.GetBoleanSettingsValue("enableDebugging");
+            _startFullscreen = SettingsManager.GetBoleanSettingsValue("fullscreen");
+
+            IsMouseVisible = _mouseEnabled;
 
         }
 
@@ -77,18 +82,17 @@ namespace Continuum93
             //Renderer.InterlaceEffect = Content.Load<Effect>("InterlaceShader");
             //Watcher.WatchDirectoryOfFile(SettingsManager.GetSettingValue("bootProgram"));
 
-            // SpriteBatch used for the integrated Service UI
-            _serviceSpriteBatch = new SpriteBatch(GraphicsDevice);
+            Renderer.SetFullScreen(_startFullscreen);
 
-            Renderer.SetFullScreen(SettingsManager.GetBoleanSettingsValue("fullscreen"));
-
-            if (SettingsManager.GetBoleanSettingsValue("enableDebugging"))
+            if (_debugEnabled)
             {
                 Thread.Sleep(10);
                 Log.WriteLine("Starting server");
                 Server.Start();
                 Log.WriteLine("Starting machine");
             }
+
+            ServiceGraphics.Initialize();
         }
 
         // Deprecated, kept for reference
@@ -127,36 +131,19 @@ namespace Continuum93
                 UtilsManager.ProcessArguments();
                 Machine.COMPUTER.Stop();
                 Exit();
+                return;
             }
 
             InputKeyboard.Update();
             //InputGamepad.Update();
             GamepadStateExts.Update();
             WindowManager.Update();
-            if (!SettingsManager.GetBoleanSettingsValue("disableMouse")) { InputMouse.Update(); }
+            if (_mouseEnabled) { InputMouse.Update(); }
             ImageLoadState.Update();
+            Service.INPUT.Update(gameTime);
+            Service.GRAPHICS.Update(gameTime);
+
             GameTimePlus.Update(gameTime);
-
-            // Service mode code
-            if (InputKeyboard.KeyPressed(State.ServiceKey)) // Toggle service mode
-            {
-                State.ToggleServiceMode();
-            }
-
-            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            float target = State.ServiceMode ? 1f : 0f;
-
-            if (_serviceAnim < target)
-            {
-                _serviceAnim = Math.Min(target, _serviceAnim + ServiceAnimSpeed * dt);
-            }
-            else if (_serviceAnim > target)
-            {
-                _serviceAnim = Math.Max(target, _serviceAnim - ServiceAnimSpeed * dt);
-            }
-
-            // End service mode code
-
 
             //UpdateAdmin();
 
@@ -187,9 +174,6 @@ namespace Continuum93
                     WaveTypeValues = { { XSoundParams.WaveTypes.TAN, 5 }, { XSoundParams.WaveTypes.RINGMODULATION, 95 } },
                     DutyCycle = 0.8f, DutyCycleRamp = 0.0f,
                     EnvelopeAttack = 0, EnvelopeDecay = 0,
-                    
-                    
-                    
                 });
             };
 
@@ -209,93 +193,16 @@ namespace Continuum93
             base.Update(gameTime);
         }
 
-        // TODO, cleanup when done with this and move logic to a dedicated ServiceModeRenderer class
         protected override void Draw(GameTime gameTime)
         {
-            var gfx = Machine.COMPUTER?.GRAPHICS;
-
-            // We want to use the service-layout renderer both:
-            // - when service mode is ON
-            // - while we are animating back (_serviceAnim > 0)
-            bool useServiceView = (State.ServiceMode || _serviceAnim > 0.001f) && gfx != null;
-
-            if (useServiceView)
+            if (Service.STATE.UseServiceView)
             {
-                // Making sure the 480x270 texture is up-to-date
-                gfx.UpdateProjectionOnly();
-
-                var projection = gfx.VideoProjection;
-
-                if (projection == null)
-                {
-                    // Nothing to show yet
-                    Renderer.DrawBlank();
-                    base.Draw(gameTime);
-                    return;
-                }
-
-                // --- FULLSCREEN RECT (normal mode with pillars/bars) ---
-                var rectFull = Renderer.GetDestinationRectangle(projection.Width, projection.Height);
-
-                // --- SERVICE RECT (final position in service mode) ---
-                const int padding = 16;
-                var rectService = new Rectangle(
-                    padding,
-                    padding,
-                    projection.Width,   // 480
-                    projection.Height   // 270
-                );
-
-                // Easing (feels nicer than linear):
-                float t = _serviceAnim;
-                float eased = t * t * (3f - 2f * t); // smoothstep 0..1
-
-                // Clear the fullscreen backbuffer for the service layout,
-                // LERPing from black (normal mode) to dark gray (service mode)
-                // TODO, move the colors to some form of theme/settings
-                Color bgColor = Color.Lerp(Color.Black, Color.DarkGray, eased);
-                Renderer.Clear(bgColor);
-
-                // Interpolate between fullscreen and service rect
-                Rectangle destRect = LerpRect(rectFull, rectService, eased);
-
-                _serviceSpriteBatch.Begin(
-                    SpriteSortMode.Deferred,
-                    BlendState.Opaque,
-                    SamplerState.PointClamp,
-                    DepthStencilState.None,
-                    RasterizerState.CullNone
-                );
-
-                // Live view of the emulator with animated position/size
-                _serviceSpriteBatch.Draw(
-                    projection,
-                    destRect,
-                    Color.White
-                );
-
-                _serviceSpriteBatch.End();
-
-                base.Draw(gameTime);
-                return;
+                Service.GRAPHICS.Draw();    // Includes drawing the emulated machine screen inside the service view
+            } else {
+                Machine.COMPUTER?.GRAPHICS.Draw();  // Normal, non-service rendering: full-screen emulated machine
             }
 
-            // Normal, non-service rendering: full-screen emulated machine
-            Machine.COMPUTER.GRAPHICS.Draw();
-
             base.Draw(gameTime);
-        }
-
-
-
-        private static Rectangle LerpRect(Rectangle from, Rectangle to, float t)
-        {
-            t = MathHelper.Clamp(t, 0f, 1f);
-            int x = (int)MathHelper.Lerp(from.X, to.X, t);
-            int y = (int)MathHelper.Lerp(from.Y, to.Y, t);
-            int w = (int)MathHelper.Lerp(from.Width, to.Width, t);
-            int h = (int)MathHelper.Lerp(from.Height, to.Height, t);
-            return new Rectangle(x, y, w, h);
         }
 
         protected override void OnExiting(object sender, EventArgs args)

@@ -46,6 +46,7 @@ namespace Continuum93.Emulator.Interrupts.FileSystem
 
             // get the font data and place it in memory
             computer.LoadMemAt(destinationAddress, fontData);
+
             // return the size of the font
             computer.CPU.REGS.Set24BitRegister(regId, (uint)fontData.Length);
 

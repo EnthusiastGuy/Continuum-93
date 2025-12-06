@@ -4,6 +4,7 @@ using Continuum93.CodeAnalysis;
 using Continuum93.Emulator;
 using Microsoft.Xna.Framework;
 using Continuum93.Emulator.States;
+using Continuum93.ServiceModule;
 
 namespace Continuum93.Emulator.Window
 {
@@ -50,7 +51,7 @@ namespace Continuum93.Emulator.Window
             }
 
             _gameWindow.Title = 
-                $"Continuum 93    {Version.GetVersion()} {(State.ServiceMode ? "- Service mode, \"" + State.ServiceKey + "\" exits" : "")} {(DebugState.ClientConnected ? "- tools connected" : "")}{(DebugState.StepByStep ? ", debugging" : "")}";
+                $"Continuum 93    {Version.GetVersion()} {(Service.STATE.ServiceMode ? "- Service mode, \"" + Service.STATE.ServiceKey + "\" exits" : "")} {(DebugState.ClientConnected ? "- tools connected" : "")}{(DebugState.StepByStep ? ", debugging" : "")}";
         }
 
         public static void SetWindowSize(float ratio)

@@ -11,16 +11,32 @@ namespace Continuum93.Emulator
         private static GraphicsDeviceManager _graphicsDeviceManager;
         private static SpriteBatch _spriteBatch;
         public static Effect InterlaceEffect;
+        private static Texture2D _pixelTexture;
+        private static Game _game;
 
-        public static void RegisterGraphicsDeviceManager(GraphicsDeviceManager gdm)
+        public static void RegisterGraphicsDeviceManager(GraphicsDeviceManager gdm, Game game)
         {
             _graphicsDeviceManager = gdm;
             _graphicsDeviceManager.HardwareModeSwitch = false;   // correct display of fullscreen
+            _game = game;
         }
 
         public static void InitializeSpriteBatch()
         {
             _spriteBatch = new SpriteBatch(_graphicsDeviceManager.GraphicsDevice);
+        }
+
+        public static SpriteBatch GetSpriteBatch()
+        {
+            return _spriteBatch;
+        }
+
+        public static Rectangle GetScreenBounds()
+        {
+            // However you access the Game instance:
+            // e.g. Service.Game, MainGame.Instance, etc.
+            var windowBounds = _game.Window.ClientBounds;
+            return windowBounds;
         }
 
         public static void SetPreferredBackBufferSize(int width, int height)
@@ -58,6 +74,18 @@ namespace Continuum93.Emulator
         public static void End()
         {
             _spriteBatch.End();
+        }
+
+        public static Texture2D GetPixelTexture()
+        {
+            if (_pixelTexture == null)
+            {
+                var device = _graphicsDeviceManager.GraphicsDevice;
+                _pixelTexture = new Texture2D(device, 1, 1, false, SurfaceFormat.Color);
+                _pixelTexture.SetData(new[] { Color.White });
+            }
+
+            return _pixelTexture;
         }
 
         public static void ToggleFullscreen()
