@@ -16,7 +16,7 @@ namespace Continuum93.ServiceModule.UI
         public static int MinWidth = 100;
         public static int MaxWidth = 1920;     // or int.MaxValue
         public static int MinHeight = 80;
-        public static int MaxHeight = 1080;
+        public static int MaxHeight = 1200;
         public static int Padding = 8;
         public static int ResizeGripSize = 12;
 
@@ -86,13 +86,13 @@ namespace Continuum93.ServiceModule.UI
         #region Geometry helpers
 
         public Rectangle Bounds =>
-            new Rectangle(X, Y, Width, Height);
+            new(X, Y, Width, Height);
 
         public Rectangle TitleBarRect =>
-            new Rectangle(X, Y, Width, TitleBarHeight);
+            new(X, Y, Width, TitleBarHeight);
 
         public Rectangle ContentRect =>
-            new Rectangle(
+            new(
                 X + BorderWidth,
                 Y + TitleBarHeight,
                 Width - BorderWidth * 2,
@@ -100,7 +100,7 @@ namespace Continuum93.ServiceModule.UI
             );
 
         public Rectangle ResizeGripRect =>
-            new Rectangle(
+            new(
                 X + Width - ResizeGripSize,
                 Y + Height - ResizeGripSize,
                 ResizeGripSize,
@@ -123,15 +123,59 @@ namespace Continuum93.ServiceModule.UI
             bool leftJustPressed = leftPressed && prevMouse.LeftButton == ButtonState.Released;
             bool leftJustReleased = !leftPressed && prevMouse.LeftButton == ButtonState.Pressed;
 
+            // Close button
             if (_canClose && leftJustPressed && CloseButtonRect.Contains(mousePos))
             {
-                //Visible = false; // Or call WindowManager.Remove(this)
                 Manager?.Remove(this);
                 return true;
             }
 
-            // Start drag from title bar
-            if (leftJustPressed && TitleBarRect.Contains(mousePos) && !_isResizing)
+            // --- Determine which edge/corner we're on for resizing ---
+            ResizeHit hit = ResizeHit.None;
+            if (_canResize && !_isResizing && !_isDragging)
+            {
+                hit = GetResizeHit(mousePos);
+            }
+
+            // --- Start resize from any edge / bottom-right corner ---
+            if (_canResize && leftJustPressed && hit != ResizeHit.None && !_isDragging)
+            {
+                _isResizing = true;
+                IsFocused = true;
+
+                _resizeFromLeft = _resizeFromRight = _resizeFromTop = _resizeFromBottom = false;
+
+                switch (hit)
+                {
+                    case ResizeHit.Left:
+                        _resizeFromLeft = true;
+                        break;
+                    case ResizeHit.Right:
+                        _resizeFromRight = true;
+                        break;
+                    case ResizeHit.Top:
+                        _resizeFromTop = true;
+                        break;
+                    case ResizeHit.Bottom:
+                        _resizeFromBottom = true;
+                        break;
+                    case ResizeHit.BottomRight:
+                        _resizeFromRight = true;
+                        _resizeFromBottom = true;
+                        break;
+                }
+
+                _resizeStartMouse = mousePos;
+                _resizeStartSize = new Point(Width, Height);
+                _resizeStartPos = new Point(X, Y);
+                _resizeStartRight = X + Width;
+                _resizeStartBottom = Y + Height;
+
+                return true;
+            }
+
+            // --- Start drag from title bar (only if NOT on a resize zone) ---
+            if (leftJustPressed && hit == ResizeHit.None && TitleBarRect.Contains(mousePos) && !_isResizing)
             {
                 _isDragging = true;
                 IsFocused = true;
@@ -139,64 +183,7 @@ namespace Continuum93.ServiceModule.UI
                 return true;
             }
 
-            // Start resize from LEFT edge
-            if (_canResize && leftJustPressed && LeftResizeRect.Contains(mousePos) && !_isDragging)
-            {
-                _isResizing = true;
-                IsFocused = true;
-
-                _resizeFromLeft = true;
-                _resizeFromRight = false;
-                _resizeFromTop = false;
-                _resizeFromBottom = false;
-
-                _resizeStartMouse = mousePos;
-                _resizeStartSize = new Point(Width, Height);
-                _resizeStartPos = new Point(X, Y);
-                _resizeStartRight = X + Width;
-                _resizeStartBottom = Y + Height;
-                return true;
-            }
-
-            // Start resize from top edge
-            if (_canResize && leftJustPressed && TopResizeRect.Contains(mousePos) && !_isDragging)
-            {
-                _isResizing = true;
-                IsFocused = true;
-
-                _resizeFromTop = true;
-                _resizeFromLeft = false;
-                _resizeFromRight = false;
-                _resizeFromBottom = false;
-
-                _resizeStartMouse = mousePos;
-                _resizeStartSize = new Point(Width, Height);
-                _resizeStartPos = new Point(X, Y);
-                _resizeStartRight = X + Width;
-                _resizeStartBottom = Y + Height;
-                return true;
-            }
-
-            // Start resize from bottom-right grip
-            if (_canResize && leftJustPressed && ResizeGripRect.Contains(mousePos) && !_isDragging)
-            {
-                _isResizing = true;
-                IsFocused = true;
-
-                _resizeFromLeft = false;
-                _resizeFromTop = false;
-                _resizeFromRight = true;
-                _resizeFromBottom = true;
-
-                _resizeStartMouse = mousePos;
-                _resizeStartSize = new Point(Width, Height);
-                _resizeStartPos = new Point(X, Y);
-                _resizeStartRight = X + Width;
-                _resizeStartBottom = Y + Height;
-                return true;
-            }
-
-            // Dragging logic
+            // --- Dragging logic ---
             if (_isDragging)
             {
                 if (leftPressed)
@@ -215,7 +202,7 @@ namespace Continuum93.ServiceModule.UI
                 return true;
             }
 
-            // Resizing logic
+            // --- Resizing logic ---
             if (_canResize && _isResizing)
             {
                 if (leftPressed)
@@ -300,7 +287,6 @@ namespace Continuum93.ServiceModule.UI
                 return true;
             }
 
-
             // Click focusing (inside window)
             if (leftJustPressed && Bounds.Contains(mousePos))
             {
@@ -310,6 +296,7 @@ namespace Continuum93.ServiceModule.UI
 
             return false;
         }
+
 
         /// <summary>
         /// Per-frame logic (not input) for this window.
@@ -379,17 +366,17 @@ namespace Continuum93.ServiceModule.UI
             var bounds = Bounds;
 
             // Border (1px)
-            Rectangle top = new Rectangle(bounds.X, bounds.Y, bounds.Width, BorderWidth);
-            Rectangle bottom = new Rectangle(bounds.X, bounds.Bottom - BorderWidth, bounds.Width, BorderWidth);
-            Rectangle left = new Rectangle(bounds.X, bounds.Y, BorderWidth, bounds.Height);
-            Rectangle right = new Rectangle(bounds.Right - BorderWidth, bounds.Y, BorderWidth, bounds.Height);
+            Rectangle top = new(bounds.X, bounds.Y, bounds.Width, BorderWidth);
+            Rectangle bottom = new(bounds.X, bounds.Bottom - BorderWidth, bounds.Width, BorderWidth);
+            Rectangle left = new(bounds.X, bounds.Y, BorderWidth, bounds.Height);
+            Rectangle right = new(bounds.Right - BorderWidth, bounds.Y, BorderWidth, bounds.Height);
 
             Color borderColor = Color.Gray;
 
             // Base colors
-            Color unfocused = new Color(30, 30, 30);
-            Color focused = new Color(40, 40, 80);   // normal focused
-            Color onTop = new Color(60, 60, 120);  // lighter for top-most
+            Color unfocused = new(30, 30, 30);
+            Color focused = new(40, 40, 80);   // normal focused
+            Color onTop = new(60, 60, 120);  // lighter for top-most
 
             Color titleBarColor;
 
@@ -404,8 +391,8 @@ namespace Continuum93.ServiceModule.UI
             }
 
             Color backgroundColor = Color.Lerp(
-                new Color(5, 5, 5, 10),      // unfocused
-                new Color(5, 5, 5, 100),     // focused
+                new(5, 5, 5, 10),      // unfocused
+                new(5, 5, 5, 100),     // focused
                 _focusBlend
             );
 
@@ -869,7 +856,7 @@ namespace Continuum93.ServiceModule.UI
 
         // Thin resize zones on left and top edges
         public Rectangle LeftResizeRect =>
-            new Rectangle(
+            new(
                 X,
                 Y + TitleBarHeight,                   // avoid overlapping close/title bar
                 BorderWidth * 4,                      // ~4 px thick
@@ -877,13 +864,119 @@ namespace Continuum93.ServiceModule.UI
             );
 
         public Rectangle TopResizeRect =>
-            new Rectangle(
+            new(
                 X + BorderWidth,
                 Y,
                 Width - BorderWidth * 2,
                 BorderWidth * 4                       // ~4 px thick
             );
 
+        public Rectangle RightResizeRect =>
+            new(
+                X + Width - BorderWidth * 4,
+                Y + TitleBarHeight,
+                BorderWidth * 4,
+                Height - TitleBarHeight - BorderWidth
+            );
+
+        public Rectangle BottomResizeRect =>
+            new(
+                X + BorderWidth,
+                Y + Height - BorderWidth * 4,
+                Width - BorderWidth * 2,
+                BorderWidth * 4
+            );
+
+        private enum ResizeHit
+        {
+            None,
+            Left,
+            Right,
+            Top,
+            Bottom,
+            BottomRight
+        }
+
+        private ResizeHit GetResizeHit(Point p)
+        {
+            if (!_canResize)
+                return ResizeHit.None;
+
+            // Corner first: bottom-right grip = diagonal resize
+            if (ResizeGripRect.Contains(p))
+                return ResizeHit.BottomRight;
+
+            if (LeftResizeRect.Contains(p))
+                return ResizeHit.Left;
+
+            if (RightResizeRect.Contains(p))
+                return ResizeHit.Right;
+
+            if (TopResizeRect.Contains(p))
+                return ResizeHit.Top;
+
+            if (BottomResizeRect.Contains(p))
+                return ResizeHit.Bottom;
+
+            return ResizeHit.None;
+        }
+
+        public virtual void UpdateCursor(MouseState mouse)
+        {
+            if (!_canResize || !Visible)
+                return;
+
+            Point p = new Point(mouse.X, mouse.Y);
+
+            // While actively resizing, keep the resize cursor even if mouse slightly
+            // slips off the exact edge rect.
+            if (_isResizing)
+            {
+                Mouse.SetCursor(GetCursorForResizeFlags());
+                return;
+            }
+
+            var hit = GetResizeHit(p);
+
+            switch (hit)
+            {
+                case ResizeHit.Left:
+                case ResizeHit.Right:
+                    Mouse.SetCursor(MouseCursor.SizeWE);
+                    break;
+
+                case ResizeHit.Top:
+                case ResizeHit.Bottom:
+                    Mouse.SetCursor(MouseCursor.SizeNS);
+                    break;
+
+                case ResizeHit.BottomRight:
+                    Mouse.SetCursor(MouseCursor.SizeNWSE); // diag ↘↖
+                    break;
+
+                case ResizeHit.None:
+                default:
+                    // Let WindowManager / others keep the default Arrow
+                    break;
+            }
+        }
+
+        private MouseCursor GetCursorForResizeFlags()
+        {
+            bool horz = _resizeFromLeft || _resizeFromRight;
+            bool vert = _resizeFromTop || _resizeFromBottom;
+
+            if (horz && vert)
+                return MouseCursor.SizeNWSE; // we only use bottom-right diag for now
+
+            if (horz)
+                return MouseCursor.SizeWE;
+
+            if (vert)
+                return MouseCursor.SizeNS;
+
+            return MouseCursor.Arrow;
+        }
 
 
     }

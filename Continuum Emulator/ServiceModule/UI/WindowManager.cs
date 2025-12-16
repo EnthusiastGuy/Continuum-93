@@ -44,11 +44,35 @@ namespace Continuum93.ServiceModule.UI
         // INPUT ONLY – this will be called from ServiceInput
         public void HandleInput(MouseState mouse, MouseState prevMouse)
         {
+            // Default cursor every frame
+            Mouse.SetCursor(MouseCursor.Arrow);
+
             // Clear focus
             foreach (var w in Windows)
                 w.IsFocused = false;
 
-            // Hit-test from top-most to bottom
+            var mousePos = new Point(mouse.X, mouse.Y);
+
+            // Let the topmost window under the mouse update the cursor
+            Window hover = null;
+            for (int i = Windows.Count - 1; i >= 0; i--)
+            {
+                var w = Windows[i];
+                if (!w.Visible) continue;
+
+                if (w.Bounds.Contains(mousePos))
+                {
+                    hover = w;
+                    break;
+                }
+            }
+
+            if (hover != null)
+            {
+                hover.UpdateCursor(mouse);
+            }
+
+            // Normal input handling (drag, resize, clicks)
             for (int i = Windows.Count - 1; i >= 0; i--)
             {
                 var w = Windows[i];
@@ -62,6 +86,7 @@ namespace Continuum93.ServiceModule.UI
                 }
             }
         }
+
 
         // PER-FRAME LOGIC – this will be called from ServiceGraphics.Update
         public void Update(GameTime gameTime)

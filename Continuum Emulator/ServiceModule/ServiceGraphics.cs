@@ -16,6 +16,7 @@ namespace Continuum93.ServiceModule
 
         private static WindowManager _windowManager;
         private static TextWindow _testWindow;
+        private static DisassemblerWindow _disassemblerWindow;
 
         // Expose to ServiceInput so it can send mouse events
         public static WindowManager WindowManager => _windowManager;
@@ -55,6 +56,19 @@ namespace Continuum93.ServiceModule
             );
 
             _windowManager.Add(_testWindow);
+
+            _disassemblerWindow = new(
+                "DISASSEMBLER",
+                x: 976,
+                y: 16,
+                width: 600,
+                height: 400,
+                1.0f,
+                true,
+                true
+            );
+
+            _windowManager.Add(_disassemblerWindow);
         }
 
         public void Update(GameTime gameTime)

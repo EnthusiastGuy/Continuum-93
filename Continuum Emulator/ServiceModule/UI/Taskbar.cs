@@ -289,8 +289,7 @@ namespace Continuum93.ServiceModule.UI
 
             var win = new TextWindow(
                 "Taskbar test",
-                () => "This window was spawned from the taskbar settings button.\n\n" +
-                "You can replace SpawnDummyWindow() with a real settings UI later.",
+                () => "This window was spawned from the taskbar settings button.\n\n",
                 x, y, w, h,
                 spawnDelaySeconds: 0.05f,
                 canResize: true,
