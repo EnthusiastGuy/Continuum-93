@@ -113,7 +113,7 @@ namespace Continuum93.ServiceModule.UI
         /// Called each frame to process input that might affect this window.
         /// Returns true if the window captured the mouse this frame.
         /// </summary>
-        public bool HandleInput(MouseState mouse, MouseState prevMouse)
+        public virtual bool HandleInput(MouseState mouse, MouseState prevMouse)
         {
             if (!Visible)
                 return false;

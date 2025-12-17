@@ -24,6 +24,7 @@ namespace Continuum93.ServiceModule
         private static MemoryWindow _memoryWindow;
         private static StatusBarWindow _statusBarWindow;
         private static PalettesWindow _palettesWindow;
+        private static VirtualScreen3DWindow _virtualScreen3DWindow;
 
         // Expose to ServiceInput so it can send mouse events
         public static WindowManager WindowManager => _windowManager;
@@ -138,6 +139,19 @@ namespace Continuum93.ServiceModule
                 false
             );
             _windowManager.Add(_palettesWindow);
+
+            // 3D View window
+            _virtualScreen3DWindow = new VirtualScreen3DWindow(
+                "3D VIEW",
+                x: 1480,
+                y: 240,
+                width: 400,
+                height: 300,
+                0.8f,
+                true,
+                false
+            );
+            _windowManager.Add(_virtualScreen3DWindow);
         }
 
         public void Update(GameTime gameTime)
