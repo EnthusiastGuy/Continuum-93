@@ -11,10 +11,20 @@ namespace Continuum93.ServiceModule
 
         public static void Disassemble()
         {
+            if (Machine.COMPUTER == null)
+                return;
+
             ContinuumDebugger.RunAt(0, Machine.COMPUTER);
             DisassembledCode = ContinuumDebugger.GetDissassembledFull();
             Disassembled.SetResponse(DisassembledCode);
-            
+        }
+
+        public static void UpdateAll()
+        {
+            CPUState.Update();
+            Memory.Update();
+            Stacks.Update();
+            Video.Update();
         }
     }
 }

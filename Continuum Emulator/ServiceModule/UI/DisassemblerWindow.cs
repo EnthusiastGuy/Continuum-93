@@ -86,10 +86,25 @@ namespace Continuum93.ServiceModule.UI
                 }
             }
 
+            // Get current IP address
+            uint currentIP = Machine.COMPUTER?.CPU.REGS.IPO ?? 0;
+
             for (int i = 0; i < visibleCount; i++)
             {
                 var line = lines[i];
                 int y = contentRect.Y + Padding + i * lineHeight;
+
+                // Highlight current instruction
+                if (line.Address == currentIP)
+                {
+                    Rectangle currentRect = new(
+                        contentRect.X + 1,
+                        y - 1,
+                        contentRect.Width - 2,
+                        lineHeight + 2
+                    );
+                    spriteBatch.Draw(pixel, currentRect, new Color(0, 139, 139, 100)); // DarkCyan background
+                }
 
                 // --- hover highlight border ---
                 if (i == hoverIndex)

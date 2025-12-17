@@ -2,6 +2,7 @@
 using Continuum93.Emulator.States;
 using Continuum93.ServiceModule.Themes;
 using Continuum93.ServiceModule.UI;
+using Continuum93.ServiceModule;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -15,8 +16,14 @@ namespace Continuum93.ServiceModule
         private static ColorTheme Theme;
 
         private static WindowManager _windowManager;
-        private static TextWindow _testWindow;
         private static DisassemblerWindow _disassemblerWindow;
+        private static RegisterWindow _registerWindow;
+        private static FloatRegWindow _floatRegWindow;
+        private static FlagWindow _flagWindow;
+        private static StacksWindow _stacksWindow;
+        private static MemoryWindow _memoryWindow;
+        private static StatusBarWindow _statusBarWindow;
+        private static PalettesWindow _palettesWindow;
 
         // Expose to ServiceInput so it can send mouse events
         public static WindowManager WindowManager => _windowManager;
@@ -28,47 +35,109 @@ namespace Continuum93.ServiceModule
 
             _windowManager = new WindowManager();
 
-            _testWindow = new TextWindow(
-                "DEBUGGER",
-                () => Operations.DisassembledCode,
-                x: 988,
-                y: 16,
-                width: 400,
-                height: 600,
-                1.1f,
-                true,
-                true
-            );
-
-            _windowManager.Add(_testWindow);
-
-            _testWindow = new TextWindow(
-                "REGISTERS",
-                () => "This is a draggable, resizable test window.\n" +
-                "Mouse input is routed via ServiceInput.",
-                x: 160,
-                y: 540,
-                width: 600,
-                height: 200,
-                1.1f,
-                true,
-                true
-            );
-
-            _windowManager.Add(_testWindow);
-
-            _disassemblerWindow = new(
+            // Disassembler window
+            _disassemblerWindow = new DisassemblerWindow(
                 "DISASSEMBLER",
-                x: 976,
+                x: 16,
                 y: 16,
                 width: 600,
                 height: 400,
-                1.0f,
+                0f,
                 true,
-                true
+                false
             );
-
             _windowManager.Add(_disassemblerWindow);
+
+            // Register window
+            _registerWindow = new RegisterWindow(
+                "REGISTERS",
+                x: 640,
+                y: 16,
+                width: 500,
+                height: 500,
+                0.1f,
+                true,
+                false
+            );
+            _windowManager.Add(_registerWindow);
+
+            // Float register window
+            _floatRegWindow = new FloatRegWindow(
+                "FLOAT REGISTERS",
+                x: 1160,
+                y: 16,
+                width: 300,
+                height: 300,
+                0.2f,
+                true,
+                false
+            );
+            _windowManager.Add(_floatRegWindow);
+
+            // Flag window
+            _flagWindow = new FlagWindow(
+                "FLAGS",
+                x: 1160,
+                y: 340,
+                width: 300,
+                height: 200,
+                0.3f,
+                true,
+                false
+            );
+            _windowManager.Add(_flagWindow);
+
+            // Stacks window
+            _stacksWindow = new StacksWindow(
+                "STACKS",
+                x: 640,
+                y: 540,
+                width: 500,
+                height: 200,
+                0.4f,
+                true,
+                false
+            );
+            _windowManager.Add(_stacksWindow);
+
+            // Memory window
+            _memoryWindow = new MemoryWindow(
+                "MEMORY",
+                x: 16,
+                y: 440,
+                width: 600,
+                height: 300,
+                0.5f,
+                true,
+                false
+            );
+            _windowManager.Add(_memoryWindow);
+
+            // Status bar window
+            _statusBarWindow = new StatusBarWindow(
+                "STATUS",
+                x: 16,
+                y: 760,
+                width: 1500,
+                height: 30,
+                0.6f,
+                false,
+                false
+            );
+            _windowManager.Add(_statusBarWindow);
+
+            // Palettes window
+            _palettesWindow = new PalettesWindow(
+                "PALETTES",
+                x: 1480,
+                y: 16,
+                width: 300,
+                height: 200,
+                0.7f,
+                true,
+                false
+            );
+            _windowManager.Add(_palettesWindow);
         }
 
         public void Update(GameTime gameTime)
@@ -90,6 +159,12 @@ namespace Continuum93.ServiceModule
             // - while we are animating back (_serviceAnim > 0)
             Service.STATE.UseServiceView =
                 (Service.STATE.ServiceMode || _serviceAnim > 0.001f) && Machine.COMPUTER?.GRAPHICS != null;
+
+            // Update all parsers
+            if (Service.STATE.UseServiceView)
+            {
+                Operations.UpdateAll();
+            }
 
             _windowManager?.Update(gameTime);
         }
