@@ -1,3 +1,7 @@
 ﻿[Oo]bj/
 [Bb]in/
 /.vscode
+/Continuum Emulator/.vscode
+/ContinuumUnitTests/obj/
+/ContinuumUnitTests/bin/
+/Automated reports/
