@@ -677,6 +677,7 @@
     <Folder Include="Data\filesystem\programs\cube3d\" />
     <Folder Include="Data\filesystem\programs\CPU benchmark\" />
     <Folder Include="Data\filesystem\programs\simple-loop\" />
+    <Folder Include="Emulator\Compilers\C93Basic\" />
   </ItemGroup>
   <Target Name="RestoreDotnetTools" BeforeTargets="Restore">
     <Message Text="Restoring dotnet tools" Importance="High" />
