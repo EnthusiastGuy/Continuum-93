@@ -2,6 +2,7 @@
 using Continuum93.Emulator.IO;
 using Continuum93.Emulator;
 using Continuum93.Emulator.States;
+using Continuum93.Emulator.Compilers.C93Basic;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -105,6 +106,84 @@ namespace Continuum93.Emulator.Interrupts
         {
             State.FullScreenRequest = true;
             computer.CPU.REGS.Set8BitRegister(regId, (byte)(Renderer.IsFullScreen() ? 1 : 0));
+        }
+
+        public static void BuildBasic(byte regId, Computer computer)
+        {
+            // Reg ID 
+            byte nRegister = computer.CPU.REGS.GetNextRegister(regId, 1);
+            uint pathAddress = computer.CPU.REGS.Get24BitRegister(nRegister);
+
+            // Get filepath
+            string filePath = Path.Combine(DataConverter.GetCrossPlatformPath(Constants.FS_ROOT), DataConverter.GetCrossPlatformPath(computer.MEMC.GetStringAt(pathAddress)));
+            CompileLog.Reset();
+
+            if (!FileManager.FileExists(filePath))
+            {
+                computer.CPU.REGS.Set24BitRegister(nRegister, 0xFFFFFF);
+                return;
+            }
+
+            string dirPath = Path.GetDirectoryName(filePath);
+            string fileName = Path.GetFileName(filePath);
+            Directory.CreateDirectory(Path.Combine(dirPath, "debug"));
+
+            // Read BASIC source
+            string basicSource = FileManager.ReadFile(filePath);
+
+            // Compile BASIC to assembly
+            BasicCompiler basicCompiler = new BasicCompiler();
+            uint codeStartAddress = 0x080000; // Default start address
+            string assemblyCode = basicCompiler.Compile(basicSource, codeStartAddress);
+
+            if (basicCompiler.Errors > 0)
+            {
+                // Write compiler log
+                File.WriteAllText(Path.Combine(dirPath, "debug", fileName + ".basic.log"), basicCompiler.Log);
+                
+                byte basicErrorReg = computer.CPU.REGS.GetNextRegister(regId, 4);
+                byte basicErrorCount = basicCompiler.Errors > 255 ? (byte)255 : (byte)basicCompiler.Errors;
+                computer.CPU.REGS.Set8BitRegister(basicErrorReg, basicErrorCount);
+                computer.CPU.REGS.Set24BitRegister(nRegister, 0xFFFFFF);
+                return;
+            }
+
+            // Write generated assembly for debugging
+            File.WriteAllText(Path.Combine(dirPath, "debug", fileName + ".generated.asm"), assemblyCode);
+
+            // Compile assembly
+            Assembler assembler = new();
+            assembler.Build(assemblyCode, Path.Combine(dirPath, "debug", fileName + ".generated.asm"));
+
+            string log = CompileLog.GetLog();
+            File.WriteAllText(Path.Combine(dirPath, "debug", fileName + ".log"), log);
+
+            File.WriteAllText(Path.Combine(dirPath, "debug", fileName + ".full.asm"), assembler.FullSource);
+            assembler.FullSource = "";
+
+            List<CodeBlock> cBlocks = assembler.BlockManager.GetBlocks();
+
+            if (cBlocks.Count == 0)
+            {
+                computer.CPU.REGS.Set24BitRegister(nRegister, 0xFFFFFF);
+                return;
+            }
+
+            foreach (CodeBlock cBlock in cBlocks)
+            {
+                computer.LoadMemAt(cBlock.Start, cBlock.Data);
+                File.WriteAllBytes(Path.Combine(dirPath, "debug", fileName + "." + cBlock.Start), cBlock.Data);
+            }
+
+            cBlocks.Clear();
+
+            uint address = assembler.GetRunAddress();
+            computer.CPU.REGS.Set24BitRegister(nRegister, address);
+
+            byte errorReg = computer.CPU.REGS.GetNextRegister(regId, 4);
+            byte totalErrors = (byte)(basicCompiler.Errors + assembler.Errors);
+            if (totalErrors > 255) totalErrors = 255;
+            computer.CPU.REGS.Set8BitRegister(errorReg, totalErrors);
         }
 
         public static void GetCPUDesignationByFrequency(byte regId, Computer computer)
