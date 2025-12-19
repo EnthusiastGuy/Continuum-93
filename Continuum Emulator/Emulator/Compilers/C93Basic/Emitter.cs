@@ -29,6 +29,9 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         private string _printIntBufferLabel = ".string_print_int_buffer"; // Label for PrintInt string buffer
         private uint _printIntBufferAddr; // Address for PrintInt string buffer
         private StringBuilder _variableSection; // Variable declarations section
+        private Dictionary<string, bool> _stringHelpersEmitted; // Track which string helper subroutines have been emitted
+        private int _stringHelperCounter; // Counter for string helper labels
+        private Dictionary<string, string> _stringTempBuffers; // Map function calls to temporary buffer labels
 
         public List<CompileError> Errors => _errors;
 
@@ -67,6 +70,9 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             _errors.Clear();
             _labelAddresses.Clear();
             _forwardReferences.Clear();
+            _stringHelpersEmitted = new Dictionary<string, bool>();
+            _stringHelperCounter = 0;
+            _stringTempBuffers = new Dictionary<string, string>();
 
             if (program == null || program.Statements == null || program.Statements.Count == 0)
             {
@@ -110,6 +116,24 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                 result += "; SHARED SUBROUTINES\n";
                 result += "; ---------------------------------------------------------\n";
                 result += EmitPrintIntSubroutine();
+            }
+            
+            // Append string helper subroutines if they were used
+            if (_stringHelpersEmitted != null && _stringHelpersEmitted.Count > 0)
+            {
+                if (!_printIntEmitted)
+                {
+                    result += "\n; ---------------------------------------------------------\n";
+                    result += "; SHARED SUBROUTINES\n";
+                    result += "; ---------------------------------------------------------\n";
+                }
+                foreach (var helper in _stringHelpersEmitted.Keys)
+                {
+                    if (_stringHelpersEmitted[helper])
+                    {
+                        result += EmitStringHelper(helper);
+                    }
+                }
             }
 
             // Append data section with strings
@@ -493,6 +517,15 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             switch (bin.Operator)
             {
                 case TokenType.PLUS:
+                    // Check if this is string concatenation
+                    VariableType leftType = GetExpressionType(bin.Left);
+                    VariableType rightType = GetExpressionType(bin.Right);
+                    if (leftType == VariableType.String || rightType == VariableType.String)
+                    {
+                        // String concatenation
+                        return EmitStringConcatenation(bin.Left, bin.Right, leftReg, rightReg);
+                    }
+                    // Numeric addition
                     _assembly.AppendLine($"    ADD {resultReg}, {rightReg}");
                     _currentAddress += 5; // ADD rrrr, rrrr = 5 bytes
                     // Release rightReg as it's no longer needed after the operation
@@ -820,16 +853,37 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                     _assembly.AppendLine($"    LD {resultReg}, {eBits:X8}");
                     _currentAddress += 9; // LD fr, nnnn = 9 bytes
                     break;
-                // String functions - use interrupts
+                // String functions
                 case "LEN":
-                    if (func.Arguments.Count != 1) throw new Exception("LEN requires 1 argument");
-                    string lenStr = EmitExpression(func.Arguments[0], VariableType.String);
-                    _assembly.AppendLine($"    LD A, 0x01  ; String length function (placeholder)");
-                    _assembly.AppendLine($"    LD BCD, {lenStr}");
-                    _assembly.AppendLine($"    INT 0x05, A");
-                    _assembly.AppendLine($"    LD {resultReg}, A");
-                    _currentAddress += 15;
-                    break;
+                    return EmitLenFunction(func, resultReg);
+                case "LEFT":
+                    return EmitLeftFunction(func, resultReg);
+                case "RIGHT":
+                    return EmitRightFunction(func, resultReg);
+                case "MID":
+                    return EmitMidFunction(func, resultReg);
+                case "CHR":
+                    return EmitChrFunction(func, resultReg);
+                case "ASC":
+                    return EmitAscFunction(func, resultReg);
+                case "VAL":
+                    return EmitValFunction(func, resultReg);
+                case "STR":
+                    return EmitStrFunction(func, resultReg);
+                case "STRING":
+                    return EmitStringFunction(func, resultReg);
+                case "INSTR":
+                    return EmitInstrFunction(func, resultReg);
+                case "UCASE":
+                    return EmitUcaseFunction(func, resultReg);
+                case "LCASE":
+                    return EmitLcaseFunction(func, resultReg);
+                case "TRIM":
+                    return EmitTrimFunction(func, resultReg);
+                case "LTRIM":
+                    return EmitLtrimFunction(func, resultReg);
+                case "RTRIM":
+                    return EmitRtrimFunction(func, resultReg);
                 default:
                     _errors.Add(new CompileError(func.Line, func.Column, $"Unsupported function: {func.FunctionName}"));
                     return "A";
@@ -1851,6 +1905,1165 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                 // Integer or float - 4 bytes initialized to 0
                 _variableSection.AppendLine($"    #DB 0, 0, 0, 0");
             }
+        }
+
+        /// <summary>
+        /// Determines the type of an expression.
+        /// </summary>
+        private VariableType GetExpressionType(ExpressionNode expr)
+        {
+            switch (expr)
+            {
+                case LiteralNode lit:
+                    return lit.Type;
+                case VariableNode var:
+                    SymbolInfo varInfo = _symbolTable.GetVariable(var.Name);
+                    if (varInfo != null)
+                        return varInfo.Type;
+                    // Infer from variable name suffix
+                    if (var.Name.EndsWith("$"))
+                        return VariableType.String;
+                    if (var.Name.EndsWith("#"))
+                        return VariableType.Float;
+                    return VariableType.Integer;
+                case FunctionCallNode func:
+                    // String-returning functions
+                    string funcName = func.FunctionName.ToUpper();
+                    if (funcName == "LEFT" || funcName == "RIGHT" || funcName == "MID" || 
+                        funcName == "CHR" || funcName == "STR" || funcName == "STRING" ||
+                        funcName == "UCASE" || funcName == "LCASE" || funcName == "TRIM" ||
+                        funcName == "LTRIM" || funcName == "RTRIM")
+                        return VariableType.String;
+                    // Integer-returning functions
+                    if (funcName == "LEN" || funcName == "ASC" || funcName == "INSTR")
+                        return VariableType.Integer;
+                    // Numeric-returning functions
+                    if (funcName == "VAL")
+                        return VariableType.Float; // VAL can return float
+                    return VariableType.Integer; // Default
+                case BinaryExpressionNode bin:
+                    // For binary expressions, check if it's string concatenation
+                    if (bin.Operator == TokenType.PLUS)
+                    {
+                        VariableType leftType = GetExpressionType(bin.Left);
+                        VariableType rightType = GetExpressionType(bin.Right);
+                        if (leftType == VariableType.String || rightType == VariableType.String)
+                            return VariableType.String;
+                    }
+                    // Default to integer for numeric operations
+                    return VariableType.Integer;
+                default:
+                    return VariableType.Integer;
+            }
+        }
+
+        /// <summary>
+        /// Emits code for string concatenation.
+        /// </summary>
+        private string EmitStringConcatenation(ExpressionNode left, ExpressionNode right, string leftReg, string rightReg)
+        {
+            // Allocate temporary buffer for result
+            string bufferLabel = $".strcat_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            
+            // Add buffer to data section
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes for concatenated string");
+            
+            // Mark that we need the string concatenation helper
+            _stringHelpersEmitted["StrCat"] = true;
+            
+            // Call string concatenation helper
+            // Parameters: leftReg (24-bit string address), rightReg (24-bit string address), bufferLabel (24-bit result address)
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {leftReg}  ; First string address");
+            _assembly.AppendLine($"    LD IJK, {rightReg}  ; Second string address");
+            _assembly.AppendLine($"    LD LMN, {bufferLabel}  ; Result buffer address");
+            _assembly.AppendLine($"    CALL .StrCat");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(leftReg, VariableType.String);
+            ReleaseRegister(rightReg, VariableType.String);
+            
+            // Return the buffer label as a string address
+            string resultReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultReg}, {bufferLabel}");
+            _currentAddress += 50; // Approximate size
+            
+            return resultReg;
+        }
+
+        /// <summary>
+        /// Emits code for LEN function - returns string length.
+        /// </summary>
+        private string EmitLenFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "LEN requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            // Mark that we need the string length helper
+            _stringHelpersEmitted["StrLen"] = true;
+            
+            // Call string length helper
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    CALL .StrLen");
+            _assembly.AppendLine($"    LD {resultReg}, A  ; Length result");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            _currentAddress += 30;
+            
+            return resultReg;
+        }
+
+        /// <summary>
+        /// Emits code for LEFT$ function - returns leftmost n characters.
+        /// </summary>
+        private string EmitLeftFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 2)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "LEFT$ requires 2 arguments"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            string nReg = EmitExpression(func.Arguments[1], VariableType.Integer);
+            
+            // Allocate temporary buffer
+            string bufferLabel = $".strleft_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrLeft"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD BCDE, {nReg}  ; Number of characters");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrLeft");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            ReleaseRegister(nReg, VariableType.Integer);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 40;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for RIGHT$ function - returns rightmost n characters.
+        /// </summary>
+        private string EmitRightFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 2)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "RIGHT$ requires 2 arguments"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            string nReg = EmitExpression(func.Arguments[1], VariableType.Integer);
+            
+            string bufferLabel = $".strright_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrRight"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD BCDE, {nReg}  ; Number of characters");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrRight");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            ReleaseRegister(nReg, VariableType.Integer);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 40;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for MID$ function - returns substring.
+        /// </summary>
+        private string EmitMidFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count < 2 || func.Arguments.Count > 3)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "MID$ requires 2 or 3 arguments"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            string startReg = EmitExpression(func.Arguments[1], VariableType.Integer);
+            string lengthReg = null;
+            if (func.Arguments.Count == 3)
+            {
+                lengthReg = EmitExpression(func.Arguments[2], VariableType.Integer);
+            }
+            
+            string bufferLabel = $".strmid_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrMid"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD BCDE, {startReg}  ; Start position (1-based)");
+            if (lengthReg != null)
+            {
+                _assembly.AppendLine($"    LD EFGH, {lengthReg}  ; Length");
+            }
+            else
+            {
+                _assembly.AppendLine($"    LD EFGH, 0xFFFFFFFF  ; Length = -1 (to end)");
+            }
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrMid");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            ReleaseRegister(startReg, VariableType.Integer);
+            if (lengthReg != null)
+                ReleaseRegister(lengthReg, VariableType.Integer);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 45;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for CHR$ function - converts ASCII code to character.
+        /// </summary>
+        private string EmitChrFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "CHR$ requires 1 argument"));
+                return resultReg;
+            }
+            
+            string codeReg = EmitExpression(func.Arguments[0], VariableType.Integer);
+            
+            string bufferLabel = $".strchr_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0  ; 2 bytes for single character + null");
+            
+            _stringHelpersEmitted["StrChr"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD BCDE, {codeReg}  ; ASCII code");
+            _assembly.AppendLine($"    LD FGH, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrChr");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(codeReg, VariableType.Integer);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 35;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for ASC function - returns ASCII code of first character.
+        /// </summary>
+        private string EmitAscFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "ASC requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            _stringHelpersEmitted["StrAsc"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    CALL .StrAsc");
+            _assembly.AppendLine($"    LD {resultReg}, A  ; ASCII code result");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            _currentAddress += 30;
+            
+            return resultReg;
+        }
+
+        /// <summary>
+        /// Emits code for VAL function - converts string to number.
+        /// </summary>
+        private string EmitValFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "VAL requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            _stringHelpersEmitted["StrVal"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    CALL .StrVal");
+            _assembly.AppendLine($"    LD {resultReg}, BCDE  ; Numeric result (32-bit)");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            _currentAddress += 30;
+            
+            return resultReg;
+        }
+
+        /// <summary>
+        /// Emits code for STR$ function - converts number to string.
+        /// </summary>
+        private string EmitStrFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "STR$ requires 1 argument"));
+                return resultReg;
+            }
+            
+            // Determine if argument is integer or float
+            VariableType argType = GetExpressionType(func.Arguments[0]);
+            string numReg = EmitExpression(func.Arguments[0], argType);
+            
+            string bufferLabel = $".strstr_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 12 bytes");
+            
+            // Use existing IntToString or FloatToString interrupt
+            string formatLabel = AllocateString("{0}");
+            
+            if (argType == VariableType.Float)
+            {
+                _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+                _assembly.AppendLine($"    LD A, 0x01  ; FloatToString function");
+                _assembly.AppendLine($"    LD B, 0  ; Float register index (F0)");
+                _assembly.AppendLine($"    LD F0, {numReg}  ; Load float value");
+                _assembly.AppendLine($"    LD FGH, {formatLabel}  ; Format string");
+                _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Target buffer");
+                _assembly.AppendLine($"    INT 0x05, A  ; Convert");
+                _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            }
+            else
+            {
+                _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+                _assembly.AppendLine($"    LD A, 0x03  ; IntToString function");
+                _assembly.AppendLine($"    LD BCDE, {numReg}  ; Integer value");
+                _assembly.AppendLine($"    LD FGH, {formatLabel}  ; Format string");
+                _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Target buffer");
+                _assembly.AppendLine($"    INT 0x05, A  ; Convert");
+                _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            }
+            
+            ReleaseRegister(numReg, argType);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 40;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for STRING$ function - repeats character n times.
+        /// </summary>
+        private string EmitStringFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 2)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "STRING$ requires 2 arguments"));
+                return resultReg;
+            }
+            
+            string nReg = EmitExpression(func.Arguments[0], VariableType.Integer);
+            string charReg = EmitExpression(func.Arguments[1], VariableType.String);
+            
+            string bufferLabel = $".strstring_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrString"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD BCDE, {nReg}  ; Number of repetitions");
+            _assembly.AppendLine($"    LD FGH, {charReg}  ; Character string address");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrString");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(nReg, VariableType.Integer);
+            ReleaseRegister(charReg, VariableType.String);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 40;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for INSTR function - finds substring position.
+        /// </summary>
+        private string EmitInstrFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count < 2 || func.Arguments.Count > 3)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "INSTR requires 2 or 3 arguments"));
+                return resultReg;
+            }
+            
+            string startReg = null;
+            string str1Reg, str2Reg;
+            
+            if (func.Arguments.Count == 3)
+            {
+                startReg = EmitExpression(func.Arguments[0], VariableType.Integer);
+                str1Reg = EmitExpression(func.Arguments[1], VariableType.String);
+                str2Reg = EmitExpression(func.Arguments[2], VariableType.String);
+            }
+            else
+            {
+                str1Reg = EmitExpression(func.Arguments[0], VariableType.String);
+                str2Reg = EmitExpression(func.Arguments[1], VariableType.String);
+            }
+            
+            _stringHelpersEmitted["StrInstr"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            if (startReg != null)
+            {
+                _assembly.AppendLine($"    LD BCDE, {startReg}  ; Start position");
+            }
+            else
+            {
+                _assembly.AppendLine($"    LD BCDE, 1  ; Start position (default)");
+            }
+            _assembly.AppendLine($"    LD FGH, {str1Reg}  ; First string address");
+            _assembly.AppendLine($"    LD IJK, {str2Reg}  ; Second string address");
+            _assembly.AppendLine($"    CALL .StrInstr");
+            _assembly.AppendLine($"    LD {resultReg}, BCDE  ; Position result (0 if not found)");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            if (startReg != null)
+                ReleaseRegister(startReg, VariableType.Integer);
+            ReleaseRegister(str1Reg, VariableType.String);
+            ReleaseRegister(str2Reg, VariableType.String);
+            _currentAddress += 40;
+            
+            return resultReg;
+        }
+
+        /// <summary>
+        /// Emits code for UCASE$ function - converts to uppercase.
+        /// </summary>
+        private string EmitUcaseFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "UCASE$ requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            string bufferLabel = $".strucase_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrUcase"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrUcase");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 35;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for LCASE$ function - converts to lowercase.
+        /// </summary>
+        private string EmitLcaseFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "LCASE$ requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            string bufferLabel = $".strlcase_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrLcase"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrLcase");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 35;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for TRIM$ function - removes leading and trailing whitespace.
+        /// </summary>
+        private string EmitTrimFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "TRIM$ requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            string bufferLabel = $".strtrim_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrTrim"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrTrim");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 35;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for LTRIM$ function - removes leading whitespace.
+        /// </summary>
+        private string EmitLtrimFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "LTRIM$ requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            string bufferLabel = $".strltrim_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrLtrim"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrLtrim");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 35;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits code for RTRIM$ function - removes trailing whitespace.
+        /// </summary>
+        private string EmitRtrimFunction(FunctionCallNode func, string resultReg)
+        {
+            if (func.Arguments.Count != 1)
+            {
+                _errors.Add(new CompileError(func.Line, func.Column, "RTRIM$ requires 1 argument"));
+                return resultReg;
+            }
+            
+            string strReg = EmitExpression(func.Arguments[0], VariableType.String);
+            
+            string bufferLabel = $".strrtrim_buf_{_stringHelperCounter}";
+            _stringHelperCounter++;
+            _dataSection.AppendLine($"{bufferLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 32 bytes");
+            
+            _stringHelpersEmitted["StrRtrim"] = true;
+            
+            _assembly.AppendLine($"    PUSH A, U  ; Preserve registers");
+            _assembly.AppendLine($"    LD FGH, {strReg}  ; String address");
+            _assembly.AppendLine($"    LD IJK, {bufferLabel}  ; Result buffer");
+            _assembly.AppendLine($"    CALL .StrRtrim");
+            _assembly.AppendLine($"    POP A, U  ; Restore registers");
+            
+            ReleaseRegister(strReg, VariableType.String);
+            
+            string resultStrReg = GetTempRegister(VariableType.String);
+            _assembly.AppendLine($"    LD {resultStrReg}, {bufferLabel}");
+            _currentAddress += 35;
+            
+            return resultStrReg;
+        }
+
+        /// <summary>
+        /// Emits a string helper subroutine.
+        /// </summary>
+        private string EmitStringHelper(string helperName)
+        {
+            StringBuilder helper = new StringBuilder();
+            
+            switch (helperName)
+            {
+                case "StrLen":
+                    helper.AppendLine(".StrLen");
+                    helper.AppendLine("    ; Input: FGH = string address (24-bit)");
+                    helper.AppendLine("    ; Output: A = string length (8-bit)");
+                    helper.AppendLine("    PUSH B, U  ; Preserve registers");
+                    helper.AppendLine("    LD A, 0  ; Initialize length counter");
+                    helper.AppendLine("    LD BCD, FGH  ; Copy string address");
+                    helper.AppendLine(".StrLen_loop");
+                    helper.AppendLine("    LD B, (BCD)  ; Load byte from string");
+                    helper.AppendLine("    CP B, 0  ; Check for null terminator");
+                    helper.AppendLine("    JR Z, .StrLen_done");
+                    helper.AppendLine("    INC A  ; Increment length");
+                    helper.AppendLine("    INC BCD  ; Move to next byte");
+                    helper.AppendLine("    JP .StrLen_loop");
+                    helper.AppendLine(".StrLen_done");
+                    helper.AppendLine("    POP B, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrCat":
+                    helper.AppendLine(".StrCat");
+                    helper.AppendLine("    ; Input: FGH = first string address, IJK = second string address, LMN = result buffer");
+                    helper.AppendLine("    ; Concatenates two strings into result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    ; Copy first string");
+                    helper.AppendLine("    LD BCD, FGH  ; Source");
+                    helper.AppendLine("    LD EFG, LMN  ; Destination");
+                    helper.AppendLine(".StrCat_copy1");
+                    helper.AppendLine("    LD A, (BCD)  ; Load byte");
+                    helper.AppendLine("    LD (EFG), A  ; Store byte");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrCat_copy2");
+                    helper.AppendLine("    INC BCD  ; Next source byte");
+                    helper.AppendLine("    INC EFG  ; Next dest byte");
+                    helper.AppendLine("    JP .StrCat_copy1");
+                    helper.AppendLine(".StrCat_copy2");
+                    helper.AppendLine("    ; Copy second string (EFG already points to end of first string)");
+                    helper.AppendLine("    LD BCD, IJK  ; Source");
+                    helper.AppendLine(".StrCat_copy2_loop");
+                    helper.AppendLine("    LD A, (BCD)  ; Load byte");
+                    helper.AppendLine("    LD (EFG), A  ; Store byte");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrCat_done");
+                    helper.AppendLine("    INC BCD  ; Next source byte");
+                    helper.AppendLine("    INC EFG  ; Next dest byte");
+                    helper.AppendLine("    JP .StrCat_copy2_loop");
+                    helper.AppendLine(".StrCat_done");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrLeft":
+                    helper.AppendLine(".StrLeft");
+                    helper.AppendLine("    ; Input: FGH = string address, BCDE = number of characters, IJK = result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    LD BCD, FGH  ; Source string");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination buffer");
+                    helper.AppendLine("    LD HI, 0  ; Character counter");
+                    helper.AppendLine(".StrLeft_loop");
+                    helper.AppendLine("    CP HI, CD  ; Compare counter with count");
+                    helper.AppendLine("    JR GTE, .StrLeft_done");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrLeft_done");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    INC BCD  ; Next source");
+                    helper.AppendLine("    INC EFG  ; Next dest");
+                    helper.AppendLine("    INC HI  ; Increment counter");
+                    helper.AppendLine("    JP .StrLeft_loop");
+                    helper.AppendLine(".StrLeft_done");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (EFG), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrRight":
+                    helper.AppendLine(".StrRight");
+                    helper.AppendLine("    ; Input: FGH = string address, BCDE = number of characters, IJK = result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    ; First, find string length");
+                    helper.AppendLine("    LD BCD, FGH  ; String address");
+                    helper.AppendLine("    LD HI, 0  ; Length counter");
+                    helper.AppendLine(".StrRight_len");
+                    helper.AppendLine("    LD A, (BCD)  ; Load byte");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrRight_start");
+                    helper.AppendLine("    INC HI  ; Increment length");
+                    helper.AppendLine("    INC BCD  ; Next byte");
+                    helper.AppendLine("    JP .StrRight_len");
+                    helper.AppendLine(".StrRight_start");
+                    helper.AppendLine("    ; Calculate start position: length - count");
+                    helper.AppendLine("    LD JK, HI  ; Length");
+                    helper.AppendLine("    SUB JK, CD  ; Subtract count");
+                    helper.AppendLine("    ; If result < 0, start at 0");
+                    helper.AppendLine("    CP JK, 0");
+                    helper.AppendLine("    JR LT, .StrRight_start0");
+                    helper.AppendLine("    JP .StrRight_copy");
+                    helper.AppendLine(".StrRight_start0");
+                    helper.AppendLine("    LD JK, 0  ; Start at beginning");
+                    helper.AppendLine(".StrRight_copy");
+                    helper.AppendLine("    ; Copy from position JK to end");
+                    helper.AppendLine("    LD BCD, FGH  ; Source string");
+                    helper.AppendLine("    ADD BCD, JK  ; Add offset");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination");
+                    helper.AppendLine(".StrRight_loop");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrRight_done");
+                    helper.AppendLine("    INC BCD  ; Next source");
+                    helper.AppendLine("    INC EFG  ; Next dest");
+                    helper.AppendLine("    JP .StrRight_loop");
+                    helper.AppendLine(".StrRight_done");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrMid":
+                    helper.AppendLine(".StrMid");
+                    helper.AppendLine("    ; Input: FGH = string address, BCDE = start position (1-based), EFGH = length (-1 for to end), IJK = result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    ; Skip to start position (convert 1-based to 0-based)");
+                    helper.AppendLine("    LD BCD, FGH  ; Source string");
+                    helper.AppendLine("    SUB BCDE, 1  ; Convert to 0-based");
+                    helper.AppendLine("    ADD BCD, BCDE  ; Add offset");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination");
+                    helper.AppendLine("    LD HI, 0  ; Character counter");
+                    helper.AppendLine(".StrMid_loop");
+                    helper.AppendLine("    ; Check if we've reached the length limit");
+                    helper.AppendLine("    CP EFGH, 0xFFFFFFFF  ; Check if length is -1");
+                    helper.AppendLine("    JR NE, .StrMid_checklen");
+                    helper.AppendLine("    JP .StrMid_copy");
+                    helper.AppendLine(".StrMid_checklen");
+                    helper.AppendLine("    CP HI, GH  ; Compare counter with length");
+                    helper.AppendLine("    JR GTE, .StrMid_done");
+                    helper.AppendLine(".StrMid_copy");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrMid_done");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    INC BCD  ; Next source");
+                    helper.AppendLine("    INC EFG  ; Next dest");
+                    helper.AppendLine("    INC HI  ; Increment counter");
+                    helper.AppendLine("    JP .StrMid_loop");
+                    helper.AppendLine(".StrMid_done");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (EFG), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrChr":
+                    helper.AppendLine(".StrChr");
+                    helper.AppendLine("    ; Input: BCDE = ASCII code, FGH = result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    LD A, CD  ; Get ASCII code (8-bit)");
+                    helper.AppendLine("    LD (FGH), A  ; Store character");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    INC FGH");
+                    helper.AppendLine("    LD (FGH), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrAsc":
+                    helper.AppendLine(".StrAsc");
+                    helper.AppendLine("    ; Input: FGH = string address");
+                    helper.AppendLine("    ; Output: A = ASCII code of first character (0 if empty)");
+                    helper.AppendLine("    PUSH B, U  ; Preserve registers");
+                    helper.AppendLine("    LD BCD, FGH  ; String address");
+                    helper.AppendLine("    LD A, (BCD)  ; Load first character");
+                    helper.AppendLine("    POP B, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrVal":
+                    helper.AppendLine(".StrVal");
+                    helper.AppendLine("    ; Input: FGH = string address");
+                    helper.AppendLine("    ; Output: BCDE = numeric value (32-bit)");
+                    helper.AppendLine("    ; Note: This is a simplified implementation. Full VAL would parse floats too.");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    LD BCD, FGH  ; String address");
+                    helper.AppendLine("    LD BCDE, 0  ; Initialize result");
+                    helper.AppendLine("    LD A, 1  ; Sign (1 = positive, -1 = negative)");
+                    helper.AppendLine("    ; Check for negative sign");
+                    helper.AppendLine("    LD HI, (BCD)  ; Load first character");
+                    helper.AppendLine("    CP HI, 0x2D  ; Check for '-'");
+                    helper.AppendLine("    JR NE, .StrVal_parse");
+                    helper.AppendLine("    LD A, -1  ; Negative");
+                    helper.AppendLine("    INC BCD  ; Skip '-'");
+                    helper.AppendLine(".StrVal_parse");
+                    helper.AppendLine("    LD JK, (BCD)  ; Load character");
+                    helper.AppendLine("    CP JK, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrVal_done");
+                    helper.AppendLine("    ; Check if digit (0x30-0x39)");
+                    helper.AppendLine("    CP JK, 0x30  ; '0'");
+                    helper.AppendLine("    JR LT, .StrVal_done");
+                    helper.AppendLine("    CP JK, 0x3A  ; '9' + 1");
+                    helper.AppendLine("    JR GTE, .StrVal_done");
+                    helper.AppendLine("    ; Convert digit to number");
+                    helper.AppendLine("    SUB JK, 0x30  ; Subtract '0'");
+                    helper.AppendLine("    MUL BCDE, 10  ; Multiply result by 10");
+                    helper.AppendLine("    ADD BCDE, JK  ; Add digit");
+                    helper.AppendLine("    INC BCD  ; Next character");
+                    helper.AppendLine("    JP .StrVal_parse");
+                    helper.AppendLine(".StrVal_done");
+                    helper.AppendLine("    ; Apply sign");
+                    helper.AppendLine("    CP A, -1");
+                    helper.AppendLine("    JR NE, .StrVal_ret");
+                    helper.AppendLine("    NEG BCDE  ; Negate result");
+                    helper.AppendLine(".StrVal_ret");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrString":
+                    helper.AppendLine(".StrString");
+                    helper.AppendLine("    ; Input: BCDE = number of repetitions, FGH = character string address, IJK = result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    ; Get first character from string");
+                    helper.AppendLine("    LD BCD, FGH  ; Character string");
+                    helper.AppendLine("    LD A, (BCD)  ; Load first character");
+                    helper.AppendLine("    LD EFG, IJK  ; Result buffer");
+                    helper.AppendLine("    LD HI, 0  ; Counter");
+                    helper.AppendLine(".StrString_loop");
+                    helper.AppendLine("    CP HI, CD  ; Compare counter with count");
+                    helper.AppendLine("    JR GTE, .StrString_done");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    INC EFG  ; Next position");
+                    helper.AppendLine("    INC HI  ; Increment counter");
+                    helper.AppendLine("    JP .StrString_loop");
+                    helper.AppendLine(".StrString_done");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (EFG), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrInstr":
+                    helper.AppendLine(".StrInstr");
+                    helper.AppendLine("    ; Input: BCDE = start position (1-based), FGH = first string, IJK = second string");
+                    helper.AppendLine("    ; Output: BCDE = position (1-based, 0 if not found)");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    ; Convert start to 0-based and skip to position");
+                    helper.AppendLine("    LD BCD, FGH  ; First string");
+                    helper.AppendLine("    SUB BCDE, 1  ; Convert to 0-based");
+                    helper.AppendLine("    ADD BCD, BCDE  ; Add offset");
+                    helper.AppendLine("    LD EFG, IJK  ; Second string (search string)");
+                    helper.AppendLine("    LD HI, (EFG)  ; Load first character of search string");
+                    helper.AppendLine("    CP HI, 0  ; Check if search string is empty");
+                    helper.AppendLine("    JR Z, .StrInstr_notfound");
+                    helper.AppendLine("    LD JK, BCDE  ; Save start position for result");
+                    helper.AppendLine(".StrInstr_outer");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character from first string");
+                    helper.AppendLine("    CP A, 0  ; Check for end of string");
+                    helper.AppendLine("    JR Z, .StrInstr_notfound");
+                    helper.AppendLine("    CP A, HI  ; Compare with first char of search");
+                    helper.AppendLine("    JR NE, .StrInstr_next");
+                    helper.AppendLine("    ; Potential match - check rest of search string");
+                    helper.AppendLine("    LD LMN, BCD  ; Save position in first string");
+                    helper.AppendLine("    LD OPQ, EFG  ; Save position in search string");
+                    helper.AppendLine("    INC LMN  ; Next char in first string");
+                    helper.AppendLine("    INC OPQ  ; Next char in search string");
+                    helper.AppendLine(".StrInstr_match");
+                    helper.AppendLine("    LD A, (OPQ)  ; Load from search string");
+                    helper.AppendLine("    CP A, 0  ; Check for end of search");
+                    helper.AppendLine("    JR Z, .StrInstr_found");
+                    helper.AppendLine("    LD R, (LMN)  ; Load from first string");
+                    helper.AppendLine("    CP R, 0  ; Check for end of first string");
+                    helper.AppendLine("    JR Z, .StrInstr_notfound");
+                    helper.AppendLine("    CP A, R  ; Compare characters");
+                    helper.AppendLine("    JR NE, .StrInstr_next");
+                    helper.AppendLine("    INC LMN  ; Next in first");
+                    helper.AppendLine("    INC OPQ  ; Next in search");
+                    helper.AppendLine("    JP .StrInstr_match");
+                    helper.AppendLine(".StrInstr_found");
+                    helper.AppendLine("    ; Found! Calculate 1-based position");
+                    helper.AppendLine("    SUB BCD, FGH  ; Calculate offset");
+                    helper.AppendLine("    ADD BCDE, 1  ; Convert to 1-based");
+                    helper.AppendLine("    LD BCDE, BCD  ; Result");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    helper.AppendLine(".StrInstr_next");
+                    helper.AppendLine("    INC BCD  ; Next position in first string");
+                    helper.AppendLine("    INC JK  ; Increment position counter");
+                    helper.AppendLine("    JP .StrInstr_outer");
+                    helper.AppendLine(".StrInstr_notfound");
+                    helper.AppendLine("    LD BCDE, 0  ; Not found");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrUcase":
+                    helper.AppendLine(".StrUcase");
+                    helper.AppendLine("    ; Input: FGH = string address, IJK = result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    LD BCD, FGH  ; Source");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination");
+                    helper.AppendLine(".StrUcase_loop");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrUcase_done");
+                    helper.AppendLine("    ; Check if lowercase letter (a-z: 0x61-0x7A)");
+                    helper.AppendLine("    CP A, 0x61  ; 'a'");
+                    helper.AppendLine("    JR LT, .StrUcase_store");
+                    helper.AppendLine("    CP A, 0x7B  ; 'z' + 1");
+                    helper.AppendLine("    JR GTE, .StrUcase_store");
+                    helper.AppendLine("    SUB A, 0x20  ; Convert to uppercase");
+                    helper.AppendLine(".StrUcase_store");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    INC BCD  ; Next source");
+                    helper.AppendLine("    INC EFG  ; Next dest");
+                    helper.AppendLine("    JP .StrUcase_loop");
+                    helper.AppendLine(".StrUcase_done");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (EFG), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrLcase":
+                    helper.AppendLine(".StrLcase");
+                    helper.AppendLine("    ; Input: FGH = string address, IJK = result buffer");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    LD BCD, FGH  ; Source");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination");
+                    helper.AppendLine(".StrLcase_loop");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrLcase_done");
+                    helper.AppendLine("    ; Check if uppercase letter (A-Z: 0x41-0x5A)");
+                    helper.AppendLine("    CP A, 0x41  ; 'A'");
+                    helper.AppendLine("    JR LT, .StrLcase_store");
+                    helper.AppendLine("    CP A, 0x5B  ; 'Z' + 1");
+                    helper.AppendLine("    JR GTE, .StrLcase_store");
+                    helper.AppendLine("    ADD A, 0x20  ; Convert to lowercase");
+                    helper.AppendLine(".StrLcase_store");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    INC BCD  ; Next source");
+                    helper.AppendLine("    INC EFG  ; Next dest");
+                    helper.AppendLine("    JP .StrLcase_loop");
+                    helper.AppendLine(".StrLcase_done");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (EFG), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrTrim":
+                    helper.AppendLine(".StrTrim");
+                    helper.AppendLine("    ; Input: FGH = string address, IJK = result buffer");
+                    helper.AppendLine("    ; Removes leading and trailing whitespace");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    ; First, find start (skip leading whitespace)");
+                    helper.AppendLine("    LD BCD, FGH  ; String address");
+                    helper.AppendLine(".StrTrim_skip_lead");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrTrim_empty");
+                    helper.AppendLine("    CP A, 0x20  ; Space");
+                    helper.AppendLine("    JR Z, .StrTrim_skip_lead_inc");
+                    helper.AppendLine("    CP A, 0x09  ; Tab");
+                    helper.AppendLine("    JR Z, .StrTrim_skip_lead_inc");
+                    helper.AppendLine("    CP A, 0x0A  ; Newline");
+                    helper.AppendLine("    JR Z, .StrTrim_skip_lead_inc");
+                    helper.AppendLine("    CP A, 0x0D  ; Carriage return");
+                    helper.AppendLine("    JR Z, .StrTrim_skip_lead_inc");
+                    helper.AppendLine("    JP .StrTrim_copy");
+                    helper.AppendLine(".StrTrim_skip_lead_inc");
+                    helper.AppendLine("    INC BCD  ; Skip whitespace");
+                    helper.AppendLine("    JP .StrTrim_skip_lead");
+                    helper.AppendLine(".StrTrim_copy");
+                    helper.AppendLine("    ; Find end of string (for trailing whitespace)");
+                    helper.AppendLine("    LD EFG, BCD  ; Start of non-whitespace");
+                    helper.AppendLine("    LD HI, BCD  ; End pointer");
+                    helper.AppendLine("    LD JK, BCD  ; Last non-whitespace");
+                    helper.AppendLine(".StrTrim_find_end");
+                    helper.AppendLine("    LD A, (HI)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrTrim_found_end");
+                    helper.AppendLine("    CP A, 0x20  ; Space");
+                    helper.AppendLine("    JR Z, .StrTrim_find_end_inc");
+                    helper.AppendLine("    CP A, 0x09  ; Tab");
+                    helper.AppendLine("    JR Z, .StrTrim_find_end_inc");
+                    helper.AppendLine("    CP A, 0x0A  ; Newline");
+                    helper.AppendLine("    JR Z, .StrTrim_find_end_inc");
+                    helper.AppendLine("    CP A, 0x0D  ; Carriage return");
+                    helper.AppendLine("    JR Z, .StrTrim_find_end_inc");
+                    helper.AppendLine("    LD JK, HI  ; Update last non-whitespace");
+                    helper.AppendLine(".StrTrim_find_end_inc");
+                    helper.AppendLine("    INC HI  ; Next character");
+                    helper.AppendLine("    JP .StrTrim_find_end");
+                    helper.AppendLine(".StrTrim_found_end");
+                    helper.AppendLine("    ; Copy from EFG to JK");
+                    helper.AppendLine("    LD LMN, IJK  ; Destination");
+                    helper.AppendLine(".StrTrim_copy_loop");
+                    helper.AppendLine("    CP EFG, JK  ; Compare with end");
+                    helper.AppendLine("    JR GT, .StrTrim_done");
+                    helper.AppendLine("    LD A, (EFG)  ; Load character");
+                    helper.AppendLine("    LD (LMN), A  ; Store character");
+                    helper.AppendLine("    INC EFG  ; Next source");
+                    helper.AppendLine("    INC LMN  ; Next dest");
+                    helper.AppendLine("    JP .StrTrim_copy_loop");
+                    helper.AppendLine(".StrTrim_empty");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (EFG), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    helper.AppendLine(".StrTrim_done");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (LMN), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrLtrim":
+                    helper.AppendLine(".StrLtrim");
+                    helper.AppendLine("    ; Input: FGH = string address, IJK = result buffer");
+                    helper.AppendLine("    ; Removes leading whitespace");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    LD BCD, FGH  ; Source");
+                    helper.AppendLine("    ; Skip leading whitespace");
+                    helper.AppendLine(".StrLtrim_skip");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrLtrim_done");
+                    helper.AppendLine("    CP A, 0x20  ; Space");
+                    helper.AppendLine("    JR Z, .StrLtrim_skip_inc");
+                    helper.AppendLine("    CP A, 0x09  ; Tab");
+                    helper.AppendLine("    JR Z, .StrLtrim_skip_inc");
+                    helper.AppendLine("    CP A, 0x0A  ; Newline");
+                    helper.AppendLine("    JR Z, .StrLtrim_skip_inc");
+                    helper.AppendLine("    CP A, 0x0D  ; Carriage return");
+                    helper.AppendLine("    JR Z, .StrLtrim_skip_inc");
+                    helper.AppendLine("    JP .StrLtrim_copy");
+                    helper.AppendLine(".StrLtrim_skip_inc");
+                    helper.AppendLine("    INC BCD  ; Skip whitespace");
+                    helper.AppendLine("    JP .StrLtrim_skip");
+                    helper.AppendLine(".StrLtrim_copy");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination");
+                    helper.AppendLine(".StrLtrim_loop");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrLtrim_done");
+                    helper.AppendLine("    INC BCD  ; Next source");
+                    helper.AppendLine("    INC EFG  ; Next dest");
+                    helper.AppendLine("    JP .StrLtrim_loop");
+                    helper.AppendLine(".StrLtrim_done");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                case "StrRtrim":
+                    helper.AppendLine(".StrRtrim");
+                    helper.AppendLine("    ; Input: FGH = string address, IJK = result buffer");
+                    helper.AppendLine("    ; Removes trailing whitespace");
+                    helper.AppendLine("    PUSH A, U  ; Preserve registers");
+                    helper.AppendLine("    LD BCD, FGH  ; Source");
+                    helper.AppendLine("    LD EFG, IJK  ; Destination");
+                    helper.AppendLine("    LD HI, EFG  ; Last non-whitespace position");
+                    helper.AppendLine(".StrRtrim_loop");
+                    helper.AppendLine("    LD A, (BCD)  ; Load character");
+                    helper.AppendLine("    CP A, 0  ; Check for null");
+                    helper.AppendLine("    JR Z, .StrRtrim_done");
+                    helper.AppendLine("    LD (EFG), A  ; Store character");
+                    helper.AppendLine("    CP A, 0x20  ; Space");
+                    helper.AppendLine("    JR Z, .StrRtrim_next");
+                    helper.AppendLine("    CP A, 0x09  ; Tab");
+                    helper.AppendLine("    JR Z, .StrRtrim_next");
+                    helper.AppendLine("    CP A, 0x0A  ; Newline");
+                    helper.AppendLine("    JR Z, .StrRtrim_next");
+                    helper.AppendLine("    CP A, 0x0D  ; Carriage return");
+                    helper.AppendLine("    JR Z, .StrRtrim_next");
+                    helper.AppendLine("    LD HI, EFG  ; Update last non-whitespace");
+                    helper.AppendLine(".StrRtrim_next");
+                    helper.AppendLine("    INC BCD  ; Next source");
+                    helper.AppendLine("    INC EFG  ; Next dest");
+                    helper.AppendLine("    JP .StrRtrim_loop");
+                    helper.AppendLine(".StrRtrim_done");
+                    helper.AppendLine("    ; Null terminate at last non-whitespace");
+                    helper.AppendLine("    INC HI  ; After last non-whitespace");
+                    helper.AppendLine("    LD A, 0  ; Null terminator");
+                    helper.AppendLine("    LD (HI), A");
+                    helper.AppendLine("    POP A, U  ; Restore registers");
+                    helper.AppendLine("    RET");
+                    break;
+                    
+                default:
+                    return ""; // Unknown helper
+            }
+            
+            return helper.ToString();
         }
 
         public uint GetRunAddress()

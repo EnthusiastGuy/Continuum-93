@@ -23,7 +23,7 @@ This document tracks the progress of the C93 BASIC compiler implementation.
 - [x] Complete expression compilation (all operators) - Fixed LD instruction usage
 - [x] Complete PRINT implementation (all features)
 - [x] Math functions
-- [ ] String operations
+- [x] String operations (all functions implemented)
 - [x] More graphics commands (CIRCLE, RECTANGLE, ELLIPSE, etc.)
 - [x] Array support (basic)
 - [x] Function calls (math functions)
@@ -44,6 +44,11 @@ This document tracks the progress of the C93 BASIC compiler implementation.
 - [x] Created PRINT helper function with PUSH/POP to preserve registers and avoid code duplication
 - [x] Fixed PRINT to handle integer expressions by converting to strings using IntToString interrupt
 - [x] Fixed PLOT command - load function ID first, use correct register sizes (16-bit for x/y, 8-bit for color)
+- [x] Implemented all string operations:
+  - [x] LEN, LEFT$, RIGHT$, MID$, CHR$, ASC, VAL, STR$, STRING$, INSTR
+  - [x] UCASE$, LCASE$, TRIM$, LTRIM$, RTRIM$
+  - [x] String concatenation with + operator
+  - [x] String helper subroutines for runtime string manipulation
 
 ## Architecture
 
