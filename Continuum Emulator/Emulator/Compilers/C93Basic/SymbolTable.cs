@@ -55,10 +55,12 @@ namespace Continuum93.Emulator.Compilers.C93Basic
     {
         public string Name { get; set; }
         public VariableType Type { get; set; }
-        public uint Address { get; set; }
+        public uint Address { get; set; } // Kept for backward compatibility, but Label should be used instead
+        public string Label { get; set; } // Label for the variable (e.g., ".var_int_i")
         public int Size { get; set; } // Size in bytes
         public List<int> ArrayDimensions { get; set; } = new List<int>(); // For arrays
         public bool IsArray => ArrayDimensions.Count > 0;
+        public string InitialValue { get; set; } // For string literals (e.g., "Hello!")
     }
 }
 

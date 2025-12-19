@@ -35,6 +35,15 @@ This document tracks the progress of the C93 BASIC compiler implementation.
 - [x] Fixed END IF parsing - handles both ENDIF and END IF tokens
 - [x] Fixed IF statement parsing - correctly handles THEN block
 - [x] All unit tests passing (18/18)
+- [x] Fixed register allocation - use 32-bit registers (ABCD, EFGH, etc.) spaced by 4 positions
+- [x] Optimized binary expressions - reuse left register instead of allocating new result register
+- [x] Implemented register reuse pool - registers are released after operations and assignments for reuse
+- [x] Fixed FOR loop - use direct memory operations `LD (addr), value, 4` for 32-bit initialization
+- [x] Fixed FOR loop - use 32-bit registers for comparisons and increments (not 8-bit)
+- [x] Added float step support for FOR loops (separate integer and float loop implementations)
+- [x] Created PRINT helper function with PUSH/POP to preserve registers and avoid code duplication
+- [x] Fixed PRINT to handle integer expressions by converting to strings using IntToString interrupt
+- [x] Fixed PLOT command - load function ID first, use correct register sizes (16-bit for x/y, 8-bit for color)
 
 ## Architecture
 

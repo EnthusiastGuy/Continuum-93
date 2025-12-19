@@ -8,13 +8,10 @@ namespace Continuum93.Emulator.Compilers.C93Basic
     /// </summary>
     public class VariableManager
     {
-        private uint _nextVariableAddress;
         private uint _codeEndAddress;
-        private const uint VARIABLE_SECTION_START = 0x100000; // Start variables after code section
 
         public VariableManager()
         {
-            _nextVariableAddress = VARIABLE_SECTION_START;
         }
 
         /// <summary>
@@ -23,24 +20,34 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         public void SetCodeEndAddress(uint address)
         {
             _codeEndAddress = address;
-            _nextVariableAddress = Math.Max(_codeEndAddress, VARIABLE_SECTION_START);
         }
 
         /// <summary>
-        /// Allocates memory for a variable.
+        /// Generates a label name for a variable.
         /// </summary>
-        public uint AllocateVariable(VariableType type, List<int> dimensions = null)
+        public string GenerateVariableLabel(string variableName, VariableType type)
         {
-            int size = GetVariableSize(type, dimensions);
-            uint address = _nextVariableAddress;
-            _nextVariableAddress += (uint)size;
-            return address;
+            // Remove type suffix from variable name (# for float, $ for string)
+            string baseName = variableName.TrimEnd('#', '$');
+            
+            // Sanitize the name (replace invalid characters with underscores)
+            baseName = System.Text.RegularExpressions.Regex.Replace(baseName, @"[^a-zA-Z0-9_]", "_");
+            
+            string typePrefix = type switch
+            {
+                VariableType.Integer => "int",
+                VariableType.Float => "float",
+                VariableType.String => "str",
+                _ => "var"
+            };
+            
+            return $".var_{typePrefix}_{baseName}";
         }
 
         /// <summary>
         /// Gets the size in bytes for a variable type.
         /// </summary>
-        private int GetVariableSize(VariableType type, List<int> dimensions)
+        private int GetVariableSizeInternal(VariableType type, List<int> dimensions)
         {
             int elementSize = type switch
             {
@@ -66,11 +73,19 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         }
 
         /// <summary>
-        /// Gets the current variable section end address.
+        /// Gets the size in bytes for a variable type (for arrays).
+        /// </summary>
+        public int GetVariableSize(VariableType type, List<int> dimensions = null)
+        {
+            return GetVariableSizeInternal(type, dimensions ?? new List<int>());
+        }
+        
+        /// <summary>
+        /// Gets a dummy address for temporary buffers (not used with label-based variables).
         /// </summary>
         public uint GetVariableSectionEnd()
         {
-            return _nextVariableAddress;
+            return 0; // Not used anymore, but kept for compatibility
         }
     }
 }

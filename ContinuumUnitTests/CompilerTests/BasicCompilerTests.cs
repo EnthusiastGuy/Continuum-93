@@ -131,6 +131,25 @@ Main:
         }
 
         [Fact]
+        public void TestTwoForLoops()
+        {
+            BasicCompiler compiler = new BasicCompiler();
+            string source = @"
+Main:
+    FOR i = 1 TO 10
+        PRINT i
+    NEXT i
+    FOR j = 5 TO 15
+        PRINT j
+    NEXT j
+    END
+";
+            string assembly = compiler.Compile(source);
+            Assert.True(assembly.Length > 0);
+            Assert.Equal(0, compiler.Errors);
+        }
+
+        [Fact]
         public void TestGoto()
         {
             BasicCompiler compiler = new BasicCompiler();
