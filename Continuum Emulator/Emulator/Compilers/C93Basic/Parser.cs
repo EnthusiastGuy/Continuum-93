@@ -146,6 +146,31 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                     return ParseInk();
                 case TokenType.PAPER:
                     return ParsePaper();
+                case TokenType.BEEP:
+                    return ParseBeep();
+                case TokenType.PLAY:
+                    return ParsePlay();
+                case TokenType.LOAD:
+                    return ParseLoad();
+                case TokenType.FONT:
+                    return ParseFont();
+                case TokenType.LAYER:
+                    return ParseLayer();
+                case TokenType.SPRITE:
+                    return ParseSprite();
+                case TokenType.LOCATE:
+                    return ParseLocate();
+                case TokenType.DATA:
+                    return ParseData();
+                case TokenType.POKE:
+                case TokenType.POKE16:
+                case TokenType.POKE24:
+                case TokenType.POKE32:
+                    return ParsePoke(token.Type);
+                case TokenType.MEMCOPY:
+                    return ParseMemCopy();
+                case TokenType.MEMFILL:
+                    return ParseMemFill();
                 case TokenType.REM:
                 case TokenType.COMMENT:
                     // Skip comments
@@ -693,6 +718,258 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             return new PaperNode { Color = color, Line = line };
         }
 
+        private StatementNode ParseBeep()
+        {
+            int line = Current().Line;
+            Advance(); // BEEP
+            ExpressionNode duration = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode pitch = ParseExpression();
+            ExpressionNode volume = null;
+            if (Match(TokenType.COMMA))
+            {
+                volume = ParseExpression();
+            }
+            return new BeepNode { Duration = duration, Pitch = pitch, Volume = volume, Line = line };
+        }
+
+        private StatementNode ParsePlay()
+        {
+            int line = Current().Line;
+            Advance(); // PLAY
+            ExpressionNode address = ParseExpression();
+            return new PlayNode { Address = address, Line = line };
+        }
+
+        private StatementNode ParseLoad()
+        {
+            int line = Current().Line;
+            Advance(); // LOAD
+            if (Match(TokenType.FONT))
+            {
+                // LOAD FONT filename$, address
+                ExpressionNode filename = ParseExpression();
+                Expect(TokenType.COMMA);
+                ExpressionNode address = ParseExpression();
+                return new LoadFontNode { Filename = filename, Address = address, Line = line };
+            }
+            else
+            {
+                // LOAD filename$ [, address]
+                ExpressionNode filename = ParseExpression();
+                ExpressionNode address = null;
+                if (Match(TokenType.COMMA))
+                {
+                    address = ParseExpression();
+                }
+                // TODO: Implement regular LOAD command
+                Errors.Add(new CompileError(line, Current().Column, "LOAD command not yet implemented (use LOAD FONT)"));
+                return null;
+            }
+        }
+
+        private StatementNode ParseFont()
+        {
+            int line = Current().Line;
+            Advance(); // FONT
+            if (Match(TokenType.COLOR))
+            {
+                ExpressionNode color = ParseExpression();
+                return new FontColorNode { Color = color, Line = line };
+            }
+            else if (Match(TokenType.FLAGS))
+            {
+                ExpressionNode flags = ParseExpression();
+                return new FontFlagsNode { Flags = flags, Line = line };
+            }
+            else if (Match(TokenType.MAXWIDTH))
+            {
+                ExpressionNode maxWidth = ParseExpression();
+                return new FontMaxWidthNode { MaxWidth = maxWidth, Line = line };
+            }
+            else if (Match(TokenType.OUTLINE))
+            {
+                ExpressionNode color = ParseExpression();
+                Expect(TokenType.COMMA);
+                ExpressionNode pattern = ParseExpression();
+                return new FontOutlineNode { Color = color, Pattern = pattern, Line = line };
+            }
+            else
+            {
+                // FONT address
+                ExpressionNode address = ParseExpression();
+                return new FontNode { Address = address, Line = line };
+            }
+        }
+
+        private StatementNode ParseLayer()
+        {
+            int line = Current().Line;
+            Advance(); // LAYER
+            if (Match(TokenType.SHOW))
+            {
+                ExpressionNode layer = ParseExpression();
+                return new LayerShowNode { Layer = layer, Line = line };
+            }
+            else if (Match(TokenType.HIDE))
+            {
+                ExpressionNode layer = ParseExpression();
+                return new LayerHideNode { Layer = layer, Line = line };
+            }
+            else if (Match(TokenType.VISIBILITY))
+            {
+                ExpressionNode mask = ParseExpression();
+                return new LayerVisibilityNode { Mask = mask, Line = line };
+            }
+            else
+            {
+                Errors.Add(new CompileError(line, Current().Column, "LAYER command requires SHOW, HIDE, or VISIBILITY"));
+                return null;
+            }
+        }
+
+        private StatementNode ParseSprite()
+        {
+            int line = Current().Line;
+            Advance(); // SPRITE
+            ExpressionNode x = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode y = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode address = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode width = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode height = ParseExpression();
+            ExpressionNode page = null;
+            if (Match(TokenType.COMMA))
+            {
+                page = ParseExpression();
+            }
+            return new SpriteNode { X = x, Y = y, Address = address, Width = width, Height = height, Page = page, Line = line };
+        }
+
+        private StatementNode ParseLocate()
+        {
+            int line = Current().Line;
+            Advance(); // LOCATE
+            ExpressionNode x = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode y = ParseExpression();
+            return new LocateNode { X = x, Y = y, Line = line };
+        }
+
+
+        private ExpressionNode ParseMouse()
+        {
+            int line = Current().Line;
+            // MOUSE already consumed by Match in ParsePrimary
+            if (Match(TokenType.X))
+            {
+                return new MouseXNode { Line = line };
+            }
+            else if (Match(TokenType.Y))
+            {
+                return new MouseYNode { Line = line };
+            }
+            else if (Match(TokenType.BUTTON))
+            {
+                ExpressionNode button = ParseExpression();
+                return new MouseButtonNode { Button = button, Line = line };
+            }
+            else
+            {
+                Errors.Add(new CompileError(line, Current().Column, "MOUSE requires X, Y, or BUTTON"));
+                return null;
+            }
+        }
+
+        private StatementNode ParseData()
+        {
+            int line = Current().Line;
+            Advance(); // DATA
+            DataNode data = new DataNode { Line = line };
+            do
+            {
+                data.Values.Add(ParseExpression());
+            } while (Match(TokenType.COMMA));
+            return data;
+        }
+
+        private ExpressionNode ParsePeek(TokenType tokenType)
+        {
+            int line = Current().Line;
+            Advance(); // PEEK/PEEK16/PEEK24/PEEK32
+            Expect(TokenType.LPAREN);
+            ExpressionNode address = ParseExpression();
+            Expect(TokenType.RPAREN);
+            int size = tokenType == TokenType.PEEK ? 1 :
+                       tokenType == TokenType.PEEK16 ? 16 :
+                       tokenType == TokenType.PEEK24 ? 24 : 32;
+            return new PeekNode { Address = address, Size = size, Line = line };
+        }
+
+        private StatementNode ParsePoke(TokenType tokenType)
+        {
+            int line = Current().Line;
+            Advance(); // POKE/POKE16/POKE24/POKE32
+            ExpressionNode address = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode value = ParseExpression();
+            int size = tokenType == TokenType.POKE ? 1 :
+                       tokenType == TokenType.POKE16 ? 16 :
+                       tokenType == TokenType.POKE24 ? 24 : 32;
+            return new PokeNode { Address = address, Value = value, Size = size, Line = line };
+        }
+
+        private StatementNode ParseMemCopy()
+        {
+            int line = Current().Line;
+            Advance(); // MEMCOPY
+            ExpressionNode source = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode dest = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode length = ParseExpression();
+            return new MemCopyNode { Source = source, Dest = dest, Length = length, Line = line };
+        }
+
+        private StatementNode ParseMemFill()
+        {
+            int line = Current().Line;
+            Advance(); // MEMFILL
+            ExpressionNode address = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode length = ParseExpression();
+            Expect(TokenType.COMMA);
+            ExpressionNode value = ParseExpression();
+            return new MemFillNode { Address = address, Length = length, Value = value, Line = line };
+        }
+
+        private ExpressionNode ParseVarPtr()
+        {
+            int line = Current().Line;
+            // VARPTR already consumed by Match in ParsePrimary
+            Expect(TokenType.LPAREN);
+            VariableNode var = ParseVariable();
+            Expect(TokenType.RPAREN);
+            return new VarPtrNode { Variable = var, Line = line };
+        }
+
+        private ExpressionNode ParseTime()
+        {
+            int line = Current().Line;
+            // TIME already consumed by Match in ParsePrimary
+            return new TimeNode { Line = line };
+        }
+
+        private ExpressionNode ParseTicks()
+        {
+            int line = Current().Line;
+            // TICKS already consumed by Match in ParsePrimary
+            return new TicksNode { Line = line };
+        }
+
         private ExpressionNode ParseExpression()
         {
             return ParseLogicalOr();
@@ -867,6 +1144,46 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             {
                 // E is a constant, return as function call with no arguments
                 return new FunctionCallNode { FunctionName = "E", Line = _tokens[_position - 1].Line };
+            }
+
+            // Check for MOUSE, TIME, TICKS as expressions
+            if (Match(TokenType.MOUSE))
+            {
+                return ParseMouse();
+            }
+
+            if (Match(TokenType.TIME))
+            {
+                return ParseTime();
+            }
+
+            if (Match(TokenType.TICKS))
+            {
+                return ParseTicks();
+            }
+
+            // Check for INKEY as expression
+            if (Match(TokenType.INKEY))
+            {
+                bool isString = false;
+                if (Current().Type == TokenType.IDENTIFIER && Current().Value == "$")
+                {
+                    Advance(); // Consume $
+                    isString = true;
+                }
+                return new InkeyNode { IsString = isString, Line = _tokens[_position - 1].Line };
+            }
+
+            // Check for PEEK, VARPTR as expressions
+            if (Current().Type == TokenType.PEEK || Current().Type == TokenType.PEEK16 || 
+                Current().Type == TokenType.PEEK24 || Current().Type == TokenType.PEEK32)
+            {
+                return ParsePeek(Current().Type);
+            }
+
+            if (Match(TokenType.VARPTR))
+            {
+                return ParseVarPtr();
             }
 
             // Check for function calls (tokenized as keywords like SIN, COS, etc.)

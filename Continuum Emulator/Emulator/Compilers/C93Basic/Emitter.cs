@@ -286,6 +286,60 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                 case PaperNode paper:
                     EmitPaper(paper);
                     break;
+                case InputNode input:
+                    EmitInput(input);
+                    break;
+                case BeepNode beep:
+                    EmitBeep(beep);
+                    break;
+                case PlayNode play:
+                    EmitPlay(play);
+                    break;
+                case LoadFontNode loadFont:
+                    EmitLoadFont(loadFont);
+                    break;
+                case FontNode font:
+                    EmitFont(font);
+                    break;
+                case FontColorNode fontColor:
+                    EmitFontColor(fontColor);
+                    break;
+                case FontFlagsNode fontFlags:
+                    EmitFontFlags(fontFlags);
+                    break;
+                case FontMaxWidthNode fontMaxWidth:
+                    EmitFontMaxWidth(fontMaxWidth);
+                    break;
+                case FontOutlineNode fontOutline:
+                    EmitFontOutline(fontOutline);
+                    break;
+                case LayerShowNode layerShow:
+                    EmitLayerShow(layerShow);
+                    break;
+                case LayerHideNode layerHide:
+                    EmitLayerHide(layerHide);
+                    break;
+                case LayerVisibilityNode layerVisibility:
+                    EmitLayerVisibility(layerVisibility);
+                    break;
+                case SpriteNode sprite:
+                    EmitSprite(sprite);
+                    break;
+                case LocateNode locate:
+                    EmitLocate(locate);
+                    break;
+                case DataNode data:
+                    EmitData(data);
+                    break;
+                case PokeNode poke:
+                    EmitPoke(poke);
+                    break;
+                case MemCopyNode memCopy:
+                    EmitMemCopy(memCopy);
+                    break;
+                case MemFillNode memFill:
+                    EmitMemFill(memFill);
+                    break;
                 default:
                     _errors.Add(new CompileError(stmt.Line, stmt.Column, $"Unsupported statement: {stmt.GetType().Name}"));
                     break;
@@ -367,6 +421,22 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                     return EmitUnaryExpression(unary, targetType);
                 case FunctionCallNode func:
                     return EmitFunctionCall(func, targetType);
+                case PeekNode peek:
+                    return EmitPeek(peek, targetType);
+                case VarPtrNode varPtr:
+                    return EmitVarPtr(varPtr);
+                case TimeNode time:
+                    return EmitTime();
+                case TicksNode ticks:
+                    return EmitTicks();
+                case MouseXNode mouseX:
+                    return EmitMouseX();
+                case MouseYNode mouseY:
+                    return EmitMouseY();
+                case MouseButtonNode mouseButton:
+                    return EmitMouseButton(mouseButton);
+                case InkeyNode inkey:
+                    return EmitInkey(inkey);
                 default:
                     _errors.Add(new CompileError(expr.Line, expr.Column, $"Unsupported expression: {expr.GetType().Name}"));
                     return "A"; // Default register
@@ -1605,6 +1675,507 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             _assembly.AppendLine($"    ; PAPER {colorReg} - set background color");
             _assembly.AppendLine($"    LD .currentPaper, {colorReg}");
             _currentAddress += 10;
+        }
+
+        private void EmitInput(InputNode input)
+        {
+            // INPUT [prompt$;] variable
+            // Use INT 0x02, function 0x01 (ReadKeyboardBuffer)
+            if (input.Prompt != null)
+            {
+                // Print prompt first
+                string promptReg = EmitExpression(input.Prompt, VariableType.String);
+                _assembly.AppendLine($"    LD A, 0x12  ; DrawString");
+                _assembly.AppendLine($"    LD BCD, 0  ; Default font");
+                _assembly.AppendLine($"    LD EFG, {promptReg}");
+                _assembly.AppendLine($"    LD HI, 0  ; X");
+                _assembly.AppendLine($"    LD JK, 0  ; Y");
+                _assembly.AppendLine($"    LD L, 15  ; Color");
+                _assembly.AppendLine($"    LD M, 0  ; Page");
+                _assembly.AppendLine($"    INT 0x01, A");
+                ReleaseRegister(promptReg, VariableType.String);
+            }
+            
+            // Read input
+            SymbolInfo varInfo = _symbolTable.GetVariable(input.Variable.Name);
+            if (varInfo == null)
+            {
+                string label = _variableManager.GenerateVariableLabel(input.Variable.Name, input.Variable.Type);
+                varInfo = new SymbolInfo { Name = input.Variable.Name, Type = input.Variable.Type, Label = label };
+                _symbolTable.AddVariable(input.Variable.Name, varInfo);
+                DeclareVariable(varInfo, null);
+            }
+            
+            _assembly.AppendLine("    LD A, 0x01  ; ReadKeyboardBuffer");
+            _assembly.AppendLine("    INT 0x02, A  ; Read character into A");
+            if (input.Variable.Type == VariableType.String)
+            {
+                // Store character in string variable
+                _assembly.AppendLine($"    LD ({varInfo.Label}), A");
+                _assembly.AppendLine($"    LD B, ({varInfo.Label} + 1)");
+                _assembly.AppendLine("    LD B, 0  ; Null terminator");
+            }
+            else
+            {
+                // Convert character to number and store
+                _assembly.AppendLine($"    LD ({varInfo.Label}), A");
+            }
+            _currentAddress += 15;
+        }
+
+        private void EmitBeep(BeepNode beep)
+        {
+            // BEEP duration, pitch [, volume]
+            // Generate sound parameters in memory and call PLAY
+            string durationReg = EmitExpression(beep.Duration, VariableType.Float);
+            string pitchReg = EmitExpression(beep.Pitch, VariableType.Float);
+            string volumeReg = beep.Volume != null ? EmitExpression(beep.Volume, VariableType.Float) : "F2";
+            
+            if (beep.Volume == null)
+            {
+                _assembly.AppendLine("    LD F2, 0x3F000000  ; 0.5 (default volume)");
+            }
+            
+            // Allocate sound parameter structure
+            string soundLabel = $".beep_sound_{_labelCounter++}";
+            _dataSection.AppendLine($"{soundLabel}");
+            _dataSection.AppendLine("    #DB 0x00, 0x00  ; Flags: no optional parameters");
+            _dataSection.AppendLine("    #DB 0.0  ; Frequency (will be set at runtime)");
+            _dataSection.AppendLine("    #DB 0.0  ; Sustain (will be set at runtime)");
+            _dataSection.AppendLine("    #DB 0.0  ; Volume (will be set at runtime)");
+            
+            // Store parameters
+            _assembly.AppendLine($"    LD BCD, {soundLabel}");
+            _assembly.AppendLine($"    ADD BCD, 2  ; Skip flags");
+            _assembly.AppendLine($"    LD (BCD), {pitchReg}  ; Store frequency");
+            _assembly.AppendLine($"    ADD BCD, 4");
+            _assembly.AppendLine($"    LD (BCD), {durationReg}  ; Store sustain");
+            _assembly.AppendLine($"    ADD BCD, 4");
+            _assembly.AppendLine($"    LD (BCD), {volumeReg}  ; Store volume");
+            
+            // Call PLAY
+            _assembly.AppendLine($"    LD XYZ, {soundLabel}");
+            _assembly.AppendLine("    PLAY XYZ");
+            
+            ReleaseRegister(durationReg, VariableType.Float);
+            ReleaseRegister(pitchReg, VariableType.Float);
+            if (beep.Volume != null)
+            {
+                ReleaseRegister(volumeReg, VariableType.Float);
+            }
+            _currentAddress += 30;
+        }
+
+        private void EmitPlay(PlayNode play)
+        {
+            // PLAY address
+            string addressReg = EmitExpression(play.Address, VariableType.Integer);
+            _assembly.AppendLine($"    PLAY {addressReg}");
+            ReleaseRegister(addressReg, VariableType.Integer);
+            _currentAddress += 5;
+        }
+
+        private void EmitLoadFont(LoadFontNode loadFont)
+        {
+            // LOAD FONT filename$, address
+            // INT 0x04, function 0x40 (LoadPNGFont)
+            string filenameReg = EmitExpression(loadFont.Filename, VariableType.String);
+            string addressReg = EmitExpression(loadFont.Address, VariableType.Integer);
+            
+            _assembly.AppendLine("    LD A, 0x40  ; LoadPNGFont");
+            _assembly.AppendLine($"    LD BCD, {filenameReg}");
+            _assembly.AppendLine($"    LD EFG, {addressReg}");
+            _assembly.AppendLine("    INT 0x04, A");
+            
+            ReleaseRegister(filenameReg, VariableType.String);
+            ReleaseRegister(addressReg, VariableType.Integer);
+            _currentAddress += 15;
+        }
+
+        private void EmitFont(FontNode font)
+        {
+            // FONT address - sets current font (compiler state)
+            string addressReg = EmitExpression(font.Address, VariableType.Integer);
+            _assembly.AppendLine($"    ; FONT {addressReg} - set current font");
+            // Store in compiler-managed variable
+            _assembly.AppendLine($"    LD .currentFont, {addressReg}");
+            ReleaseRegister(addressReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        private void EmitFontColor(FontColorNode fontColor)
+        {
+            string colorReg = EmitExpression(fontColor.Color, VariableType.Integer);
+            _assembly.AppendLine($"    ; FONT COLOR {colorReg}");
+            _assembly.AppendLine($"    LD .currentFontColor, {colorReg}");
+            ReleaseRegister(colorReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        private void EmitFontFlags(FontFlagsNode fontFlags)
+        {
+            string flagsReg = EmitExpression(fontFlags.Flags, VariableType.Integer);
+            _assembly.AppendLine($"    ; FONT FLAGS {flagsReg}");
+            _assembly.AppendLine($"    LD .currentFontFlags, {flagsReg}");
+            ReleaseRegister(flagsReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        private void EmitFontMaxWidth(FontMaxWidthNode fontMaxWidth)
+        {
+            string widthReg = EmitExpression(fontMaxWidth.MaxWidth, VariableType.Integer);
+            _assembly.AppendLine($"    ; FONT MAXWIDTH {widthReg}");
+            _assembly.AppendLine($"    LD .currentFontMaxWidth, {widthReg}");
+            ReleaseRegister(widthReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        private void EmitFontOutline(FontOutlineNode fontOutline)
+        {
+            string colorReg = EmitExpression(fontOutline.Color, VariableType.Integer);
+            string patternReg = EmitExpression(fontOutline.Pattern, VariableType.Integer);
+            _assembly.AppendLine($"    ; FONT OUTLINE {colorReg}, {patternReg}");
+            _assembly.AppendLine($"    LD .currentFontOutlineColor, {colorReg}");
+            _assembly.AppendLine($"    LD .currentFontOutlinePattern, {patternReg}");
+            ReleaseRegister(colorReg, VariableType.Integer);
+            ReleaseRegister(patternReg, VariableType.Integer);
+            _currentAddress += 15;
+        }
+
+        private void EmitLayerShow(LayerShowNode layerShow)
+        {
+            // LAYER SHOW n - set bit n in visibility mask
+            string layerReg = EmitExpression(layerShow.Layer, VariableType.Integer);
+            _assembly.AppendLine("    LD A, 0x30  ; ReadLayerVisibility");
+            _assembly.AppendLine("    INT 0x01, A  ; Get current mask in A");
+            _assembly.AppendLine($"    LD B, 1");
+            _assembly.AppendLine($"    SL B, {layerReg}  ; Shift 1 by layer number");
+            _assembly.AppendLine("    OR A, B  ; Set bit");
+            _assembly.AppendLine("    LD B, A");
+            _assembly.AppendLine("    LD A, 0x31  ; SetLayersVisibility");
+            _assembly.AppendLine("    INT 0x01, A");
+            ReleaseRegister(layerReg, VariableType.Integer);
+            _currentAddress += 20;
+        }
+
+        private void EmitLayerHide(LayerHideNode layerHide)
+        {
+            // LAYER HIDE n - clear bit n in visibility mask
+            string layerReg = EmitExpression(layerHide.Layer, VariableType.Integer);
+            _assembly.AppendLine("    LD A, 0x30  ; ReadLayerVisibility");
+            _assembly.AppendLine("    INT 0x01, A  ; Get current mask in A");
+            _assembly.AppendLine($"    LD B, 1");
+            _assembly.AppendLine($"    SL B, {layerReg}  ; Shift 1 by layer number");
+            _assembly.AppendLine("    INV B  ; Invert to create mask");
+            _assembly.AppendLine("    AND A, B  ; Clear bit");
+            _assembly.AppendLine("    LD B, A");
+            _assembly.AppendLine("    LD A, 0x31  ; SetLayersVisibility");
+            _assembly.AppendLine("    INT 0x01, A");
+            ReleaseRegister(layerReg, VariableType.Integer);
+            _currentAddress += 20;
+        }
+
+        private void EmitLayerVisibility(LayerVisibilityNode layerVisibility)
+        {
+            // LAYER VISIBILITY mask
+            string maskReg = EmitExpression(layerVisibility.Mask, VariableType.Integer);
+            _assembly.AppendLine("    LD A, 0x31  ; SetLayersVisibility");
+            _assembly.AppendLine($"    LD B, {maskReg}");
+            _assembly.AppendLine("    INT 0x01, A");
+            ReleaseRegister(maskReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        private void EmitSprite(SpriteNode sprite)
+        {
+            // SPRITE x, y, address, width, height [, page]
+            string xReg = EmitExpression(sprite.X, VariableType.Integer);
+            string yReg = EmitExpression(sprite.Y, VariableType.Integer);
+            string addrReg = EmitExpression(sprite.Address, VariableType.Integer);
+            string widthReg = EmitExpression(sprite.Width, VariableType.Integer);
+            string heightReg = EmitExpression(sprite.Height, VariableType.Integer);
+            string pageReg = sprite.Page != null ? EmitExpression(sprite.Page, VariableType.Integer) : "B";
+            
+            if (sprite.Page == null)
+            {
+                _assembly.AppendLine("    LD B, 0  ; Default page 0");
+            }
+            
+            _assembly.AppendLine("    LD A, 0x10  ; DrawSpriteToVideoPage");
+            _assembly.AppendLine($"    LD BCD, {addrReg}");
+            _assembly.AppendLine($"    LD EF, {xReg}");
+            _assembly.AppendLine($"    LD GH, {yReg}");
+            _assembly.AppendLine($"    LD IJ, {widthReg}");
+            _assembly.AppendLine($"    LD KL, {heightReg}");
+            _assembly.AppendLine($"    LD M, {pageReg}");
+            _assembly.AppendLine("    INT 0x01, A");
+            
+            ReleaseRegister(xReg, VariableType.Integer);
+            ReleaseRegister(yReg, VariableType.Integer);
+            ReleaseRegister(addrReg, VariableType.Integer);
+            ReleaseRegister(widthReg, VariableType.Integer);
+            ReleaseRegister(heightReg, VariableType.Integer);
+            if (sprite.Page != null)
+            {
+                ReleaseRegister(pageReg, VariableType.Integer);
+            }
+            _currentAddress += 25;
+        }
+
+        private void EmitLocate(LocateNode locate)
+        {
+            // LOCATE x, y - sets text cursor position (compiler state)
+            string xReg = EmitExpression(locate.X, VariableType.Integer);
+            string yReg = EmitExpression(locate.Y, VariableType.Integer);
+            _assembly.AppendLine($"    ; LOCATE {xReg}, {yReg}");
+            _assembly.AppendLine($"    LD .currentTextX, {xReg}");
+            _assembly.AppendLine($"    LD .currentTextY, {yReg}");
+            ReleaseRegister(xReg, VariableType.Integer);
+            ReleaseRegister(yReg, VariableType.Integer);
+            _currentAddress += 15;
+        }
+
+        private string EmitInkey(InkeyNode inkey)
+        {
+            // INKEY or INKEY$ - returns key or empty string
+            _assembly.AppendLine("    LD A, 0x01  ; ReadKeyboardBuffer");
+            _assembly.AppendLine("    INT 0x02, A  ; Character in A, remaining in B");
+            if (inkey.IsString)
+            {
+                // INKEY$ - return string
+                // Allocate string buffer and store character
+                string resultReg = GetTempRegister(VariableType.String);
+                string strLabel = $".inkey_str_{_labelCounter++}";
+                _dataSection.AppendLine($"{strLabel}");
+                _dataSection.AppendLine("    #DB 0  ; Null terminator");
+                _assembly.AppendLine($"    LD {resultReg}, {strLabel}");
+                _assembly.AppendLine($"    LD ({strLabel}), A  ; Store character");
+                _currentAddress += 10;
+                return resultReg;
+            }
+            else
+            {
+                // INKEY - return integer (ASCII code)
+                // Result is already in A
+                string resultReg = GetTempRegister(VariableType.Integer);
+                _assembly.AppendLine($"    LD {resultReg}, A");
+                _currentAddress += 5;
+                return resultReg;
+            }
+        }
+
+        private void EmitData(DataNode data)
+        {
+            // DATA values - emit to data section
+            foreach (var value in data.Values)
+            {
+                if (value is LiteralNode lit)
+                {
+                    if (lit.Type == VariableType.Integer && lit.Value is int intVal)
+                    {
+                        _dataSection.AppendLine($"    #DB {intVal}");
+                    }
+                    else if (lit.Type == VariableType.Float && lit.Value is float floatVal)
+                    {
+                        _dataSection.AppendLine($"    #DB {floatVal}");
+                    }
+                    else if (lit.Type == VariableType.String && lit.Value is string strVal)
+                    {
+                        _dataSection.AppendLine($"    #DB \"{strVal}\", 0");
+                    }
+                }
+            }
+        }
+
+        private void EmitPoke(PokeNode poke)
+        {
+            // POKE/POKE16/POKE24/POKE32 address, value
+            string addrReg = EmitExpression(poke.Address, VariableType.Integer);
+            string valueReg = EmitExpression(poke.Value, VariableType.Integer);
+            
+            if (poke.Size == 1)
+            {
+                _assembly.AppendLine($"    LD ({addrReg}), {valueReg}");
+            }
+            else if (poke.Size == 16)
+            {
+                _assembly.AppendLine($"    LD ({addrReg}), {valueReg}, 2");
+            }
+            else if (poke.Size == 24)
+            {
+                _assembly.AppendLine($"    LD ({addrReg}), {valueReg}, 3");
+            }
+            else // 32
+            {
+                _assembly.AppendLine($"    LD ({addrReg}), {valueReg}, 4");
+            }
+            
+            ReleaseRegister(addrReg, VariableType.Integer);
+            ReleaseRegister(valueReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        private void EmitMemCopy(MemCopyNode memCopy)
+        {
+            // MEMCOPY source, dest, length
+            string sourceReg = EmitExpression(memCopy.Source, VariableType.Integer);
+            string destReg = EmitExpression(memCopy.Dest, VariableType.Integer);
+            string lengthReg = EmitExpression(memCopy.Length, VariableType.Integer);
+            
+            _assembly.AppendLine($"    MEMC {sourceReg}, {destReg}, {lengthReg}");
+            
+            ReleaseRegister(sourceReg, VariableType.Integer);
+            ReleaseRegister(destReg, VariableType.Integer);
+            ReleaseRegister(lengthReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        private void EmitMemFill(MemFillNode memFill)
+        {
+            // MEMFILL address, length, value
+            string addrReg = EmitExpression(memFill.Address, VariableType.Integer);
+            string lengthReg = EmitExpression(memFill.Length, VariableType.Integer);
+            string valueReg = EmitExpression(memFill.Value, VariableType.Integer);
+            
+            _assembly.AppendLine($"    MEMF {addrReg}, {lengthReg}, {valueReg}");
+            
+            ReleaseRegister(addrReg, VariableType.Integer);
+            ReleaseRegister(lengthReg, VariableType.Integer);
+            ReleaseRegister(valueReg, VariableType.Integer);
+            _currentAddress += 10;
+        }
+
+        // Expression emitters
+        private string EmitPeek(PeekNode peek, VariableType targetType)
+        {
+            string addrReg = EmitExpression(peek.Address, VariableType.Integer);
+            string resultReg = GetTempRegister(targetType);
+            
+            if (peek.Size == 1)
+            {
+                _assembly.AppendLine($"    LD {resultReg}, ({addrReg})");
+            }
+            else if (peek.Size == 16)
+            {
+                _assembly.AppendLine($"    LD {resultReg}, ({addrReg}), 2");
+            }
+            else if (peek.Size == 24)
+            {
+                _assembly.AppendLine($"    LD {resultReg}, ({addrReg}), 3");
+            }
+            else // 32
+            {
+                _assembly.AppendLine($"    LD {resultReg}, ({addrReg}), 4");
+            }
+            
+            ReleaseRegister(addrReg, VariableType.Integer);
+            _currentAddress += 10;
+            return resultReg;
+        }
+
+        private string EmitVarPtr(VarPtrNode varPtr)
+        {
+            SymbolInfo varInfo = _symbolTable.GetVariable(varPtr.Variable.Name);
+            if (varInfo == null)
+            {
+                _errors.Add(new CompileError(varPtr.Line, varPtr.Column, $"Variable {varPtr.Variable.Name} not found"));
+                return "A";
+            }
+            
+            string resultReg = GetTempRegister(VariableType.Integer);
+            _assembly.AppendLine($"    LD {resultReg}, {varInfo.Label}");
+            _currentAddress += 7;
+            return resultReg;
+        }
+
+        private string EmitTime()
+        {
+            // TIME - returns milliseconds since program start
+            // INT 0x00, function 0x03 (ReadClock)
+            string resultReg = GetTempRegister(VariableType.Integer);
+            string destLabel = $".time_dest_{_labelCounter++}";
+            _dataSection.AppendLine($"{destLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0  ; 32-bit milliseconds");
+            
+            _assembly.AppendLine("    LD A, 0x03  ; ReadClock");
+            _assembly.AppendLine("    LD B, 0x00  ; Mode: milliseconds");
+            _assembly.AppendLine($"    LD CDE, {destLabel}");
+            _assembly.AppendLine("    INT 0x00, A");
+            _assembly.AppendLine($"    LD {resultReg}, ({destLabel})");
+            
+            _currentAddress += 15;
+            return resultReg;
+        }
+
+        private string EmitTicks()
+        {
+            // TICKS - returns ticks since program start (64-bit, but we return 32-bit)
+            string resultReg = GetTempRegister(VariableType.Integer);
+            string destLabel = $".ticks_dest_{_labelCounter++}";
+            _dataSection.AppendLine($"{destLabel}");
+            _dataSection.AppendLine("    #DB 0, 0, 0, 0, 0, 0, 0, 0  ; 64-bit ticks");
+            
+            _assembly.AppendLine("    LD A, 0x03  ; ReadClock");
+            _assembly.AppendLine("    LD B, 0x01  ; Mode: ticks");
+            _assembly.AppendLine($"    LD CDE, {destLabel}");
+            _assembly.AppendLine("    INT 0x00, A");
+            _assembly.AppendLine($"    LD {resultReg}, ({destLabel})  ; Lower 32 bits");
+            
+            _currentAddress += 15;
+            return resultReg;
+        }
+
+        private string EmitMouseX()
+        {
+            // MOUSE X - returns mouse X coordinate
+            string resultReg = GetTempRegister(VariableType.Integer);
+            _assembly.AppendLine("    LD A, 0x03  ; ReadMouseState");
+            _assembly.AppendLine("    LD BCD, 0  ; X register (destination)");
+            _assembly.AppendLine("    LD EFG, 0  ; Y register (destination)");
+            _assembly.AppendLine("    LD HIJ, 0  ; Button register (destination)");
+            _assembly.AppendLine("    INT 0x02, A  ; X in CD, Y in EF, buttons in I");
+            _assembly.AppendLine($"    LD {resultReg}, CD");
+            _currentAddress += 15;
+            return resultReg;
+        }
+
+        private string EmitMouseY()
+        {
+            // MOUSE Y - returns mouse Y coordinate
+            string resultReg = GetTempRegister(VariableType.Integer);
+            _assembly.AppendLine("    LD A, 0x03  ; ReadMouseState");
+            _assembly.AppendLine("    LD BCD, 0  ; X register (destination)");
+            _assembly.AppendLine("    LD EFG, 0  ; Y register (destination)");
+            _assembly.AppendLine("    LD HIJ, 0  ; Button register (destination)");
+            _assembly.AppendLine("    INT 0x02, A  ; X in CD, Y in EF, buttons in I");
+            _assembly.AppendLine($"    LD {resultReg}, EF");
+            _currentAddress += 15;
+            return resultReg;
+        }
+
+        private string EmitMouseButton(MouseButtonNode mouseButton)
+        {
+            // MOUSE BUTTON n - returns 1 if pressed, 0 otherwise
+            string buttonReg = EmitExpression(mouseButton.Button, VariableType.Integer);
+            string resultReg = GetTempRegister(VariableType.Integer);
+            
+            _assembly.AppendLine("    LD A, 0x03  ; ReadMouseState");
+            _assembly.AppendLine("    LD BCD, 0  ; X register (destination)");
+            _assembly.AppendLine("    LD EFG, 0  ; Y register (destination)");
+            _assembly.AppendLine("    LD HIJ, 0  ; Button register (destination)");
+            _assembly.AppendLine("    INT 0x02, A  ; Buttons in I");
+            _assembly.AppendLine($"    LD A, I  ; Button state");
+            _assembly.AppendLine($"    LD B, {buttonReg}  ; Button number");
+            _assembly.AppendLine("    BIT A, B  ; Test bit");
+            _assembly.AppendLine("    LD A, 1");
+            _assembly.AppendLine($"    JR NZ, .mouse_btn_{_labelCounter}");
+            _assembly.AppendLine("    LD A, 0");
+            _assembly.AppendLine($".mouse_btn_{_labelCounter++}");
+            _assembly.AppendLine($"    LD {resultReg}, A");
+            
+            ReleaseRegister(buttonReg, VariableType.Integer);
+            _currentAddress += 20;
+            return resultReg;
         }
 
         private void ResolveForwardReferences()

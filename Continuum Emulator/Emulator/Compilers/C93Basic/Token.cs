@@ -126,6 +126,8 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         INKEY,
         MOUSE,
         BUTTON,
+        X,
+        Y,
         LOAD,
         SAVE,
         OPEN,

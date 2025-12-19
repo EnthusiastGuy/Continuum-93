@@ -46,6 +46,8 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             { "INKEY", TokenType.INKEY },
             { "MOUSE", TokenType.MOUSE },
             { "BUTTON", TokenType.BUTTON },
+            { "X", TokenType.X },
+            { "Y", TokenType.Y },
             { "LOAD", TokenType.LOAD },
             { "SAVE", TokenType.SAVE },
             { "OPEN", TokenType.OPEN },

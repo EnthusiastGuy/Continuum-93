@@ -198,6 +198,133 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         public ExpressionNode Color { get; set; }
     }
 
+    public class BeepNode : StatementNode
+    {
+        public ExpressionNode Duration { get; set; }
+        public ExpressionNode Pitch { get; set; }
+        public ExpressionNode Volume { get; set; }
+    }
+
+    public class PlayNode : StatementNode
+    {
+        public ExpressionNode Address { get; set; }
+    }
+
+    public class LoadFontNode : StatementNode
+    {
+        public ExpressionNode Filename { get; set; }
+        public ExpressionNode Address { get; set; }
+    }
+
+    public class FontNode : StatementNode
+    {
+        public ExpressionNode Address { get; set; }
+    }
+
+    public class FontColorNode : StatementNode
+    {
+        public ExpressionNode Color { get; set; }
+    }
+
+    public class FontFlagsNode : StatementNode
+    {
+        public ExpressionNode Flags { get; set; }
+    }
+
+    public class FontMaxWidthNode : StatementNode
+    {
+        public ExpressionNode MaxWidth { get; set; }
+    }
+
+    public class FontOutlineNode : StatementNode
+    {
+        public ExpressionNode Color { get; set; }
+        public ExpressionNode Pattern { get; set; }
+    }
+
+    public class LayerShowNode : StatementNode
+    {
+        public ExpressionNode Layer { get; set; }
+    }
+
+    public class LayerHideNode : StatementNode
+    {
+        public ExpressionNode Layer { get; set; }
+    }
+
+    public class LayerVisibilityNode : StatementNode
+    {
+        public ExpressionNode Mask { get; set; }
+    }
+
+    public class SpriteNode : StatementNode
+    {
+        public ExpressionNode X { get; set; }
+        public ExpressionNode Y { get; set; }
+        public ExpressionNode Address { get; set; }
+        public ExpressionNode Width { get; set; }
+        public ExpressionNode Height { get; set; }
+        public ExpressionNode Page { get; set; }
+    }
+
+    public class LocateNode : StatementNode
+    {
+        public ExpressionNode X { get; set; }
+        public ExpressionNode Y { get; set; }
+    }
+
+    public class InkeyNode : ExpressionNode
+    {
+        public bool IsString { get; set; } // INKEY$ vs INKEY
+    }
+
+    public class MouseXNode : ExpressionNode { }
+    public class MouseYNode : ExpressionNode { }
+    public class MouseButtonNode : ExpressionNode
+    {
+        public ExpressionNode Button { get; set; }
+    }
+
+    public class DataNode : StatementNode
+    {
+        public List<ExpressionNode> Values { get; set; } = new List<ExpressionNode>();
+    }
+
+    public class PeekNode : ExpressionNode
+    {
+        public ExpressionNode Address { get; set; }
+        public int Size { get; set; } // 1, 16, 24, or 32
+    }
+
+    public class PokeNode : StatementNode
+    {
+        public ExpressionNode Address { get; set; }
+        public ExpressionNode Value { get; set; }
+        public int Size { get; set; } // 1, 16, 24, or 32
+    }
+
+    public class MemCopyNode : StatementNode
+    {
+        public ExpressionNode Source { get; set; }
+        public ExpressionNode Dest { get; set; }
+        public ExpressionNode Length { get; set; }
+    }
+
+    public class MemFillNode : StatementNode
+    {
+        public ExpressionNode Address { get; set; }
+        public ExpressionNode Length { get; set; }
+        public ExpressionNode Value { get; set; }
+    }
+
+    public class VarPtrNode : ExpressionNode
+    {
+        public VariableNode Variable { get; set; }
+    }
+
+    public class TimeNode : ExpressionNode { }
+    public class TicksNode : ExpressionNode { }
+
     // Expression nodes
     public abstract class ExpressionNode : ASTNode { }
 
