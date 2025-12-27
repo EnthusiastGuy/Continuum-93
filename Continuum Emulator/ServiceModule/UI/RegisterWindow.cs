@@ -53,6 +53,13 @@ namespace Continuum93.ServiceModule.UI
             int startY = contentRect.Y + Padding + 24;
             byte fontFlags = (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline);
 
+            // width of "FF" with the active font rules (monospace + spacing + outline pad)
+            int byteCellWidth = Fonts.ModernDOS_12x18_thin.MeasureText("FF", 0, fontFlags).width;
+
+            // extra gap between bytes so it doesn’t look cramped
+            const int byteGap = 4;
+            int byteStride = byteCellWidth + byteGap;
+
             // Draw registers
             for (int i = 0; i < 26; i++)
             {
@@ -145,27 +152,32 @@ namespace Continuum93.ServiceModule.UI
                     0xFF
                 );
 
+
+
+
                 // Draw memory data pointed by register
+                int memBaseX = contentRect.X + Padding + 550;
+
                 for (int j = 0; j < 6; j++)
                 {
-                    if (i * 16 + j < regMemoryData.Length)
-                    {
-                        int memX = contentRect.X + Padding + 550 + j * 17;
-                        byte memValue = regMemoryData[i * 16 + j];
-                        string hexMem = memValue.ToString("X2");
+                    int idx = i * 16 + j;
+                    if (idx >= regMemoryData.Length)
+                        break;
 
-                        ServiceGraphics.DrawText(
-                            Fonts.ModernDOS_12x18_thin,
-                            hexMem,
-                            memX,
-                            startY + i * lineHeight,
-                            contentRect.Width - Padding * 2,
-                            new Color(40, 80, 160), // Memory byte color
-                            Color.Black,
-                            (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
-                            0xFF
-                        );
-                    }
+                    int memX = memBaseX + j * byteStride;
+                    string hexMem = regMemoryData[idx].ToString("X2");
+
+                    ServiceGraphics.DrawText(
+                        Fonts.ModernDOS_12x18_thin,
+                        hexMem,
+                        memX,
+                        startY + i * lineHeight,
+                        contentRect.Width - Padding * 2,
+                        new Color(40, 80, 160),
+                        Color.Black,
+                        fontFlags,
+                        0xFF
+                    );
                 }
             }
         }
