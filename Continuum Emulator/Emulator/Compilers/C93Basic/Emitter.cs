@@ -209,8 +209,14 @@ namespace Continuum93.Emulator.Compilers.C93Basic
 
         private uint EstimateStatementSize(StatementNode stmt)
         {
-            // Rough estimates - will be refined
-            return 10; // Default estimate
+            // FIXME: This method currently returns a constant 10 for all statements.
+            // This causes label addresses computed in CollectLabelsAndVariables to be incorrect,
+            // which means EmitGoto/EmitGosub will emit JP/CALL to wrong addresses when using numeric addresses.
+            // The code should either:
+            // 1. Implement proper statement size estimation based on actual instruction sizes, or
+            // 2. Always use label-based branches (JP .label) instead of numeric addresses (JP 0x123456)
+            // For now, this is a known limitation - label-based branches work, but numeric addresses are wrong.
+            return 10; // Default estimate (WRONG for almost all statements)
         }
 
         private void EmitStatement(StatementNode stmt)
@@ -386,6 +392,36 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             // Use LD to store variable (LD (label), reg or fr)
             if (assign.Variable.Type == VariableType.Integer)
             {
+                // If expression result is 8-bit (boolean from comparison/logical op) and we need 32-bit, convert it
+                if (exprReg == "A" || (exprReg.Length == 1 && exprReg != "F"))
+                {
+                    // Convert 8-bit boolean to 32-bit integer
+                    // Zero-extend the 8-bit value to 32-bit
+                    // CRITICAL: Avoid register overlap - don't use a 32-bit temp that contains the 8-bit source register
+                    string temp32Reg;
+                    int attempts = 0;
+                    do
+                    {
+                        temp32Reg = GetTempRegister(VariableType.Integer);
+                        attempts++;
+                        // Prevent infinite loop if all registers overlap (shouldn't happen with 7 registers)
+                        if (attempts > 10)
+                        {
+                            // Fallback: use a different approach - save source to a safe register first
+                            string safeReg = "Z"; // Z is least likely to be in a 32-bit temp
+                            _assembly.AppendLine($"    LD {safeReg}, {exprReg}  ; Save 8-bit boolean to safe register");
+                            exprReg = safeReg;
+                            temp32Reg = GetTempRegister(VariableType.Integer);
+                            break;
+                        }
+                    } while (temp32Reg.Contains(exprReg)); // Avoid overlap like ABCD containing A
+                    
+                    string lowerByte = temp32Reg[temp32Reg.Length - 1].ToString();
+                    _assembly.AppendLine($"    LD {temp32Reg}, 0  ; Clear register");
+                    _assembly.AppendLine($"    LD {lowerByte}, {exprReg}  ; Load 8-bit boolean result into lower byte");
+                    _currentAddress += 12; // LD rrrr, 0 + LD r, r = 12 bytes
+                    exprReg = temp32Reg;
+                }
                 _assembly.AppendLine($"    LD ({varInfo.Label}), {exprReg}");
                 _currentAddress += 7; // LD (addr), rrrr = 7 bytes (32-bit)
             }
@@ -399,7 +435,8 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             {
                 // For strings, we need to copy the string data
                 // exprReg contains the string address, copy to variable address
-                _assembly.AppendLine($"    MEMC {exprReg}, {varInfo.Label}, 256");
+                // FIXED: String variables are allocated 16 bytes, not 256
+                _assembly.AppendLine($"    MEMC {exprReg}, {varInfo.Label}, 16  ; Copy string (16 bytes max)");
                 _currentAddress += 10; // Approximate
             }
 
@@ -577,12 +614,43 @@ namespace Continuum93.Emulator.Compilers.C93Basic
 
         private string EmitBinaryExpression(BinaryExpressionNode bin, VariableType targetType)
         {
-            string leftReg = EmitExpression(bin.Left, targetType);
-            string rightReg = EmitExpression(bin.Right, targetType);
+            // Check if this is a logical operator on boolean results
+            bool isLogicalOp = bin.Operator == TokenType.AND || bin.Operator == TokenType.OR || 
+                              bin.Operator == TokenType.XOR || bin.Operator == TokenType.NAND ||
+                              bin.Operator == TokenType.NOR || bin.Operator == TokenType.XNOR ||
+                              bin.Operator == TokenType.IMPLY;
             
-            // Optimize: reuse leftReg as result register instead of allocating a new one
-            // This avoids unnecessary LD operations and register allocation
-            string resultReg = leftReg;
+            // For logical operators, we need to check if operands are boolean (from comparisons)
+            // Comparisons return 8-bit register "A", so we need to handle that
+            string leftReg = EmitExpression(bin.Left, isLogicalOp ? VariableType.Integer : targetType);
+            
+            // If left operand is a boolean result (8-bit register "A"), save it before evaluating right
+            // because right might also return "A" and overwrite it
+            bool leftIsBoolean = leftReg == "A";
+            string savedLeftReg = null;
+            if (isLogicalOp && leftIsBoolean)
+            {
+                // Save left boolean result to a temporary 8-bit register (use B)
+                savedLeftReg = "B";
+                _assembly.AppendLine($"    LD {savedLeftReg}, {leftReg}  ; Save left boolean result");
+                _currentAddress += 3;
+            }
+            
+            string rightReg = EmitExpression(bin.Right, isLogicalOp ? VariableType.Integer : targetType);
+            bool rightIsBoolean = rightReg == "A";
+            
+            // Declare resultReg - optimize: reuse leftReg as result register instead of allocating a new one
+            string resultReg;
+            if (savedLeftReg != null)
+            {
+                // If we saved the left result, use it instead
+                leftReg = savedLeftReg;
+                resultReg = savedLeftReg;
+            }
+            else
+            {
+                resultReg = leftReg;
+            }
 
             switch (bin.Operator)
             {
@@ -704,59 +772,310 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                     ReleaseRegister(resultReg, targetType);
                     return "A"; // Return 8-bit register for boolean
                 case TokenType.AND:
-                    _assembly.AppendLine($"    AND {resultReg}, {rightReg}");
+                    // AND works on same-size operands
+                    // If left is 8-bit (boolean) and right is 32-bit, convert right to 8-bit
+                    if (leftIsBoolean && !rightIsBoolean && rightReg.Length > 1)
+                    {
+                        // Convert 32-bit right operand to 8-bit (extract lower byte)
+                        string right8Reg = rightReg[rightReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    AND {resultReg}, {right8Reg}  ; Logical AND (boolean)");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else if (!leftIsBoolean && rightIsBoolean)
+                    {
+                        // Convert left to 8-bit
+                        string left8Reg = resultReg[resultReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    AND {left8Reg}, {rightReg}  ; Logical AND (boolean)");
+                        resultReg = left8Reg;
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else
+                    {
+                        // Both same size - use directly
+                        _assembly.AppendLine($"    AND {resultReg}, {rightReg}");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    // For boolean results, ensure we return "A" for consistency
+                    if (isLogicalOp && (leftIsBoolean || rightIsBoolean) && resultReg != "A")
+                    {
+                        _assembly.AppendLine($"    LD A, {resultReg}  ; Move boolean result to A");
+                        _currentAddress += 3;
+                        resultReg = "A";
+                    }
                     _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
                     break;
                 case TokenType.OR:
-                    _assembly.AppendLine($"    OR {resultReg}, {rightReg}");
+                    if (leftIsBoolean && !rightIsBoolean && rightReg.Length > 1)
+                    {
+                        string right8Reg = rightReg[rightReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    OR {resultReg}, {right8Reg}  ; Logical OR (boolean)");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else if (!leftIsBoolean && rightIsBoolean)
+                    {
+                        string left8Reg = resultReg[resultReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    OR {left8Reg}, {rightReg}  ; Logical OR (boolean)");
+                        resultReg = left8Reg;
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else
+                    {
+                        _assembly.AppendLine($"    OR {resultReg}, {rightReg}");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    if (isLogicalOp && (leftIsBoolean || rightIsBoolean) && resultReg != "A")
+                    {
+                        _assembly.AppendLine($"    LD A, {resultReg}  ; Move boolean result to A");
+                        _currentAddress += 3;
+                        resultReg = "A";
+                    }
                     _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
                     break;
                 case TokenType.XOR:
-                    _assembly.AppendLine($"    XOR {resultReg}, {rightReg}");
+                    if (leftIsBoolean && !rightIsBoolean && rightReg.Length > 1)
+                    {
+                        string right8Reg = rightReg[rightReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    XOR {resultReg}, {right8Reg}  ; Logical XOR (boolean)");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else if (!leftIsBoolean && rightIsBoolean)
+                    {
+                        string left8Reg = resultReg[resultReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    XOR {left8Reg}, {rightReg}  ; Logical XOR (boolean)");
+                        resultReg = left8Reg;
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else
+                    {
+                        _assembly.AppendLine($"    XOR {resultReg}, {rightReg}");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    if (isLogicalOp && (leftIsBoolean || rightIsBoolean) && resultReg != "A")
+                    {
+                        _assembly.AppendLine($"    LD A, {resultReg}  ; Move boolean result to A");
+                        _currentAddress += 3;
+                        resultReg = "A";
+                    }
                     _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
                     break;
                 case TokenType.NAND:
-                    _assembly.AppendLine($"    NAND {resultReg}, {rightReg}");
+                    if (leftIsBoolean && !rightIsBoolean && rightReg.Length > 1)
+                    {
+                        string right8Reg = rightReg[rightReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    NAND {resultReg}, {right8Reg}  ; Logical NAND (boolean)");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else if (!leftIsBoolean && rightIsBoolean)
+                    {
+                        string left8Reg = resultReg[resultReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    NAND {left8Reg}, {rightReg}  ; Logical NAND (boolean)");
+                        resultReg = left8Reg;
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else
+                    {
+                        _assembly.AppendLine($"    NAND {resultReg}, {rightReg}");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    if (isLogicalOp && (leftIsBoolean || rightIsBoolean) && resultReg != "A")
+                    {
+                        _assembly.AppendLine($"    LD A, {resultReg}  ; Move boolean result to A");
+                        _currentAddress += 3;
+                        resultReg = "A";
+                    }
                     _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
                     break;
                 case TokenType.NOR:
-                    _assembly.AppendLine($"    NOR {resultReg}, {rightReg}");
+                    if (leftIsBoolean && !rightIsBoolean && rightReg.Length > 1)
+                    {
+                        string right8Reg = rightReg[rightReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    NOR {resultReg}, {right8Reg}  ; Logical NOR (boolean)");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else if (!leftIsBoolean && rightIsBoolean)
+                    {
+                        string left8Reg = resultReg[resultReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    NOR {left8Reg}, {rightReg}  ; Logical NOR (boolean)");
+                        resultReg = left8Reg;
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else
+                    {
+                        _assembly.AppendLine($"    NOR {resultReg}, {rightReg}");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    if (isLogicalOp && (leftIsBoolean || rightIsBoolean) && resultReg != "A")
+                    {
+                        _assembly.AppendLine($"    LD A, {resultReg}  ; Move boolean result to A");
+                        _currentAddress += 3;
+                        resultReg = "A";
+                    }
                     _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
                     break;
                 case TokenType.XNOR:
-                    _assembly.AppendLine($"    XNOR {resultReg}, {rightReg}");
+                    if (leftIsBoolean && !rightIsBoolean && rightReg.Length > 1)
+                    {
+                        string right8Reg = rightReg[rightReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    XNOR {resultReg}, {right8Reg}  ; Logical XNOR (boolean)");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else if (!leftIsBoolean && rightIsBoolean)
+                    {
+                        string left8Reg = resultReg[resultReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    XNOR {left8Reg}, {rightReg}  ; Logical XNOR (boolean)");
+                        resultReg = left8Reg;
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else
+                    {
+                        _assembly.AppendLine($"    XNOR {resultReg}, {rightReg}");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    if (isLogicalOp && (leftIsBoolean || rightIsBoolean) && resultReg != "A")
+                    {
+                        _assembly.AppendLine($"    LD A, {resultReg}  ; Move boolean result to A");
+                        _currentAddress += 3;
+                        resultReg = "A";
+                    }
                     _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
                     break;
                 case TokenType.IMPLY:
-                    _assembly.AppendLine($"    IMPLY {resultReg}, {rightReg}");
+                    if (leftIsBoolean && !rightIsBoolean && rightReg.Length > 1)
+                    {
+                        string right8Reg = rightReg[rightReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    IMPLY {resultReg}, {right8Reg}  ; Logical IMPLY (boolean)");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else if (!leftIsBoolean && rightIsBoolean)
+                    {
+                        string left8Reg = resultReg[resultReg.Length - 1].ToString();
+                        _assembly.AppendLine($"    IMPLY {left8Reg}, {rightReg}  ; Logical IMPLY (boolean)");
+                        resultReg = left8Reg;
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    else
+                    {
+                        _assembly.AppendLine($"    IMPLY {resultReg}, {rightReg}");
+                        ReleaseRegister(rightReg, targetType);
+                    }
+                    if (isLogicalOp && (leftIsBoolean || rightIsBoolean) && resultReg != "A")
+                    {
+                        _assembly.AppendLine($"    LD A, {resultReg}  ; Move boolean result to A");
+                        _currentAddress += 3;
+                        resultReg = "A";
+                    }
                     _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
                     break;
                 case TokenType.SHL:
-                    _assembly.AppendLine($"    SL {resultReg}, {rightReg}");
-                    _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
+                    // SL rrrr, n (literal) or SL rrrr, r (8-bit register)
+                    if (bin.Right is LiteralNode rightLit && rightLit.Value is int shiftVal && shiftVal >= 0 && shiftVal <= 31)
+                    {
+                        // Use literal directly
+                        _assembly.AppendLine($"    SL {resultReg}, {shiftVal}");
+                        _currentAddress += 5;
+                    }
+                    else
+                    {
+                        // Evaluate expression and use 8-bit register
+                        string shiftReg = EmitExpression(bin.Right, VariableType.Integer);
+                        // Extract lower 8 bits into an 8-bit register
+                        // For 32-bit registers like "ABCD", the lower byte is in "D"
+                        // But we need a safe 8-bit register, so use the last character if it's a 32-bit reg
+                        string shift8Reg;
+                        if (shiftReg.Length == 1)
+                        {
+                            // Already 8-bit register
+                            shift8Reg = shiftReg;
+                            _assembly.AppendLine($"    SL {resultReg}, {shift8Reg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        else
+                        {
+                            // 32-bit register - extract lower byte (last character)
+                            shift8Reg = shiftReg[shiftReg.Length - 1].ToString();
+                            _assembly.AppendLine($"    SL {resultReg}, {shift8Reg}  ; Use lower 8 bits of {shiftReg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        _currentAddress += 5;
+                    }
                     break;
                 case TokenType.SHR:
-                    _assembly.AppendLine($"    SR {resultReg}, {rightReg}");
-                    _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
+                    // SR rrrr, n (literal) or SR rrrr, r (8-bit register)
+                    if (bin.Right is LiteralNode rightLit2 && rightLit2.Value is int shiftVal2 && shiftVal2 >= 0 && shiftVal2 <= 31)
+                    {
+                        _assembly.AppendLine($"    SR {resultReg}, {shiftVal2}");
+                        _currentAddress += 5;
+                    }
+                    else
+                    {
+                        string shiftReg = EmitExpression(bin.Right, VariableType.Integer);
+                        string shift8Reg;
+                        if (shiftReg.Length == 1)
+                        {
+                            shift8Reg = shiftReg;
+                            _assembly.AppendLine($"    SR {resultReg}, {shift8Reg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        else
+                        {
+                            shift8Reg = shiftReg[shiftReg.Length - 1].ToString();
+                            _assembly.AppendLine($"    SR {resultReg}, {shift8Reg}  ; Use lower 8 bits of {shiftReg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        _currentAddress += 5;
+                    }
                     break;
                 case TokenType.ROL:
-                    _assembly.AppendLine($"    RL {resultReg}, {rightReg}");
-                    _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
+                    // RL rrrr, n (literal) or RL rrrr, r (8-bit register)
+                    if (bin.Right is LiteralNode rightLit3 && rightLit3.Value is int shiftVal3 && shiftVal3 >= 0 && shiftVal3 <= 31)
+                    {
+                        _assembly.AppendLine($"    RL {resultReg}, {shiftVal3}");
+                        _currentAddress += 5;
+                    }
+                    else
+                    {
+                        string shiftReg = EmitExpression(bin.Right, VariableType.Integer);
+                        string shift8Reg;
+                        if (shiftReg.Length == 1)
+                        {
+                            shift8Reg = shiftReg;
+                            _assembly.AppendLine($"    RL {resultReg}, {shift8Reg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        else
+                        {
+                            shift8Reg = shiftReg[shiftReg.Length - 1].ToString();
+                            _assembly.AppendLine($"    RL {resultReg}, {shift8Reg}  ; Use lower 8 bits of {shiftReg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        _currentAddress += 5;
+                    }
                     break;
                 case TokenType.ROR:
-                    _assembly.AppendLine($"    RR {resultReg}, {rightReg}");
-                    _currentAddress += 5;
-                    ReleaseRegister(rightReg, targetType);
+                    // RR rrrr, n (literal) or RR rrrr, r (8-bit register)
+                    if (bin.Right is LiteralNode rightLit4 && rightLit4.Value is int shiftVal4 && shiftVal4 >= 0 && shiftVal4 <= 31)
+                    {
+                        _assembly.AppendLine($"    RR {resultReg}, {shiftVal4}");
+                        _currentAddress += 5;
+                    }
+                    else
+                    {
+                        string shiftReg = EmitExpression(bin.Right, VariableType.Integer);
+                        string shift8Reg;
+                        if (shiftReg.Length == 1)
+                        {
+                            shift8Reg = shiftReg;
+                            _assembly.AppendLine($"    RR {resultReg}, {shift8Reg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        else
+                        {
+                            shift8Reg = shiftReg[shiftReg.Length - 1].ToString();
+                            _assembly.AppendLine($"    RR {resultReg}, {shift8Reg}  ; Use lower 8 bits of {shiftReg}");
+                            ReleaseRegister(shiftReg, VariableType.Integer);
+                        }
+                        _currentAddress += 5;
+                    }
                     break;
                 default:
                     _errors.Add(new CompileError(bin.Line, bin.Column, $"Unsupported operator: {bin.Operator}"));
@@ -2180,8 +2499,11 @@ namespace Continuum93.Emulator.Compilers.C93Basic
 
         private void ResolveForwardReferences()
         {
-            // Forward references are resolved by label addresses
-            // This is a simplified version
+            // FIXME: This method is currently empty - forward references are not actually resolved.
+            // The code tracks _forwardReferences but never patches them.
+            // Currently, forward references work because the code falls back to label-based branches
+            // (JP .label) when the label is not in _labelAddresses, but numeric address patching is not implemented.
+            // This should be implemented to patch numeric addresses in forward references once label addresses are known.
         }
 
         private int _tempRegisterCounter = 0;
@@ -2259,7 +2581,9 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             // Track this string
             _stringLiterals[str] = label;
             
-            // Update variable manager (estimate size for address calculation)
+            // NOTE: GetVariableSectionEnd() currently returns 0, so address calculation here is not meaningful.
+            // The string is allocated with a label in _dataSection, so the label is used, not the numeric address.
+            // This address calculation is kept for potential future use but is not currently functional.
             uint addr = _variableManager.GetVariableSectionEnd();
             _variableManager.SetCodeEndAddress(addr + (uint)str.Length + 1); // +1 for null terminator
             
@@ -2328,7 +2652,9 @@ namespace Continuum93.Emulator.Compilers.C93Basic
 
         private string ConvertIntegerToString(int value)
         {
-            // Allocate a temporary string buffer
+            // FIXME: GetVariableSectionEnd() returns 0, so strAddr will be 0, causing incorrect memory writes.
+            // This should be refactored to use a label-based temporary buffer (like _printIntBufferLabel).
+            // For now, this is a known bug - conversion functions using numeric addresses will target address 0.
             uint strAddr = _variableManager.GetVariableSectionEnd();
             _variableManager.SetCodeEndAddress(strAddr + 32); // Reserve space for string
             
@@ -2340,7 +2666,7 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             _assembly.AppendLine($"    LD A, 0x03  ; IntToString function");
             _assembly.AppendLine($"    LD {valueReg}, {value}  ; Integer value (32-bit)");
             _assembly.AppendLine($"    LD BCD, {formatLabel}  ; Format string address");
-            _assembly.AppendLine($"    LD EFG, {strAddr:X6}  ; Target address");
+            _assembly.AppendLine($"    LD EFG, {strAddr:X6}  ; Target address (WARNING: Will be 0x000000 due to GetVariableSectionEnd bug)");
             _assembly.AppendLine($"    INT 0x05, A  ; Convert integer to string");
             
             ReleaseRegister(valueReg, VariableType.Integer);
@@ -2350,7 +2676,8 @@ namespace Continuum93.Emulator.Compilers.C93Basic
 
         private string ConvertVariableToString(SymbolInfo varInfo)
         {
-            // Allocate a temporary string buffer
+            // FIXME: GetVariableSectionEnd() returns 0, so strAddr will be 0, causing incorrect memory writes.
+            // This should be refactored to use a label-based temporary buffer (like _printIntBufferLabel).
             uint strAddr = _variableManager.GetVariableSectionEnd();
             _variableManager.SetCodeEndAddress(strAddr + 32); // Reserve space for string
             
@@ -2378,7 +2705,7 @@ namespace Continuum93.Emulator.Compilers.C93Basic
                 _assembly.AppendLine($"    LD {valueReg}, ({varInfo.Label})  ; Load float value");
                 _assembly.AppendLine($"    LD F0, {valueReg}  ; Store in float register");
                 _assembly.AppendLine($"    LD BCD, {formatLabel}  ; Format string address");
-                _assembly.AppendLine($"    LD EFG, {strAddr:X6}  ; Target address");
+                _assembly.AppendLine($"    LD EFG, {strAddr:X6}  ; Target address (WARNING: Will be 0x000000 due to GetVariableSectionEnd bug)");
                 _assembly.AppendLine($"    INT 0x05, A  ; Convert float to string");
                 
                 ReleaseRegister(valueReg, VariableType.Float);
@@ -2392,7 +2719,8 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             // Evaluate expression as integer, then convert to string
             string valueReg = EmitExpression(expr, VariableType.Integer);
             
-            // Allocate a temporary string buffer
+            // FIXME: GetVariableSectionEnd() returns 0, so strAddr will be 0, causing incorrect memory writes.
+            // This should be refactored to use a label-based temporary buffer (like _printIntBufferLabel).
             uint strAddr = _variableManager.GetVariableSectionEnd();
             _variableManager.SetCodeEndAddress(strAddr + 32); // Reserve space for string
             
@@ -2401,7 +2729,7 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             _assembly.AppendLine($"    LD A, 0x03  ; IntToString function");
             _assembly.AppendLine($"    LD BCDE, {valueReg}  ; Integer value (32-bit)");
             _assembly.AppendLine($"    LD FGH, {formatLabel}  ; Format string address");
-            _assembly.AppendLine($"    LD IJK, {strAddr:X6}  ; Target address");
+            _assembly.AppendLine($"    LD IJK, {strAddr:X6}  ; Target address (WARNING: Will be 0x000000 due to GetVariableSectionEnd bug)");
             _assembly.AppendLine($"    INT 0x05, A  ; Convert integer to string");
             
             ReleaseRegister(valueReg, VariableType.Integer);
@@ -2412,9 +2740,11 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         private string EmitPrintIntSubroutine()
         {
             // Allocate string buffer if not already allocated
+            // NOTE: _printIntBufferAddr is not actually used - the code uses _printIntBufferLabel instead.
+            // This address calculation is kept for potential future use but is not currently functional.
             if (_printIntBufferAddr == 0)
             {
-                _printIntBufferAddr = _variableManager.GetVariableSectionEnd();
+                _printIntBufferAddr = _variableManager.GetVariableSectionEnd(); // Will be 0
                 _variableManager.SetCodeEndAddress(_printIntBufferAddr + 12); // Reserve 12 bytes for string buffer
             }
             
@@ -2460,6 +2790,10 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         {
             _variableSection.AppendLine($"{varInfo.Label}");
             
+            // FIXED: Handle arrays properly - calculate size based on dimensions
+            bool isArray = varInfo.ArrayDimensions != null && varInfo.ArrayDimensions.Count > 0;
+            int totalSize = _variableManager.GetVariableSize(varInfo.Type, varInfo.ArrayDimensions);
+            
             if (varInfo.Type == VariableType.String && !string.IsNullOrEmpty(initialValue))
             {
                 // String with initial value
@@ -2468,13 +2802,52 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             }
             else if (varInfo.Type == VariableType.String)
             {
-                // String without initial value - allocate space
-                _variableSection.AppendLine($"    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; Reserve 16 bytes for string");
+                if (isArray)
+                {
+                    // String array - each element is 16 bytes (as per DeclareVariable logic)
+                    // VariableManager.GetVariableSize already calculates totalSize correctly
+                    for (int i = 0; i < totalSize / 16; i++)
+                    {
+                        _variableSection.AppendLine($"    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; String array element {i}");
+                    }
+                }
+                else
+                {
+                    // Single string without initial value - allocate space
+                    _variableSection.AppendLine($"    #DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; Reserve 16 bytes for string");
+                }
             }
             else
             {
-                // Integer or float - 4 bytes initialized to 0
-                _variableSection.AppendLine($"    #DB 0, 0, 0, 0");
+                // Integer or float - calculate size based on array dimensions
+                if (isArray)
+                {
+                    // Array: allocate totalSize bytes initialized to 0
+                    // Generate #DB directives in chunks to avoid extremely long lines
+                    int elementSize = 4; // Integer or float
+                    int totalElements = totalSize / elementSize;
+                    
+                    // Write in chunks of 16 elements per line (64 bytes per line)
+                    for (int i = 0; i < totalElements; i += 16)
+                    {
+                        int elementsThisLine = Math.Min(16, totalElements - i);
+                        string dbLine = "    #DB";
+                        for (int j = 0; j < elementsThisLine; j++)
+                        {
+                            dbLine += " 0, 0, 0, 0";
+                        }
+                        if (i == 0)
+                        {
+                            dbLine += $"  ; Array: {totalElements} elements ({totalSize} bytes total)";
+                        }
+                        _variableSection.AppendLine(dbLine);
+                    }
+                }
+                else
+                {
+                    // Single integer or float - 4 bytes initialized to 0
+                    _variableSection.AppendLine($"    #DB 0, 0, 0, 0");
+                }
             }
         }
 
