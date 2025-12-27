@@ -9,7 +9,7 @@ namespace Continuum93.ServiceModule.UI
 {
     public class RegisterWindow : Window
     {
-        private static readonly byte[] POSITIONS = new byte[] { 103, 136, 192, 0 };
+        private const int ColumnSpacing = 20; // Spacing between columns
 
         public RegisterWindow(
             string title,
@@ -51,6 +51,7 @@ namespace Continuum93.ServiceModule.UI
             );
 
             int startY = contentRect.Y + Padding + 24;
+            byte fontFlags = (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline);
 
             // Draw registers
             for (int i = 0; i < 26; i++)
@@ -60,29 +61,43 @@ namespace Continuum93.ServiceModule.UI
                     break;
 
                 // Draw register name and values (1-4 bit)
+                int currentX = contentRect.X + Padding;
                 for (int j = 0; j < 4; j++)
                 {
-                    int x = contentRect.X + Padding + POSITIONS[j];
                     string regName = RegistryUtils.GetNBitRegisterName(i, 1 + j);
                     string hexValue = RegistryUtils.GetHexValueForNBitRegister(i, 1 + j, regPage0);
                     string oldHexValue = RegistryUtils.GetHexValueForNBitRegister(i, 1 + j, regPageOld);
                     Color regColor = RegistryUtils.GetRegisterStateColor(i);
 
+                    // Measure the full column text (register name + ":" + hex value")
+                    string fullColumnText = $"{regName}:{hexValue}";
+                    int columnWidth = Fonts.ModernDOS_12x18_thin.MeasureText(
+                        fullColumnText,
+                        contentRect.Width - Padding * 2,
+                        fontFlags
+                    ).width;
+
                     // Register name
                     ServiceGraphics.DrawText(
                         Fonts.ModernDOS_12x18_thin,
                         $"{regName}:",
-                        x,
+                        currentX,
                         y,
-                        contentRect.Width - Padding * 2,
+                        contentRect.Width + Padding * 9,
                         regColor,
                         Color.Black,
-                        (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
+                        fontFlags,
                         0xFF
                     );
 
                     // Hex value with change detection
-                    int hexX = x + (regName.Length + 1) * charWidth;
+                    string regNameWithColon = $"{regName}:";
+                    int regNameWidth = Fonts.ModernDOS_12x18_thin.MeasureText(
+                        regNameWithColon,
+                        contentRect.Width - Padding * 2,
+                        fontFlags
+                    ).width;
+                    int hexX = currentX + regNameWidth;
                     bool valueChanged = hexValue != oldHexValue;
                     Color hexColor = valueChanged ? Color.DarkOrange : Color.White;
 
@@ -108,17 +123,20 @@ namespace Continuum93.ServiceModule.UI
                             contentRect.Width - Padding * 2,
                             charColor,
                             Color.Black,
-                            (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
+                            fontFlags,
                             0xFF
                         );
                     }
+
+                    // Update X position for next column: current position + column width + spacing
+                    currentX += columnWidth + ColumnSpacing;
                 }
 
                 // Draw separator
                 ServiceGraphics.DrawText(
                     Fonts.ModernDOS_12x18_thin,
                     ">",
-                    contentRect.X + Padding + 272,
+                    contentRect.X + Padding + 530,
                     startY + i * lineHeight,
                     contentRect.Width - Padding * 2,
                     Color.White,
@@ -132,7 +150,7 @@ namespace Continuum93.ServiceModule.UI
                 {
                     if (i * 16 + j < regMemoryData.Length)
                     {
-                        int memX = contentRect.X + Padding + 281 + j * 17;
+                        int memX = contentRect.X + Padding + 550 + j * 17;
                         byte memValue = regMemoryData[i * 16 + j];
                         string hexMem = memValue.ToString("X2");
 

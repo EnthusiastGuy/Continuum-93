@@ -459,7 +459,7 @@ namespace Continuum93.ServiceModule.UI
         /// <summary>
         /// Derived windows override this to draw their content inside ContentRect.
         /// </summary>
-        protected abstract void DrawContent(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch, Rectangle contentRect);
+        protected abstract void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect);
 
         protected void DrawContentClipped(SpriteBatch spriteBatch, Rectangle contentRect)
         {
