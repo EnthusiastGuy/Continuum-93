@@ -69,7 +69,6 @@ namespace Continuum93.ServiceModule.UI
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
             const int lineHeight = 18;
-            //const int charWidth = 13;
             var theme = ServiceGraphics.Theme;
 
             // Title
@@ -93,6 +92,72 @@ namespace Continuum93.ServiceModule.UI
 
             byte fontFlags = (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline);
             const int ColumnSpacing = 20; // Spacing between columns
+
+            // Get mouse position for hover detection
+            var mouse = Mouse.GetState();
+            Point mousePos = new Point(mouse.X, mouse.Y);
+
+            // Brown color for non-ASCII question marks
+            Color brownColor = new Color(139, 69, 19); // Brown
+            Color highlightColor = theme.TextHighlight;
+
+            // Measure width of a single character
+            int charWidth = theme.PrimaryFont.MeasureText("M", 0, fontFlags).width;
+
+            // Determine which byte (if any) is being hovered
+            int hoveredLineIndex = -1;
+            int hoveredByteIndex = -1;
+            if (contentRect.Contains(mousePos))
+            {
+                int localY = mousePos.Y - startY;
+                if (localY >= 0)
+                {
+                    hoveredLineIndex = localY / lineHeight;
+                    if (hoveredLineIndex >= 0 && hoveredLineIndex < visibleLines)
+                    {
+                        var hoveredLine = lines[hoveredLineIndex];
+                        
+                        // Measure address text width
+                        int addressWidth = theme.PrimaryFont.MeasureText(
+                            hoveredLine.TextAddress,
+                            contentRect.Width - Padding * 2,
+                            fontFlags
+                        ).width;
+
+                        int hexColumnX = contentRect.X + Padding + addressWidth + ColumnSpacing;
+                        int localX = mousePos.X - hexColumnX;
+
+                        // Check if mouse is in hex bytes column
+                        if (localX >= 0)
+                        {
+                            // Parse hex bytes to get byte count
+                            string[] hexParts = hoveredLine.HexBytes.TrimEnd().Split(' ');
+                            
+                            // Calculate actual positions of each byte to determine which one is hovered
+                            int currentX = 0;
+                            for (int j = 0; j < hexParts.Length && j < 16; j++)
+                            {
+                                int byteWidth = theme.PrimaryFont.MeasureText(hexParts[j], 0, fontFlags).width;
+                                
+                                // Check if mouse is over this byte
+                                if (localX >= currentX && localX < currentX + byteWidth)
+                                {
+                                    hoveredByteIndex = j;
+                                    break;
+                                }
+                                
+                                // Move to next byte position (byte + space)
+                                currentX += byteWidth;
+                                if (j < hexParts.Length - 1)
+                                {
+                                    int spaceWidth = theme.PrimaryFont.MeasureText(" ", 0, fontFlags).width;
+                                    currentX += spaceWidth;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             for (int i = 0; i < visibleLines; i++)
             {
@@ -122,38 +187,82 @@ namespace Continuum93.ServiceModule.UI
                     0xFF
                 );
 
-                // Measure hex bytes text width
+                // Parse hex bytes to get individual bytes
+                string[] hexParts = line.HexBytes.TrimEnd().Split(' ');
+                int hexColumnX = contentRect.X + Padding + addressWidth + ColumnSpacing;
+
+                // Draw hex bytes individually for hover detection
+                int currentHexX = hexColumnX;
+                for (int j = 0; j < hexParts.Length && j < 16; j++)
+                {
+                    bool isHovered = (i == hoveredLineIndex && j == hoveredByteIndex);
+                    Color hexColor = isHovered ? highlightColor : theme.MemoryByteColor;
+
+                    ServiceGraphics.DrawText(
+                        theme.PrimaryFont,
+                        hexParts[j],
+                        currentHexX,
+                        y,
+                        contentRect.Width - Padding * 2,
+                        hexColor,
+                        theme.TextOutline,
+                        fontFlags,
+                        0xFF
+                    );
+
+                    // Add space after hex byte (except last)
+                    if (j < hexParts.Length - 1)
+                    {
+                        int hexByteTextWidth = theme.PrimaryFont.MeasureText(hexParts[j], 0, fontFlags).width;
+                        currentHexX += hexByteTextWidth;
+                        // Measure and add space
+                        int spaceWidth = theme.PrimaryFont.MeasureText(" ", 0, fontFlags).width;
+                        currentHexX += spaceWidth;
+                    }
+                }
+
+                // Measure hex bytes text width for ASCII column positioning
                 int hexBytesWidth = theme.PrimaryFont.MeasureText(
                     line.HexBytes,
                     contentRect.Width - Padding * 2,
                     fontFlags
                 ).width;
 
-                // Hex bytes
-                ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
-                    line.HexBytes,
-                    contentRect.X + Padding + addressWidth + ColumnSpacing,
-                    y,
-                    contentRect.Width - Padding * 2,
-                    theme.MemoryByteColor,
-                    theme.TextOutline,
-                    fontFlags,
-                    0xFF
-                );
+                // Parse bytes from hex strings to determine ASCII vs non-ASCII
+                byte[] bytes = new byte[hexParts.Length];
+                for (int j = 0; j < hexParts.Length && j < 16; j++)
+                {
+                    if (byte.TryParse(hexParts[j], System.Globalization.NumberStyles.HexNumber, null, out byte b))
+                    {
+                        bytes[j] = b;
+                    }
+                }
 
-                // ASCII bytes
-                ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
-                    line.ASCIIBytes,
-                    contentRect.X + Padding + addressWidth + ColumnSpacing + hexBytesWidth + ColumnSpacing,
-                    y,
-                    contentRect.Width - Padding * 2,
-                    theme.MemoryAsciiColor,
-                    theme.TextOutline,
-                    fontFlags,
-                    0xFF
-                );
+                // Draw ASCII bytes individually
+                int asciiColumnX = contentRect.X + Padding + addressWidth + ColumnSpacing + hexBytesWidth + ColumnSpacing;
+                int currentAsciiX = asciiColumnX;
+                for (int j = 0; j < bytes.Length && j < 16; j++)
+                {
+                    bool isHovered = (i == hoveredLineIndex && j == hoveredByteIndex);
+                    bool isAscii = bytes[j] >= 32 && bytes[j] <= 127;
+                    
+                    string asciiChar = isAscii ? ((char)bytes[j]).ToString() : "?";
+                    Color asciiColor = isHovered ? highlightColor : (isAscii ? theme.MemoryAsciiColor : brownColor);
+
+                    ServiceGraphics.DrawText(
+                        theme.PrimaryFont,
+                        asciiChar,
+                        currentAsciiX,
+                        y,
+                        contentRect.Width - Padding * 2,
+                        asciiColor,
+                        theme.TextOutline,
+                        fontFlags,
+                        0xFF
+                    );
+
+                    currentAsciiX += charWidth;
+                }
             }
         }
     }
