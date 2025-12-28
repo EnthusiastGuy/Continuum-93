@@ -121,7 +121,7 @@ namespace Continuum93.ServiceModule.UI
 
                         Color charColor = hexColor;
                         if (!nonZero && hexValue[k] == '0')
-                            charColor = theme.RegisterValueZeroTransparent;
+                            charColor = theme.NumberLeadingZeroes;
 
                         if (k < oldHexValue.Length && hexValue[k] != oldHexValue[k])
                             charColor = theme.RegisterValueChangedColor;

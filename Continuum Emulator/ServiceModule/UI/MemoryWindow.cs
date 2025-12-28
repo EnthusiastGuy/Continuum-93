@@ -165,29 +165,57 @@ namespace Continuum93.ServiceModule.UI
 
                 var line = lines[i];
 
-                // Measure address text width
+                // Address with leading zero transparency
+                string address = line.TextAddress;
+                int addressX = contentRect.X + Padding;
+                
+                bool nonZero = false;
+                for (int k = 0; k < address.Length; k++)
+                {
+                    if (address[k] != '0')
+                        nonZero = true;
+
+                    Color charColor = theme.TextPrimary;
+                    if (!nonZero && address[k] == '0')
+                        charColor = theme.NumberLeadingZeroes;
+
+                    ServiceGraphics.DrawText(
+                        theme.PrimaryFont,
+                        address[k].ToString(),
+                        addressX + k * charWidth,
+                        y,
+                        contentRect.Width - Padding * 2,
+                        charColor,
+                        theme.TextOutline,
+                        fontFlags,
+                        0xFF
+                    );
+                }
+
+                // Measure address text width for column positioning
                 int addressWidth = theme.PrimaryFont.MeasureText(
                     line.TextAddress,
                     contentRect.Width - Padding * 2,
                     fontFlags
                 ).width;
 
-                // Address
-                ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
-                    line.TextAddress,
-                    contentRect.X + Padding,
-                    y,
-                    contentRect.Width - Padding * 2,
-                    theme.TextPrimary,
-                    theme.TextOutline,
-                    fontFlags,
-                    0xFF
-                );
-
                 // Parse hex bytes to get individual bytes
                 string[] hexParts = line.HexBytes.TrimEnd().Split(' ');
                 int hexColumnX = contentRect.X + Padding + addressWidth + ColumnSpacing;
+
+                // Calculate actual hex bytes column width by summing individual measurements
+                int hexBytesWidth = 0;
+                int spaceWidth = theme.PrimaryFont.MeasureText(" ", 0, fontFlags).width;
+                for (int j = 0; j < hexParts.Length && j < 16; j++)
+                {
+                    int hexByteTextWidth = theme.PrimaryFont.MeasureText(hexParts[j], 0, fontFlags).width;
+                    hexBytesWidth += hexByteTextWidth;
+                    // Add space after hex byte (except last)
+                    if (j < hexParts.Length - 1)
+                    {
+                        hexBytesWidth += spaceWidth;
+                    }
+                }
 
                 // Draw hex bytes individually for hover detection
                 int currentHexX = hexColumnX;
@@ -213,18 +241,9 @@ namespace Continuum93.ServiceModule.UI
                     {
                         int hexByteTextWidth = theme.PrimaryFont.MeasureText(hexParts[j], 0, fontFlags).width;
                         currentHexX += hexByteTextWidth;
-                        // Measure and add space
-                        int spaceWidth = theme.PrimaryFont.MeasureText(" ", 0, fontFlags).width;
                         currentHexX += spaceWidth;
                     }
                 }
-
-                // Measure hex bytes text width for ASCII column positioning
-                int hexBytesWidth = theme.PrimaryFont.MeasureText(
-                    line.HexBytes,
-                    contentRect.Width - Padding * 2,
-                    fontFlags
-                ).width;
 
                 // Parse bytes from hex strings to determine ASCII vs non-ASCII
                 byte[] bytes = new byte[hexParts.Length];

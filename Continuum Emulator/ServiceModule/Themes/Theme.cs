@@ -1,4 +1,4 @@
-﻿using Continuum93.ServiceModule;
+using Continuum93.ServiceModule;
 using Microsoft.Xna.Framework;
 
 namespace Continuum93.ServiceModule.Themes
@@ -42,7 +42,7 @@ namespace Continuum93.ServiceModule.Themes
         public Color MemoryAddressZeroOutline { get; set; } = new Color(0, 0, 0, 22);
         public Color MemoryByteColor { get; set; } = new Color(40, 80, 160);
         public Color MemoryAsciiColor { get; set; } = new Color(200, 200, 200);
-        public Color MemoryAsciiNonAsciiColor { get; set; } = new Color(139, 69, 19);
+        public Color MemoryAsciiNonAsciiColor { get; set; } = new Color(139, 69, 19); // Brown for non-ASCII characters
 
         // Disassembler window colors
         public Color DisassemblerAddressFull { get; set; } = new Color(80, 160, 255);
@@ -57,7 +57,7 @@ namespace Continuum93.ServiceModule.Themes
         public Color RegisterNameColor { get; set; } = new Color(0.5f, 0.5f, 1f);
         public Color RegisterValueChangedColor { get; set; } = Color.DarkOrange;
         public Color RegisterValueUnchangedColor { get; set; } = Color.White;
-        public Color RegisterValueZeroTransparent { get; set; } = new Color(20, 40, 64, 1);
+        public Color NumberLeadingZeroes { get; set; } = new Color(20, 40, 64, 1);
         public Color RegisterMemoryDataColor { get; set; } = new Color(40, 80, 160);
         public Color RegisterChangedStateColor { get; set; } = Color.OrangeRed;
         public Color RegisterUnchangedStateColor { get; set; } = Color.White;

@@ -113,7 +113,7 @@ namespace Continuum93.ServiceModule.Themes
             if (!string.IsNullOrEmpty(data.RegisterValueUnchangedColor))
                 theme.RegisterValueUnchangedColor = ColorParser.Parse(data.RegisterValueUnchangedColor);
             if (!string.IsNullOrEmpty(data.RegisterValueZeroTransparent))
-                theme.RegisterValueZeroTransparent = ColorParser.Parse(data.RegisterValueZeroTransparent);
+                theme.NumberLeadingZeroes = ColorParser.Parse(data.RegisterValueZeroTransparent);
             if (!string.IsNullOrEmpty(data.RegisterMemoryDataColor))
                 theme.RegisterMemoryDataColor = ColorParser.Parse(data.RegisterMemoryDataColor);
             if (!string.IsNullOrEmpty(data.RegisterChangedStateColor))
@@ -208,7 +208,7 @@ namespace Continuum93.ServiceModule.Themes
                 RegisterNameColor = ColorParser.Format(theme.RegisterNameColor),
                 RegisterValueChangedColor = ColorParser.Format(theme.RegisterValueChangedColor),
                 RegisterValueUnchangedColor = ColorParser.Format(theme.RegisterValueUnchangedColor),
-                RegisterValueZeroTransparent = ColorParser.Format(theme.RegisterValueZeroTransparent),
+                RegisterValueZeroTransparent = ColorParser.Format(theme.NumberLeadingZeroes),
                 RegisterMemoryDataColor = ColorParser.Format(theme.RegisterMemoryDataColor),
                 RegisterChangedStateColor = ColorParser.Format(theme.RegisterChangedStateColor),
                 RegisterUnchangedStateColor = ColorParser.Format(theme.RegisterUnchangedStateColor),
