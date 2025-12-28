@@ -1,4 +1,4 @@
-﻿
+
 using Continuum93.ServiceModule;
 using Microsoft.Xna.Framework;
 using System.IO;
@@ -86,6 +86,8 @@ namespace Continuum93.ServiceModule.Themes
                 theme.MemoryByteColor = ColorParser.Parse(data.MemoryByteColor);
             if (!string.IsNullOrEmpty(data.MemoryAsciiColor))
                 theme.MemoryAsciiColor = ColorParser.Parse(data.MemoryAsciiColor);
+            if (!string.IsNullOrEmpty(data.MemoryAsciiNonAsciiColor))
+                theme.MemoryAsciiNonAsciiColor = ColorParser.Parse(data.MemoryAsciiNonAsciiColor);
 
             // Disassembler window colors
             if (!string.IsNullOrEmpty(data.DisassemblerAddressFull))
@@ -191,6 +193,7 @@ namespace Continuum93.ServiceModule.Themes
                 MemoryAddressZeroOutline = ColorParser.Format(theme.MemoryAddressZeroOutline),
                 MemoryByteColor = ColorParser.Format(theme.MemoryByteColor),
                 MemoryAsciiColor = ColorParser.Format(theme.MemoryAsciiColor),
+                MemoryAsciiNonAsciiColor = ColorParser.Format(theme.MemoryAsciiNonAsciiColor),
 
                 // Disassembler window colors
                 DisassemblerAddressFull = ColorParser.Format(theme.DisassemblerAddressFull),

@@ -42,6 +42,7 @@ namespace Continuum93.ServiceModule.Themes
         public Color MemoryAddressZeroOutline { get; set; } = new Color(0, 0, 0, 22);
         public Color MemoryByteColor { get; set; } = new Color(40, 80, 160);
         public Color MemoryAsciiColor { get; set; } = new Color(200, 200, 200);
+        public Color MemoryAsciiNonAsciiColor { get; set; } = new Color(139, 69, 19);
 
         // Disassembler window colors
         public Color DisassemblerAddressFull { get; set; } = new Color(80, 160, 255);

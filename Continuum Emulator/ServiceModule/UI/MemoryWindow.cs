@@ -97,8 +97,6 @@ namespace Continuum93.ServiceModule.UI
             var mouse = Mouse.GetState();
             Point mousePos = new Point(mouse.X, mouse.Y);
 
-            // Brown color for non-ASCII question marks
-            Color brownColor = new Color(139, 69, 19); // Brown
             Color highlightColor = theme.TextHighlight;
 
             // Measure width of a single character
@@ -247,7 +245,7 @@ namespace Continuum93.ServiceModule.UI
                     bool isAscii = bytes[j] >= 32 && bytes[j] <= 127;
                     
                     string asciiChar = isAscii ? ((char)bytes[j]).ToString() : "?";
-                    Color asciiColor = isHovered ? highlightColor : (isAscii ? theme.MemoryAsciiColor : brownColor);
+                    Color asciiColor = isHovered ? highlightColor : (isAscii ? theme.MemoryAsciiColor : theme.MemoryAsciiNonAsciiColor);
 
                     ServiceGraphics.DrawText(
                         theme.PrimaryFont,

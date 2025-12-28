@@ -1,4 +1,4 @@
-﻿namespace Continuum93.ServiceModule.Themes
+namespace Continuum93.ServiceModule.Themes
 {
     public class ThemeData
     {
@@ -38,6 +38,7 @@
         public string MemoryAddressZeroOutline { get; set; }
         public string MemoryByteColor { get; set; }
         public string MemoryAsciiColor { get; set; }
+        public string MemoryAsciiNonAsciiColor { get; set; }
 
         // Disassembler window colors
         public string DisassemblerAddressFull { get; set; }
