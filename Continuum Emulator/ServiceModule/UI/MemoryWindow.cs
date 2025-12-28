@@ -91,6 +91,9 @@ namespace Continuum93.ServiceModule.UI
             var lines = Memory.Lines;
             int visibleLines = Math.Min(lines.Count, (contentRect.Height - (startY - contentRect.Y)) / lineHeight);
 
+            byte fontFlags = (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline);
+            const int ColumnSpacing = 20; // Spacing between columns
+
             for (int i = 0; i < visibleLines; i++)
             {
                 int y = startY + i * lineHeight;
@@ -98,6 +101,13 @@ namespace Continuum93.ServiceModule.UI
                     break;
 
                 var line = lines[i];
+
+                // Measure address text width
+                int addressWidth = theme.PrimaryFont.MeasureText(
+                    line.TextAddress,
+                    contentRect.Width - Padding * 2,
+                    fontFlags
+                ).width;
 
                 // Address
                 ServiceGraphics.DrawText(
@@ -108,20 +118,27 @@ namespace Continuum93.ServiceModule.UI
                     contentRect.Width - Padding * 2,
                     theme.TextPrimary,
                     theme.TextOutline,
-                    (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
+                    fontFlags,
                     0xFF
                 );
+
+                // Measure hex bytes text width
+                int hexBytesWidth = theme.PrimaryFont.MeasureText(
+                    line.HexBytes,
+                    contentRect.Width - Padding * 2,
+                    fontFlags
+                ).width;
 
                 // Hex bytes
                 ServiceGraphics.DrawText(
                     theme.PrimaryFont,
                     line.HexBytes,
-                    contentRect.X + Padding + 60,
+                    contentRect.X + Padding + addressWidth + ColumnSpacing,
                     y,
                     contentRect.Width - Padding * 2,
                     theme.MemoryByteColor,
                     theme.TextOutline,
-                    (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
+                    fontFlags,
                     0xFF
                 );
 
@@ -129,12 +146,12 @@ namespace Continuum93.ServiceModule.UI
                 ServiceGraphics.DrawText(
                     theme.PrimaryFont,
                     line.ASCIIBytes,
-                    contentRect.X + Padding + 406,
+                    contentRect.X + Padding + addressWidth + ColumnSpacing + hexBytesWidth + ColumnSpacing,
                     y,
                     contentRect.Width - Padding * 2,
                     theme.MemoryAsciiColor,
                     theme.TextOutline,
-                    (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
+                    fontFlags,
                     0xFF
                 );
             }
