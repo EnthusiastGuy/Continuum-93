@@ -371,12 +371,13 @@ namespace Continuum93.ServiceModule.UI
             Rectangle left = new(bounds.X, bounds.Y, BorderWidth, bounds.Height);
             Rectangle right = new(bounds.Right - BorderWidth, bounds.Y, BorderWidth, bounds.Height);
 
-            Color borderColor = Color.Gray;
+            var theme = ServiceGraphics.Theme;
+            Color borderColor = theme.WindowBorder;
 
             // Base colors
-            Color unfocused = new(30, 30, 30);
-            Color focused = new(40, 40, 80);   // normal focused
-            Color onTop = new(60, 60, 120);  // lighter for top-most
+            Color unfocused = theme.WindowTitleBarUnfocused;
+            Color focused = theme.WindowTitleBarFocused;   // normal focused
+            Color onTop = theme.WindowTitleBarOnTop;  // lighter for top-most
 
             Color titleBarColor;
 
@@ -391,8 +392,8 @@ namespace Continuum93.ServiceModule.UI
             }
 
             Color backgroundColor = Color.Lerp(
-                new(5, 5, 5, 10),      // unfocused
-                new(5, 5, 5, 100),     // focused
+                theme.WindowBackgroundUnfocused,
+                theme.WindowBackgroundFocused,
                 _focusBlend
             );
 
@@ -410,7 +411,7 @@ namespace Continuum93.ServiceModule.UI
 
             // Resize grip (simple small triangle / square)
             if (_canResize)
-                spriteBatch.Draw(pixel, ResizeGripRect, Color.DimGray);
+                spriteBatch.Draw(pixel, ResizeGripRect, theme.WindowResizeGrip);
 
             // Title text (using your ServiceGraphics)
             ServiceGraphics.DrawText(
@@ -419,8 +420,8 @@ namespace Continuum93.ServiceModule.UI
                 bounds.X + Padding,
                 bounds.Y + 4,       // vertically center-ish in title bar
                 bounds.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.WindowTitleText,
+                theme.TextOutline,
                 (byte)(ServiceFontFlags.DrawOutline),
                 0xFF
             );
@@ -428,15 +429,15 @@ namespace Continuum93.ServiceModule.UI
             // Draw close button
             if (_canClose)
             {
-                spriteBatch.Draw(pixel, CloseButtonRect, Color.Red);
+                spriteBatch.Draw(pixel, CloseButtonRect, theme.WindowCloseButton);
                 ServiceGraphics.DrawText(
                     Fonts.ModernDOS_12x18,
                     "X",
                     CloseButtonRect.X + 3,
                     CloseButtonRect.Y - 2,
                     20,
-                    Color.White,
-                    Color.Black,
+                    theme.WindowCloseButtonText,
+                    theme.TextOutline,
                     (byte)ServiceFontFlags.DrawOutline,
                     0xFF
                 );

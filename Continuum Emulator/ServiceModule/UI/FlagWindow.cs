@@ -30,6 +30,7 @@ namespace Continuum93.ServiceModule.UI
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
             const int charWidth = 13;
+            var theme = ServiceGraphics.Theme;
 
             byte flags = CPUState.Flags;
             byte oldFlags = CPUState.OldFlags;
@@ -41,8 +42,8 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -61,55 +62,55 @@ namespace Continuum93.ServiceModule.UI
                 bool oldFlagValue = CPUState.GetBitValue(oldFlags, i);
                 bool valueChanged = flagValue != oldFlagValue;
 
-                Color regColor = new Color(0.5f, 0.5f, 1f);
-                Color markColor = valueChanged ? Color.DarkOrange : Color.White;
+                Color regColor = theme.FlagNameColor;
+                Color markColor = valueChanged ? theme.FlagValueChangedColor : theme.FlagValueUnchangedColor;
 
                 // Flag names (positive and negative)
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     FLAGNAMES[8 + i],
                     x,
                     y1,
                     contentRect.Width - Padding * 2,
                     regColor,
-                    Color.Black,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
 
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     FLAGNAMES[i],
                     x,
                     y2,
                     contentRect.Width - Padding * 2,
                     regColor,
-                    Color.Black,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
 
                 // Flag values
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     (flagValue ? 1 : 0).ToString(),
                     x,
                     y1 + 12,
                     contentRect.Width - Padding * 2,
                     markColor,
-                    Color.Black,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
 
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     (flagValue ? 0 : 1).ToString(),
                     x,
                     y2 + 12,
                     contentRect.Width - Padding * 2,
                     markColor,
-                    Color.Black,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );

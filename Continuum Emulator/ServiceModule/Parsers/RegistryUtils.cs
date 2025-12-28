@@ -1,3 +1,4 @@
+using Continuum93.ServiceModule;
 using Continuum93.ServiceModule.Parsers;
 using System;
 using System.Globalization;
@@ -52,9 +53,10 @@ namespace Continuum93.ServiceModule.Parsers
 
         public static Microsoft.Xna.Framework.Color GetRegisterStateColor(int regindex)
         {
+            var theme = ServiceGraphics.Theme;
             return (CPUState.IsRegisterChanged(regindex) ? 
-                Microsoft.Xna.Framework.Color.OrangeRed : 
-                Microsoft.Xna.Framework.Color.White);
+                theme.RegisterChangedStateColor : 
+                theme.RegisterUnchangedStateColor);
         }
     }
 }

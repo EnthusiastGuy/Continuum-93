@@ -25,15 +25,16 @@ namespace Continuum93.ServiceModule.UI
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
             string text = _textSource?.Invoke() ?? string.Empty;
+            var theme = ServiceGraphics.Theme;
 
             ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18_thin,
+                theme.PrimaryFont,
                 text,
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)(ServiceFontFlags.Wrap |
                        ServiceFontFlags.DrawOutline |
                        ServiceFontFlags.MonospaceCentering),

@@ -27,6 +27,7 @@ namespace Continuum93.ServiceModule.UI
         {
             const int lineHeight = 18;
             const int charWidth = 13;
+            var theme = ServiceGraphics.Theme;
 
             // Title
             ServiceGraphics.DrawText(
@@ -35,8 +36,8 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -45,13 +46,13 @@ namespace Continuum93.ServiceModule.UI
 
             // Register stack label
             ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18_thin,
+                theme.PrimaryFont,
                 "Regs",
                 contentRect.X + Padding,
                 startY,
                 contentRect.Width - Padding * 2,
-                Color.White,
-                Color.Black,
+                theme.TextPrimary,
+                theme.TextOutline,
                 (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                 0xFF
             );
@@ -69,13 +70,13 @@ namespace Continuum93.ServiceModule.UI
                     break;
 
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     regStack[i],
                     drawX,
                     drawY,
                     contentRect.Width - Padding * 2,
-                    new Color(127, 255, 212), // Aquamarine
-                    Color.Black,
+                    theme.StackValueColor,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
@@ -84,13 +85,13 @@ namespace Continuum93.ServiceModule.UI
             // Call stack label
             int callStackStartY = startY + 92;
             ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18_thin,
+                theme.PrimaryFont,
                 "Calls",
                 contentRect.X + Padding,
                 callStackStartY,
                 contentRect.Width - Padding * 2,
-                Color.White,
-                Color.Black,
+                theme.TextPrimary,
+                theme.TextOutline,
                 (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                 0xFF
             );
@@ -108,13 +109,13 @@ namespace Continuum93.ServiceModule.UI
                     break;
 
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     callStack[i],
                     drawX,
                     drawY,
                     contentRect.Width - Padding * 2,
-                    new Color(127, 255, 212), // Aquamarine
-                    Color.Black,
+                    theme.StackValueColor,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );

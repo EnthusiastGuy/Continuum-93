@@ -171,9 +171,11 @@ namespace Continuum93.ServiceModule.UI
 
             Rectangle barRect = GetBarRect(screenW, screenH);
 
+            var theme = ServiceGraphics.Theme;
+
             // Background + border
-            Color bg = new Color(10, 10, 20, 220);
-            Color border = new Color(80, 80, 120);
+            Color bg = theme.TaskbarBackground;
+            Color border = theme.TaskbarBorder;
 
             spriteBatch.Draw(pixel, barRect, bg);
 
@@ -192,7 +194,7 @@ namespace Continuum93.ServiceModule.UI
                 HeaderHeight - 8
             );
 
-            spriteBatch.Draw(pixel, headerRect, new Color(30, 30, 60));
+            spriteBatch.Draw(pixel, headerRect, theme.TaskbarHeaderBackground);
 
             ServiceGraphics.DrawText(
                 Fonts.ModernDOS_12x18,
@@ -200,8 +202,8 @@ namespace Continuum93.ServiceModule.UI
                 headerRect.X + 6,
                 headerRect.Y + 4,
                 headerRect.Width - 12,
-                Color.Cyan,
-                Color.Black,
+                theme.TextCyan,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -232,20 +234,20 @@ namespace Continuum93.ServiceModule.UI
                 bool isMinimized = !w.Visible;
 
                 Color itemBg;
-                if (isActive) itemBg = new Color(80, 80, 140);
-                else if (isMinimized) itemBg = new Color(20, 20, 20);
-                else itemBg = new Color(40, 40, 60);
+                if (isActive) itemBg = theme.TaskbarItemActiveBackground;
+                else if (isMinimized) itemBg = theme.TaskbarItemMinimizedBackground;
+                else itemBg = theme.TaskbarItemNormalBackground;
 
                 spriteBatch.Draw(pixel, itemRect, itemBg);
 
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     w.Title,
                     itemRect.X + 6,
                     itemRect.Y + 4,
                     itemRect.Width - 12,
-                    Color.White,
-                    Color.Black,
+                    theme.TextPrimary,
+                    theme.TextOutline,
                     (byte)ServiceFontFlags.DrawOutline,
                     0xFF
                 );

@@ -69,7 +69,8 @@ namespace Continuum93.ServiceModule.UI
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
             const int lineHeight = 18;
-            const int charWidth = 13;
+            //const int charWidth = 13;
+            var theme = ServiceGraphics.Theme;
 
             // Title
             ServiceGraphics.DrawText(
@@ -78,8 +79,8 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -100,39 +101,39 @@ namespace Continuum93.ServiceModule.UI
 
                 // Address
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     line.TextAddress,
                     contentRect.X + Padding,
                     y,
                     contentRect.Width - Padding * 2,
-                    Color.White,
-                    Color.Black,
+                    theme.TextPrimary,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
 
                 // Hex bytes
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     line.HexBytes,
                     contentRect.X + Padding + 60,
                     y,
                     contentRect.Width - Padding * 2,
-                    new Color(40, 80, 160), // Memory byte color
-                    Color.Black,
+                    theme.MemoryByteColor,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
 
                 // ASCII bytes
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     line.ASCIIBytes,
                     contentRect.X + Padding + 406,
                     y,
                     contentRect.Width - Padding * 2,
-                    new Color(200, 200, 200), // ASCII text color
-                    Color.Black,
+                    theme.MemoryAsciiColor,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );

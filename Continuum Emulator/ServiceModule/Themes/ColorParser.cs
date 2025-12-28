@@ -66,6 +66,40 @@ namespace Continuum93.ServiceModule.Themes
 
             throw new Exception("Invalid RGBA format.");
         }
+
+        /// <summary>
+        ///     Formats a Color object back into a string representation.
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public static string Format(Color color)
+        {
+            // Try to match named colors first
+            var colorType = typeof(Color);
+            var properties = colorType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            
+            foreach (var prop in properties)
+            {
+                if (prop.PropertyType == typeof(Color))
+                {
+                    var namedColor = (Color)prop.GetValue(null);
+                    if (namedColor == color)
+                    {
+                        return prop.Name;
+                    }
+                }
+            }
+
+            // If not a named color, use RGBA format
+            if (color.A == 255)
+            {
+                return $"{color.R},{color.G},{color.B}";
+            }
+            else
+            {
+                return $"{color.R},{color.G},{color.B},{color.A}";
+            }
+        }
     }
 
 }

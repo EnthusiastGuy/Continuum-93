@@ -31,6 +31,7 @@ namespace Continuum93.ServiceModule.UI
         {
             const int lineHeight = 18;
             const int charWidth = 13;
+            var theme = ServiceGraphics.Theme;
 
             byte[] regPage0 = CPUState.RegPage0;
             byte[] regPageOld = CPUState.RegPageOld;
@@ -44,8 +45,8 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -54,9 +55,9 @@ namespace Continuum93.ServiceModule.UI
             byte fontFlags = (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline);
 
             // width of "FF" with the active font rules (monospace + spacing + outline pad)
-            int byteCellWidth = Fonts.ModernDOS_12x18_thin.MeasureText("FF", 0, fontFlags).width;
+            int byteCellWidth = theme.PrimaryFont.MeasureText("FF", 0, fontFlags).width;
 
-            // extra gap between bytes so it doesn’t look cramped
+            // extra gap between bytes so it doesnï¿½t look cramped
             const int byteGap = 4;
             int byteStride = byteCellWidth + byteGap;
 
@@ -71,14 +72,17 @@ namespace Continuum93.ServiceModule.UI
                 int currentX = contentRect.X + Padding;
                 for (int j = 0; j < 4; j++)
                 {
-                    string regName = RegistryUtils.GetNBitRegisterName(i, 1 + j);
-                    string hexValue = RegistryUtils.GetHexValueForNBitRegister(i, 1 + j, regPage0);
-                    string oldHexValue = RegistryUtils.GetHexValueForNBitRegister(i, 1 + j, regPageOld);
+                    int colPosition = (j + 3) % 4;  // Starting with the 32 bit register column, then 8, 16 and finally
+                    // 24 bit, so we can represent them as address:value pairs more naturally
+
+                    string regName = RegistryUtils.GetNBitRegisterName(i, 1 + colPosition);
+                    string hexValue = RegistryUtils.GetHexValueForNBitRegister(i, 1 + colPosition, regPage0);
+                    string oldHexValue = RegistryUtils.GetHexValueForNBitRegister(i, 1 + colPosition, regPageOld);
                     Color regColor = RegistryUtils.GetRegisterStateColor(i);
 
                     // Measure the full column text (register name + ":" + hex value")
                     string fullColumnText = $"{regName}:{hexValue}";
-                    int columnWidth = Fonts.ModernDOS_12x18_thin.MeasureText(
+                    int columnWidth = theme.PrimaryFont.MeasureText(
                         fullColumnText,
                         contentRect.Width - Padding * 2,
                         fontFlags
@@ -86,27 +90,27 @@ namespace Continuum93.ServiceModule.UI
 
                     // Register name
                     ServiceGraphics.DrawText(
-                        Fonts.ModernDOS_12x18_thin,
+                        theme.PrimaryFont,
                         $"{regName}:",
                         currentX,
                         y,
                         contentRect.Width + Padding * 9,
                         regColor,
-                        Color.Black,
+                        theme.TextOutline,
                         fontFlags,
                         0xFF
                     );
 
                     // Hex value with change detection
                     string regNameWithColon = $"{regName}:";
-                    int regNameWidth = Fonts.ModernDOS_12x18_thin.MeasureText(
+                    int regNameWidth = theme.PrimaryFont.MeasureText(
                         regNameWithColon,
                         contentRect.Width - Padding * 2,
                         fontFlags
                     ).width;
                     int hexX = currentX + regNameWidth;
                     bool valueChanged = hexValue != oldHexValue;
-                    Color hexColor = valueChanged ? Color.DarkOrange : Color.White;
+                    Color hexColor = valueChanged ? theme.RegisterValueChangedColor : theme.RegisterValueUnchangedColor;
 
                     // Draw hex value with leading zero transparency
                     bool nonZero = false;
@@ -117,19 +121,19 @@ namespace Continuum93.ServiceModule.UI
 
                         Color charColor = hexColor;
                         if (!nonZero && hexValue[k] == '0')
-                            charColor = new Color(80, 160, 255, 22); // transparent blue
+                            charColor = theme.RegisterValueZeroTransparent;
 
                         if (k < oldHexValue.Length && hexValue[k] != oldHexValue[k])
-                            charColor = Color.DarkOrange;
+                            charColor = theme.RegisterValueChangedColor;
 
                         ServiceGraphics.DrawText(
-                            Fonts.ModernDOS_12x18_thin,
+                            theme.PrimaryFont,
                             hexValue[k].ToString(),
                             hexX + k * charWidth,
                             y,
                             contentRect.Width - Padding * 2,
                             charColor,
-                            Color.Black,
+                            theme.TextOutline,
                             fontFlags,
                             0xFF
                         );
@@ -141,13 +145,13 @@ namespace Continuum93.ServiceModule.UI
 
                 // Draw separator
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     ">",
                     contentRect.X + Padding + 530,
                     startY + i * lineHeight,
                     contentRect.Width - Padding * 2,
-                    Color.White,
-                    Color.Black,
+                    theme.TextPrimary,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
@@ -168,13 +172,13 @@ namespace Continuum93.ServiceModule.UI
                     string hexMem = regMemoryData[idx].ToString("X2");
 
                     ServiceGraphics.DrawText(
-                        Fonts.ModernDOS_12x18_thin,
+                        theme.PrimaryFont,
                         hexMem,
                         memX,
                         startY + i * lineHeight,
                         contentRect.Width - Padding * 2,
-                        new Color(40, 80, 160),
-                        Color.Black,
+                        theme.RegisterMemoryDataColor,
+                        theme.TextOutline,
                         fontFlags,
                         0xFF
                     );

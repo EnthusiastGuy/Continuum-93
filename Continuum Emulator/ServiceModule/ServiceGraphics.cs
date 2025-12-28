@@ -13,7 +13,7 @@ namespace Continuum93.ServiceModule
     {
         private float _serviceAnim;          // 0 = normal, 1 = debug
         private const float ServiceAnimSpeed = 4.0f; // how fast it moves between states
-        private static ColorTheme Theme;
+        public static Theme Theme { get; private set; }
 
         private static WindowManager _windowManager;
         private static DisassemblerWindow _disassemblerWindow;
@@ -221,7 +221,6 @@ namespace Continuum93.ServiceModule
 
             // Clear the fullscreen backbuffer for the service layout,
             // LERPing from black (normal mode) to dark gray (service mode)
-            // TODO, move the colors to some form of theme/settings
             Color bgColor = Color.Lerp(Color.Black, Theme.Background, eased);
             Renderer.Clear(bgColor);
 

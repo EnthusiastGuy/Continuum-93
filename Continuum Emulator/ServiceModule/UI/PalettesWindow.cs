@@ -25,6 +25,8 @@ namespace Continuum93.ServiceModule.UI
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
+            var theme = ServiceGraphics.Theme;
+
             // Title
             ServiceGraphics.DrawText(
                 Fonts.ModernDOS_12x18,
@@ -32,8 +34,8 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -54,8 +56,8 @@ namespace Continuum93.ServiceModule.UI
                     contentRect.X + Padding,
                     startY + p * 11,
                     contentRect.Width - Padding * 2,
-                    Color.AliceBlue,
-                    Color.Black,
+                    theme.VideoPaletteNumber,
+                    theme.TextOutline,
                     (byte)ServiceFontFlags.DrawOutline,
                     0xFF
                 );

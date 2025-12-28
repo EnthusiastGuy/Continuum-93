@@ -26,6 +26,7 @@ namespace Continuum93.ServiceModule.UI
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
             const int lineHeight = 18;
+            var theme = ServiceGraphics.Theme;
 
             float[] fRegs = CPUState.FRegs;
             float[] fRegsOld = CPUState.FRegsOld;
@@ -37,8 +38,8 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -57,31 +58,31 @@ namespace Continuum93.ServiceModule.UI
                 float oldValue = fRegsOld[i];
                 bool valueChanged = !value.Equals(oldValue);
 
-                Color regColor = new Color(0.5f, 0.5f, 1f); // Register color
-                Color valueColor = valueChanged ? Color.DarkOrange : Color.White;
+                Color regColor = theme.RegisterNameColor;
+                Color valueColor = valueChanged ? theme.RegisterValueChangedColor : theme.RegisterValueUnchangedColor;
 
                 // Register name
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     $"{regName}:",
                     contentRect.X + Padding,
                     y,
                     contentRect.Width - Padding * 2,
                     regColor,
-                    Color.Black,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );
 
                 // Float value
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     value.ToString(),
                     contentRect.X + Padding + 60,
                     y,
                     contentRect.Width - Padding * 2,
                     valueColor,
-                    Color.Black,
+                    theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
                 );

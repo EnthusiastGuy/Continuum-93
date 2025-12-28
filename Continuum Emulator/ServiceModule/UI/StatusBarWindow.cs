@@ -27,14 +27,16 @@ namespace Continuum93.ServiceModule.UI
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
+            var theme = ServiceGraphics.Theme;
+
             // Connection status
             bool isConnected = Machine.COMPUTER != null;
-            Color connectionColor = isConnected ? Color.GreenYellow : Color.IndianRed;
+            Color connectionColor = isConnected ? theme.TextGreenYellow : theme.TextIndianRed;
             string connectedStatus = isConnected ? "Connected" : "No signal";
 
             // Step-by-step mode status (TODO: implement step-by-step mode tracking)
             bool stepByStepMode = false; // TODO: get from actual state
-            Color stepByStepColor = stepByStepMode ? Color.GreenYellow : Color.AliceBlue;
+            Color stepByStepColor = stepByStepMode ? theme.TextGreenYellow : theme.VideoPaletteNumber;
             string stepByStepStatus = isConnected ? (stepByStepMode ? "CPU debugging" : "CPU running") : "CPU unknown";
 
             // History
@@ -44,8 +46,8 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.X + Padding,
                 contentRect.Y + Padding,
                 contentRect.Width - Padding * 2,
-                Color.Yellow,
-                Color.Black,
+                theme.TextTitle,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -65,8 +67,8 @@ namespace Continuum93.ServiceModule.UI
                     currentX,
                     historyY,
                     contentRect.Width - Padding * 2,
-                    Color.AliceBlue,
-                    Color.Black,
+                    theme.VideoPaletteNumber,
+                    theme.TextOutline,
                     (byte)ServiceFontFlags.DrawOutline,
                     0xFF
                 );
@@ -77,8 +79,8 @@ namespace Continuum93.ServiceModule.UI
                     currentX,
                     historyY,
                     contentRect.Width - Padding * 2,
-                    Color.AliceBlue,
-                    Color.Black,
+                    theme.VideoPaletteNumber,
+                    theme.TextOutline,
                     (byte)ServiceFontFlags.DrawOutline,
                     0xFF
                 );
@@ -96,8 +98,8 @@ namespace Continuum93.ServiceModule.UI
                     currentX,
                     historyY,
                     contentRect.Width - Padding * 2,
-                    Color.DarkOrange,
-                    Color.Black,
+                    theme.TextDarkOrange,
+                    theme.TextOutline,
                     (byte)ServiceFontFlags.DrawOutline,
                     0xFF
                 );
@@ -112,7 +114,7 @@ namespace Continuum93.ServiceModule.UI
                 historyY,
                 contentRect.Width - Padding * 2,
                 stepByStepColor,
-                Color.Black,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );
@@ -125,7 +127,7 @@ namespace Continuum93.ServiceModule.UI
                 historyY,
                 contentRect.Width - Padding * 2,
                 connectionColor,
-                Color.Black,
+                theme.TextOutline,
                 (byte)ServiceFontFlags.DrawOutline,
                 0xFF
             );

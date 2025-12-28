@@ -57,14 +57,13 @@ namespace Continuum93.ServiceModule.UI
             int opcodeColumnWidth = maxOpcodeLen * charWidth;
             int instrColumnX = opcodeColumnX + opcodeColumnWidth + charWidth;           // +1 space
 
-            // Some colors
-            // TODO move to themes
-            Color addrFull = new(80, 160, 255);          // bright blue
-            Color addrZero = new(80, 160, 255, 22);     // transparent blue
-            Color addrZeroOutline = new(0, 0, 0, 22);     // transparent blue
-            Color opcodeColor = new(40, 80, 160);        // darker blue
-            Color instrColor = new(255, 180, 50);        // orange
-            Color hoverBorder = new(80, 220, 80);        // green
+            var theme = ServiceGraphics.Theme;
+            Color addrFull = theme.DisassemblerAddressFull;
+            Color addrZero = theme.DisassemblerAddressZero;
+            Color addrZeroOutline = theme.DisassemblerAddressZeroOutline;
+            Color opcodeColor = theme.DisassemblerOpcodeColor;
+            Color instrColor = theme.DisassemblerInstructionColor;
+            Color hoverBorder = theme.DisassemblerHoverBorder;
 
             byte fontFlags = (byte)(ServiceFontFlags.Monospace |
                                     ServiceFontFlags.DrawOutline);
@@ -103,7 +102,7 @@ namespace Continuum93.ServiceModule.UI
                         contentRect.Width - 2,
                         lineHeight + 2
                     );
-                    spriteBatch.Draw(pixel, currentRect, new Color(0, 139, 139, 100)); // DarkCyan background
+                    spriteBatch.Draw(pixel, currentRect, theme.DisassemblerCurrentInstructionBackground);
                 }
 
                 // --- hover highlight border ---
@@ -145,7 +144,7 @@ namespace Continuum93.ServiceModule.UI
                 if (addrZeros.Length > 0)
                 {
                     ServiceGraphics.DrawText(
-                        Fonts.ModernDOS_12x18_thin,
+                        theme.PrimaryFont,
                         addrZeros,
                         addrX,
                         y,
@@ -161,13 +160,13 @@ namespace Continuum93.ServiceModule.UI
                 if (addrRest.Length > 0)
                 {
                     ServiceGraphics.DrawText(
-                        Fonts.ModernDOS_12x18_thin,
+                        theme.PrimaryFont,
                         addrRest,
                         addrX,
                         y,
                         contentRect.Width - Padding * 2,
                         addrFull,
-                        Color.Black,
+                        theme.TextOutline,
                         fontFlags,
                         0xFF
                     );
@@ -181,13 +180,13 @@ namespace Continuum93.ServiceModule.UI
                     opcodes = opcodes.PadRight(maxOpcodeLen, ' ');
 
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     opcodes,
                     opcodeColumnX,
                     y,
                     contentRect.Width - Padding * 2,
                     opcodeColor,
-                    Color.Black,
+                    theme.TextOutline,
                     fontFlags,
                     0xFF
                 );
@@ -196,13 +195,13 @@ namespace Continuum93.ServiceModule.UI
                 string instr = line.Instruction ?? string.Empty;
 
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18_thin,
+                    theme.PrimaryFont,
                     instr,
                     instrColumnX,
                     y,
                     contentRect.Width - Padding * 2,
                     instrColor,
-                    Color.Black,
+                    theme.TextOutline,
                     fontFlags,
                     0xFF
                 );

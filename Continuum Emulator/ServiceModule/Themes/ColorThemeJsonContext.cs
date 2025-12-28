@@ -8,8 +8,8 @@ namespace Continuum93.ServiceModule.Themes
 {
     using System.Text.Json.Serialization;
 
-    [JsonSerializable(typeof(ColorThemeData))]
-    public partial class ColorThemeJsonContext : JsonSerializerContext
+    [JsonSerializable(typeof(ThemeData))]
+    public partial class ThemeJsonContext : JsonSerializerContext
     {
         
     }
