@@ -8,6 +8,7 @@ namespace Continuum93.ServiceModule.UI
     {
         public readonly List<Window> Windows = [];
         public Taskbar Taskbar { get; }
+        private Window _focusedWindow;
 
         public WindowManager()
         {
@@ -47,9 +48,11 @@ namespace Continuum93.ServiceModule.UI
             // Default cursor every frame
             Mouse.SetCursor(MouseCursor.Arrow);
 
-            // Clear focus
-            foreach (var w in Windows)
-                w.IsFocused = false;
+            // Drop focus if the focused window is no longer visible
+            if (_focusedWindow != null && !_focusedWindow.Visible)
+            {
+                _focusedWindow = null;
+            }
 
             var mousePos = new Point(mouse.X, mouse.Y);
 
@@ -80,10 +83,16 @@ namespace Continuum93.ServiceModule.UI
 
                 if (w.HandleInput(mouse, prevMouse))
                 {
-                    w.IsFocused = true;
+                    _focusedWindow = w;
                     BringToFront(w);
                     break;
                 }
+            }
+
+            // Update focus flags (persist focus until another window captures input)
+            foreach (var w in Windows)
+            {
+                w.IsFocused = (w == _focusedWindow);
             }
         }
 

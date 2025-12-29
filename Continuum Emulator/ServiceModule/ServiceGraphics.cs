@@ -17,6 +17,7 @@ namespace Continuum93.ServiceModule
 
         private static WindowManager _windowManager;
         private static EmulatorWindow _emulatorWindow;
+        private static ImmediateWindow _immediateWindow;
         private static DisassemblerWindow _disassemblerWindow;
         private static RegisterWindow _registerWindow;
         private static FloatRegWindow _floatRegWindow;
@@ -30,6 +31,7 @@ namespace Continuum93.ServiceModule
         // Expose to ServiceInput so it can send mouse events
         public static WindowManager WindowManager => _windowManager;
         public static EmulatorWindow EmulatorWindow => _emulatorWindow;
+        public static ImmediateWindow ImmediateWindow => _immediateWindow;
 
         public static void Initialize()
         {
@@ -44,6 +46,19 @@ namespace Continuum93.ServiceModule
                 y: 16
             );
             _windowManager.Add(_emulatorWindow);
+
+            // Immediate window
+            _immediateWindow = new ImmediateWindow(
+                "IMMEDIATE",
+                x: 1160,
+                y: 560,
+                width: 420,
+                height: 220,
+                spawnDelaySeconds: 0.15f,
+                canResize: true,
+                canClose: false
+            );
+            _windowManager.Add(_immediateWindow);
 
             // Disassembler window
             _disassemblerWindow = new DisassemblerWindow(
