@@ -1,7 +1,9 @@
+using Continuum93.CodeAnalysis;
 using Continuum93.Emulator;
 using Continuum93.ServiceModule.Parsers;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -34,8 +36,8 @@ namespace Continuum93.ServiceModule.UI
             Color connectionColor = isConnected ? theme.TextGreenYellow : theme.TextIndianRed;
             string connectedStatus = isConnected ? "Connected" : "No signal";
 
-            // Step-by-step mode status (TODO: implement step-by-step mode tracking)
-            bool stepByStepMode = false; // TODO: get from actual state
+            // Step-by-step mode status
+            bool stepByStepMode = DebugState.StepByStep;
             Color stepByStepColor = stepByStepMode ? theme.TextGreenYellow : theme.VideoPaletteNumber;
             string stepByStepStatus = isConnected ? (stepByStepMode ? "CPU debugging" : "CPU running") : "CPU unknown";
 
@@ -55,12 +57,16 @@ namespace Continuum93.ServiceModule.UI
             int currentX = contentRect.X + Padding + 64;
             int historyY = contentRect.Y + Padding;
 
-            // Show History
-            List<DissLine> latestHistory = StepHistory.GetAtMost(6);
+            // Reserve space on the right for status labels
+            int statusMargin = 220;
+            int availableWidth = Math.Max(0, contentRect.Width - Padding * 2 - statusMargin - (currentX - contentRect.X));
+
+            // Show History (fit horizontally, drop oldest that don't fit)
+            List<DissLine> latestHistory = StepHistory.GetFittingWidth(availableWidth, 13, 10);
             for (int i = 0; i < latestHistory.Count; i++)
             {
                 string instruction = latestHistory[i].Instruction ?? "";
-                int width = instruction.Length * 13 + 4; // Approximate width
+                int width = instruction.Length * 13 + 10; // Approximate width with spacing
                 ServiceGraphics.DrawText(
                     Fonts.ModernDOS_12x18,
                     instruction,
@@ -72,7 +78,7 @@ namespace Continuum93.ServiceModule.UI
                     (byte)ServiceFontFlags.DrawOutline,
                     0xFF
                 );
-                currentX += width + 2;
+                currentX += width;
                 ServiceGraphics.DrawText(
                     Fonts.ModernDOS_12x18,
                     ">",

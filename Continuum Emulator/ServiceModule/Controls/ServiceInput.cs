@@ -1,4 +1,5 @@
-﻿using Continuum93.Emulator.Controls;
+﻿using Continuum93.CodeAnalysis;
+using Continuum93.Emulator.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -11,9 +12,17 @@ namespace Continuum93.ServiceModule.Controls
         public void Update(GameTime gameTime)
         {
             // Toggle Service Mode
+            bool wasServiceMode = Service.STATE.ServiceMode;
             if (InputKeyboard.KeyPressed(Service.STATE.ServiceKey))
             {
                 Service.STATE.ToggleServiceMode();
+
+                if (!wasServiceMode && Service.STATE.ServiceMode)
+                {
+                    DebugState.StepByStep = true;
+                    DebugState.MoveNext = false;
+                    Operations.Disassemble(true);
+                }
             }
 
             if (Service.STATE.ServiceMode)

@@ -32,11 +32,22 @@ namespace Continuum93.ServiceModule.UI
             int linesPerPage = Math.Max(1, contentRect.Height / lineHeight);
             int visibleCount = Math.Min(linesPerPage, lines.Count);
 
+            // Get current IP address
+            uint currentIP = Machine.COMPUTER?.CPU.REGS.IPO ?? 0;
+
+            // Determine which slice of lines to show so current IP stays in view
+            int focusIndex = lines.FindIndex(l => l.Address == currentIP);
+            if (focusIndex < 0) focusIndex = 0;
+
+            int startIndex = Math.Max(0, focusIndex - visibleCount / 2);
+            if (startIndex + visibleCount > lines.Count)
+                startIndex = Math.Max(0, lines.Count - visibleCount);
+
             // max opcode length among visible lines
             int maxOpcodeLen = 0;
             for (int i = 0; i < visibleCount; i++)
             {
-                var op = lines[i].OpCodes ?? string.Empty;
+                var op = lines[startIndex + i].OpCodes ?? string.Empty;
                 if (op.Length > maxOpcodeLen)
                     maxOpcodeLen = op.Length;
             }
@@ -45,7 +56,7 @@ namespace Continuum93.ServiceModule.UI
             int maxAddrLen = 0;
             for (int i = 0; i < visibleCount; i++)
             {
-                var addr = lines[i].TextAddress ?? string.Empty;
+                var addr = lines[startIndex + i].TextAddress ?? string.Empty;
                 if (addr.Length > maxAddrLen)
                     maxAddrLen = addr.Length;
             }
@@ -85,12 +96,9 @@ namespace Continuum93.ServiceModule.UI
                 }
             }
 
-            // Get current IP address
-            uint currentIP = Machine.COMPUTER?.CPU.REGS.IPO ?? 0;
-
             for (int i = 0; i < visibleCount; i++)
             {
-                var line = lines[i];
+                var line = lines[startIndex + i];
                 int y = contentRect.Y + Padding + i * lineHeight;
 
                 // Highlight current instruction

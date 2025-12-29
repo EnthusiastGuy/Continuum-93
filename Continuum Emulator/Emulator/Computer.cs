@@ -6,6 +6,7 @@ using Continuum93.Emulator.CPU;
 using Continuum93.Emulator.RAM;
 using Continuum93.Tools;
 using System;
+using System.Threading;
 
 namespace Continuum93.Emulator
 {
@@ -182,12 +183,13 @@ namespace Continuum93.Emulator
                 Log.WriteLine($"Debugger trap in step-by-step");
                 while (!DebugState.MoveNext)
                 {
-                    if (!DebugState.StepByStep)
+                    if (!DebugState.StepByStep || !IsRunning)
                     {
                         Log.WriteLine($"Debug trap exited");
                         break;
                     }
 
+                    Thread.Sleep(1); // yield to allow UI / shutdown to proceed
                 }
                 DebugState.MoveNext = false;
             }
