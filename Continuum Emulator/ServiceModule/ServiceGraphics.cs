@@ -16,6 +16,7 @@ namespace Continuum93.ServiceModule
         public static Theme Theme { get; private set; }
 
         private static WindowManager _windowManager;
+        private static EmulatorWindow _emulatorWindow;
         private static DisassemblerWindow _disassemblerWindow;
         private static RegisterWindow _registerWindow;
         private static FloatRegWindow _floatRegWindow;
@@ -28,6 +29,7 @@ namespace Continuum93.ServiceModule
 
         // Expose to ServiceInput so it can send mouse events
         public static WindowManager WindowManager => _windowManager;
+        public static EmulatorWindow EmulatorWindow => _emulatorWindow;
 
         public static void Initialize()
         {
@@ -35,6 +37,13 @@ namespace Continuum93.ServiceModule
             Theme = ThemeLoader.Load("Data/themes/default.json");
 
             _windowManager = new WindowManager();
+
+            // Emulator window (main view)
+            _emulatorWindow = new EmulatorWindow(
+                x: 16,
+                y: 16
+            );
+            _windowManager.Add(_emulatorWindow);
 
             // Disassembler window
             _disassemblerWindow = new DisassemblerWindow(
@@ -211,13 +220,7 @@ namespace Continuum93.ServiceModule
             var rectFull = Renderer.GetDestinationRectangle(projection.Width, projection.Height);
 
             // --- SERVICE RECT (final position in service mode) ---
-            const int padding = 16;
-            var serviceScreenThumbnail = new Rectangle(
-                padding,
-                padding,
-                projection.Width * 2,   // 480
-                projection.Height * 2   // 270
-            );
+            var serviceScreenThumbnail = GetEmulatorTargetRect(projection);
 
             // Clear the fullscreen backbuffer for the service layout,
             // LERPing from black (normal mode) to dark gray (service mode)
@@ -332,6 +335,27 @@ namespace Continuum93.ServiceModule
             int w = (int)MathHelper.Lerp(from.Width, to.Width, t);
             int h = (int)MathHelper.Lerp(from.Height, to.Height, t);
             return new Rectangle(x, y, w, h);
+        }
+
+        private static Rectangle GetEmulatorTargetRect(Texture2D projection)
+        {
+            if (_emulatorWindow != null)
+            {
+                var viewport = _emulatorWindow.GetViewportRect(projection.Width, projection.Height);
+                if (viewport.Width > 0 && viewport.Height > 0)
+                {
+                    return viewport;
+                }
+            }
+
+            // Fallback to the legacy fixed position/size
+            const int padding = 16;
+            return new Rectangle(
+                padding,
+                padding,
+                projection.Width * 2,   // 480
+                projection.Height * 2   // 270
+            );
         }
     }
 }

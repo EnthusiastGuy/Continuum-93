@@ -20,6 +20,12 @@ namespace Continuum93.ServiceModule.UI
         public static int Padding = 8;
         public static int ResizeGripSize = 12;
 
+        /// <summary>
+        /// Allows derived windows to opt-out of filling the full window background.
+        /// Useful for content that is rendered elsewhere (e.g., the emulator viewport).
+        /// </summary>
+        protected virtual bool ShouldDrawBackground => true;
+
         public WindowManager Manager { get; internal set; }
 
         public string Title;
@@ -398,7 +404,8 @@ namespace Continuum93.ServiceModule.UI
             );
 
             // Background
-            spriteBatch.Draw(pixel, bounds, backgroundColor);
+            if (ShouldDrawBackground)
+                spriteBatch.Draw(pixel, bounds, backgroundColor);
 
             // Title bar area
             spriteBatch.Draw(pixel, TitleBarRect, titleBarColor);
