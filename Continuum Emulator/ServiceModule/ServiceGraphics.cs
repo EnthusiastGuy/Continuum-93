@@ -176,6 +176,9 @@ namespace Continuum93.ServiceModule
                 false
             );
             _windowManager.Add(_virtualScreen3DWindow);
+
+            ServiceLayoutManager.Initialize(_windowManager, _immediateWindow);
+            ServiceLayoutManager.LoadIfPresent();
         }
 
         public void Update(GameTime gameTime)

@@ -28,6 +28,7 @@ namespace Continuum93.ServiceModule.UI
         private int _cursorLine;
         private int _cursorColumn;
         private int _firstVisibleLine;
+        private bool _dirty;
 
         private float _blinkTimer;
         private bool _caretVisible = true;
@@ -136,6 +137,12 @@ namespace Continuum93.ServiceModule.UI
 
             // Characters
             TryInsertCharacter(current, previous, shift);
+
+            if (_dirty)
+            {
+                _dirty = false;
+                ServiceLayoutManager.Save();
+            }
         }
 
         private void TryInsertCharacter(KeyboardState current, KeyboardState previous, bool shift)
@@ -190,6 +197,7 @@ namespace Continuum93.ServiceModule.UI
         {
             foreach (char c in text)
                 InsertChar(c);
+            _dirty = true;
         }
 
         private void InsertChar(char c)
@@ -198,6 +206,7 @@ namespace Continuum93.ServiceModule.UI
             _lines[_cursorLine] = line.Insert(_cursorColumn, c.ToString());
             _cursorColumn++;
             EnsureCursorInBounds();
+            _dirty = true;
         }
 
         private void InsertNewLine()
@@ -209,6 +218,7 @@ namespace Continuum93.ServiceModule.UI
             _lines.Insert(_cursorLine + 1, right);
             _cursorLine++;
             _cursorColumn = 0;
+            _dirty = true;
         }
 
         private void Backspace()
@@ -228,6 +238,7 @@ namespace Continuum93.ServiceModule.UI
                 _cursorColumn = prevLen;
             }
             EnsureCursorInBounds();
+            _dirty = true;
         }
 
         private void Delete()
@@ -243,6 +254,7 @@ namespace Continuum93.ServiceModule.UI
                 _lines.RemoveAt(_cursorLine + 1);
             }
             EnsureCursorInBounds();
+            _dirty = true;
         }
 
         private void MoveLeft()
@@ -292,6 +304,25 @@ namespace Continuum93.ServiceModule.UI
         private void MoveLineStart() => _cursorColumn = 0;
 
         private void MoveLineEnd() => _cursorColumn = _lines[_cursorLine].Length;
+
+        public string GetText() => string.Join("\n", _lines);
+
+        public void SetText(string text)
+        {
+            _lines.Clear();
+            if (string.IsNullOrEmpty(text))
+            {
+                _lines.Add("");
+            }
+            else
+            {
+                var split = text.Replace("\r", string.Empty).Split('\n');
+                _lines.AddRange(split);
+            }
+            _cursorLine = Math.Clamp(_cursorLine, 0, _lines.Count - 1);
+            _cursorColumn = Math.Clamp(_cursorColumn, 0, _lines[_cursorLine].Length);
+            _dirty = false;
+        }
 
         private void EnsureCursorInBounds()
         {
@@ -416,6 +447,7 @@ namespace Continuum93.ServiceModule.UI
             _statusTimer = StatusSeconds;
             if (isError)
                 _caretVisible = true; // reset blink on errors for visibility
+            ServiceLayoutManager.Save();
         }
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)

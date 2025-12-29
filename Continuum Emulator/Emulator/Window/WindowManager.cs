@@ -45,9 +45,18 @@ namespace Continuum93.Emulator.Window
 
             if (_oldState.ClientWidth != _newState.ClientWidth || _oldState.ClientHeight != _newState.ClientHeight)
             {
-
-                int newWidth = (int)(_newState.ClientHeight * 1.7777777777777777777777777777777777f);
-                Renderer.SetPreferredBackBufferSize(newWidth, _newState.ClientHeight);
+                // In service mode, allow free resizing (no enforced aspect)
+                if (!Service.STATE.ServiceMode)
+                {
+                    int newWidth = (int)(_newState.ClientHeight * 1.7777777777777777777777777777777777f);
+                    Renderer.SetPreferredBackBufferSize(newWidth, _newState.ClientHeight);
+                }
+                else
+                {
+                    // Accept user-chosen size
+                    Renderer.SetPreferredBackBufferSize(_newState.ClientWidth, _newState.ClientHeight);
+                    ServiceLayoutManager.Save();
+                }
             }
 
             _gameWindow.Title = 

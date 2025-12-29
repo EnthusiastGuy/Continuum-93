@@ -134,6 +134,7 @@ namespace Continuum93.ServiceModule.UI
                                     w.Visible = false;
                                 }
 
+                                ServiceLayoutManager.Save();
                                 captured = true;
                                 break;
                             }

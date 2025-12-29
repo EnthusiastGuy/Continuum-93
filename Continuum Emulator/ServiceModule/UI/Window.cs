@@ -54,6 +54,7 @@ namespace Continuum93.ServiceModule.UI
         // dragging
         private bool _isDragging;
         private Point _dragOffset;
+        private bool _dragChanged;
 
         // resizing
         private bool _isResizing;
@@ -86,6 +87,22 @@ namespace Continuum93.ServiceModule.UI
 
             _canResize = canResize;
             _canClose = canClose;
+        }
+
+        /// <summary>
+        /// Apply a persisted layout without running the spawn animation.
+        /// </summary>
+        public void ApplyLayout(int x, int y, int width, int height, bool visible)
+        {
+            X = x;
+            Y = y;
+            Width = width;
+            Height = height;
+            Visible = visible;
+
+            _initialTargetHeight = height;
+            _isSpawning = false;
+            _spawnFade = 1f;
         }
 
 
@@ -196,6 +213,7 @@ namespace Continuum93.ServiceModule.UI
                 {
                     X = mousePos.X - _dragOffset.X;
                     Y = mousePos.Y - _dragOffset.Y;
+                    _dragChanged = true;
                 }
 
                 ClampToScreen();
@@ -204,6 +222,11 @@ namespace Continuum93.ServiceModule.UI
                 if (leftJustReleased)
                 {
                     _isDragging = false;
+                    if (_dragChanged)
+                    {
+                        ServiceLayoutManager.Save();
+                        _dragChanged = false;
+                    }
                 }
                 return true;
             }
@@ -281,6 +304,7 @@ namespace Continuum93.ServiceModule.UI
                     Y = newY;
                     Width = newWidth;
                     Height = newHeight;
+                    _dragChanged = true;
 
                     OnResized();
                 }
@@ -289,6 +313,11 @@ namespace Continuum93.ServiceModule.UI
                 {
                     _isResizing = false;
                     _resizeFromLeft = _resizeFromRight = _resizeFromTop = _resizeFromBottom = false;
+                    if (_dragChanged)
+                    {
+                        ServiceLayoutManager.Save();
+                        _dragChanged = false;
+                    }
                 }
                 return true;
             }
@@ -297,6 +326,7 @@ namespace Continuum93.ServiceModule.UI
             if (leftJustPressed && Bounds.Contains(mousePos))
             {
                 IsFocused = true;
+                ServiceLayoutManager.Save();
                 return true;
             }
 

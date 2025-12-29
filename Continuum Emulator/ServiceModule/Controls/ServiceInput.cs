@@ -19,9 +19,15 @@ namespace Continuum93.ServiceModule.Controls
 
                 if (!wasServiceMode && Service.STATE.ServiceMode)
                 {
+                    ServiceLayoutManager.CapturePreServiceSize();
+                    ServiceLayoutManager.OnServiceModeEntered();
                     DebugState.StepByStep = true;
                     DebugState.MoveNext = false;
                     Operations.Disassemble(true);
+                }
+                else if (wasServiceMode && !Service.STATE.ServiceMode)
+                {
+                    ServiceLayoutManager.RestorePreServiceSize();
                 }
             }
 
