@@ -18,7 +18,9 @@
 	CALLR .InputKeyPressed
 	CP A, 1
 	JR Z, .Exit
-		
+	
+	DEBUG
+
 	LD A, 8
 	INT 1, A	; DrawFilledRectangle at
 				; subsequent registers coordinates

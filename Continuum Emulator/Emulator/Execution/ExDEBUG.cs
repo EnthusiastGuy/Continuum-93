@@ -1,6 +1,7 @@
 ﻿using Continuum93.Emulator;
 using Continuum93.CodeAnalysis;
 using Continuum93.CodeAnalysis.Network;
+using Continuum93.ServiceModule;
 
 namespace Continuum93.Emulator.Execution
 {
@@ -17,7 +18,10 @@ namespace Continuum93.Emulator.Execution
             }
 
             // Enter Service mode here
-
+            Service.STATE.ServiceMode = true;
+            DebugState.StepByStep = true;
+            DebugState.MoveNext = false;
+            Operations.Disassemble();
         }
     }
 }

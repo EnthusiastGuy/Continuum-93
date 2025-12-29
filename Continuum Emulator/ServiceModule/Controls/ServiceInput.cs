@@ -16,34 +16,34 @@ namespace Continuum93.ServiceModule.Controls
                 Service.STATE.ToggleServiceMode();
             }
 
-            // Debugging keyboard shortcuts
-            if (InputKeyboard.KeyPressed(Keys.F10))
+            if (Service.STATE.ServiceMode)
             {
-                Operations.Disassemble();
-            }
+                // Debugging keyboard shortcuts (service mode only)
+                if (InputKeyboard.KeyPressed(Keys.F10))
+                {
+                    Operations.Disassemble();
+                }
 
-            if (InputKeyboard.KeyPressed(Keys.Enter))
-            {
-                Operations.Disassemble();
-                Operations.UpdateAll();
-            }
+                if (InputKeyboard.KeyPressed(Keys.Enter))
+                {
+                    Operations.Disassemble();
+                    Operations.UpdateAll();
+                }
 
-            if (InputKeyboard.KeyPressed(Keys.F5))
-            {
-                // TODO: Toggle step-by-step mode
-                // Operations.ToggleStepByStepMode();
-            }
+                if (InputKeyboard.KeyPressed(Keys.F5))
+                {
+                    Operations.ToggleStepByStepMode();
+                }
 
-            if (InputKeyboard.KeyPressed(Keys.F8))
-            {
-                // TODO: Continue execution
-                // Operations.ContinueExecution();
-            }
+                if (InputKeyboard.KeyPressed(Keys.F8))
+                {
+                    Operations.ContinueExecution();
+                }
 
-            if (InputKeyboard.KeyPressed(Keys.F9))
-            {
-                // TODO: Advance step-by-step
-                // Operations.AdvanceStepByStep();
+                if (InputKeyboard.KeyPressed(Keys.F9))
+                {
+                    Operations.AdvanceStepByStep();
+                }
             }
 
             // NEW: mouse -> window system
