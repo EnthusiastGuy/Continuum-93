@@ -10,6 +10,15 @@ namespace Continuum93.ServiceModule.UI
     public class MemoryWindow : Window
     {
         private int _previousScrollValue = 0;
+        
+        // Hover pop-up tracking
+        private MemoryHoverPopup _hoverPopup;
+        private int _hoveredLineIndex = -1;
+        private int _hoveredByteIndex = -1;
+        private int _previousHoveredLineIndex = -1;
+        private int _previousHoveredByteIndex = -1;
+        private float _hoverTimer = 0f;
+        private const float HoverDelay = 0.3f; // 300ms
 
         public MemoryWindow(
             string title,
@@ -22,13 +31,25 @@ namespace Continuum93.ServiceModule.UI
         {
         }
 
+        // Draw the pop-up (called from ServiceGraphics after all windows are drawn)
+        public void DrawHoverPopup()
+        {
+            if (_hoverPopup != null && _hoverPopup.Visible)
+            {
+                _hoverPopup.Draw();
+            }
+        }
+
         protected override void UpdateContent(GameTime gameTime)
         {
             Memory.Update();
 
-            // Handle mouse wheel scrolling
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             var mouse = Mouse.GetState();
-            if (ContentRect.Contains(new Point(mouse.X, mouse.Y)))
+            Point mousePos = new Point(mouse.X, mouse.Y);
+
+            // Handle mouse wheel scrolling
+            if (ContentRect.Contains(mousePos))
             {
                 int scrollDelta = mouse.ScrollWheelValue - _previousScrollValue;
                 if (scrollDelta != 0)
@@ -63,6 +84,180 @@ namespace Continuum93.ServiceModule.UI
                     Memory.Update();
                 }
                 _previousScrollValue = mouse.ScrollWheelValue;
+            }
+
+            // Update hover pop-up
+            UpdateHoverPopup(dt, mousePos);
+            
+            // Update pop-up directly (not managed by WindowManager)
+            if (_hoverPopup != null && _hoverPopup.Visible)
+            {
+                _hoverPopup.Update(gameTime);
+            }
+        }
+
+        private void UpdateHoverPopup(float dt, Point mousePos)
+        {
+            // Hide pop-up if MemoryWindow is not visible
+            if (!Visible)
+            {
+                if (_hoverPopup != null && _hoverPopup.Visible)
+                {
+                    HideHoverPopup();
+                }
+                _hoverTimer = 0f;
+                return;
+            }
+
+            // Check if mouse is over the pop-up (keep it open)
+            bool mouseOverPopup = _hoverPopup != null && _hoverPopup.Visible && _hoverPopup.Bounds.Contains(mousePos);
+            
+            // If mouse moved to a different byte or outside, reset timer
+            if (_hoveredLineIndex != _previousHoveredLineIndex || _hoveredByteIndex != _previousHoveredByteIndex)
+            {
+                _hoverTimer = 0f;
+                _previousHoveredLineIndex = _hoveredLineIndex;
+                _previousHoveredByteIndex = _hoveredByteIndex;
+            }
+
+            // If hovering over a valid byte and not over pop-up, increment timer
+            if (_hoveredLineIndex >= 0 && _hoveredByteIndex >= 0 && !mouseOverPopup)
+            {
+                _hoverTimer += dt;
+                
+                // Show pop-up after delay
+                if (_hoverTimer >= HoverDelay)
+                {
+                    if (_hoverPopup == null || !_hoverPopup.Visible)
+                    {
+                        ShowHoverPopup();
+                    }
+                    else
+                    {
+                        // Update pop-up data if byte changed
+                        UpdateHoverPopupData();
+                    }
+                }
+            }
+            else
+            {
+                // Not hovering over a byte, or mouse is outside
+                if (!mouseOverPopup)
+                {
+                    // Hide pop-up if mouse moved away
+                    if (_hoverPopup != null && _hoverPopup.Visible)
+                    {
+                        HideHoverPopup();
+                    }
+                    _hoverTimer = 0f;
+                }
+            }
+        }
+
+        private void ShowHoverPopup()
+        {
+            if (_hoveredLineIndex < 0 || _hoveredByteIndex < 0)
+                return;
+
+            var lines = Memory.Lines;
+            if (_hoveredLineIndex >= lines.Count)
+                return;
+
+            var line = lines[_hoveredLineIndex];
+            string[] hexParts = line.HexBytes.TrimEnd().Split(' ');
+            
+            if (_hoveredByteIndex >= hexParts.Length)
+                return;
+
+            // Parse the byte value
+            if (!byte.TryParse(hexParts[_hoveredByteIndex], System.Globalization.NumberStyles.HexNumber, null, out byte byteValue))
+                return;
+
+            // Calculate address
+            int address = line.Address + _hoveredByteIndex;
+
+            // Position pop-up near the hovered byte
+            const int lineHeight = 18;
+            int startY = ContentRect.Y + Padding + 24;
+            int byteY = startY + _hoveredLineIndex * lineHeight;
+            
+            var theme = ServiceGraphics.Theme;
+            byte fontFlags = (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline);
+            int addressWidth = theme.PrimaryFont.MeasureText(
+                line.TextAddress,
+                ContentRect.Width - Padding * 2,
+                fontFlags
+            ).width;
+            const int ColumnSpacing = 20;
+            int hexColumnX = ContentRect.X + Padding + addressWidth + ColumnSpacing;
+            
+            // Calculate X position of the hovered byte
+            int byteX = hexColumnX;
+            for (int j = 0; j < _hoveredByteIndex; j++)
+            {
+                int byteWidth = theme.PrimaryFont.MeasureText(hexParts[j], 0, fontFlags).width;
+                byteX += byteWidth;
+                if (j < hexParts.Length - 1)
+                {
+                    int spaceWidth = theme.PrimaryFont.MeasureText(" ", 0, fontFlags).width;
+                    byteX += spaceWidth;
+                }
+            }
+
+            // Position pop-up to the right and slightly below the byte
+            int popupX = byteX + 20;
+            int popupY = byteY;
+            
+            // Ensure pop-up stays on screen
+            var device = Renderer.GetGraphicsDevice();
+            int popupWidth = 200;
+            int popupHeight = 100;
+            if (popupX + popupWidth > device.Viewport.Width)
+                popupX = byteX - popupWidth - 10; // Show to the left instead
+            if (popupY + popupHeight > device.Viewport.Height)
+                popupY = device.Viewport.Height - popupHeight - 10;
+
+            if (_hoverPopup == null)
+            {
+                _hoverPopup = new MemoryHoverPopup(popupX, popupY, address, byteValue);
+                // Don't add to WindowManager - manage it directly to avoid collection modification issues
+            }
+            else
+            {
+                _hoverPopup.X = popupX;
+                _hoverPopup.Y = popupY;
+                _hoverPopup.UpdateData(address, byteValue);
+                _hoverPopup.Visible = true;
+            }
+        }
+
+        private void UpdateHoverPopupData()
+        {
+            if (_hoverPopup == null || _hoveredLineIndex < 0 || _hoveredByteIndex < 0)
+                return;
+
+            var lines = Memory.Lines;
+            if (_hoveredLineIndex >= lines.Count)
+                return;
+
+            var line = lines[_hoveredLineIndex];
+            string[] hexParts = line.HexBytes.TrimEnd().Split(' ');
+            
+            if (_hoveredByteIndex >= hexParts.Length)
+                return;
+
+            if (!byte.TryParse(hexParts[_hoveredByteIndex], System.Globalization.NumberStyles.HexNumber, null, out byte byteValue))
+                return;
+
+            int address = line.Address + _hoveredByteIndex;
+            _hoverPopup.UpdateData(address, byteValue);
+        }
+
+        private void HideHoverPopup()
+        {
+            if (_hoverPopup != null)
+            {
+                _hoverPopup.Visible = false;
             }
         }
 
@@ -103,17 +298,17 @@ namespace Continuum93.ServiceModule.UI
             int charWidth = theme.PrimaryFont.MeasureText("M", 0, fontFlags).width;
 
             // Determine which byte (if any) is being hovered
-            int hoveredLineIndex = -1;
-            int hoveredByteIndex = -1;
+            _hoveredLineIndex = -1;
+            _hoveredByteIndex = -1;
             if (contentRect.Contains(mousePos))
             {
                 int localY = mousePos.Y - startY;
                 if (localY >= 0)
                 {
-                    hoveredLineIndex = localY / lineHeight;
-                    if (hoveredLineIndex >= 0 && hoveredLineIndex < visibleLines)
+                    _hoveredLineIndex = localY / lineHeight;
+                    if (_hoveredLineIndex >= 0 && _hoveredLineIndex < visibleLines)
                     {
-                        var hoveredLine = lines[hoveredLineIndex];
+                        var hoveredLine = lines[_hoveredLineIndex];
                         
                         // Measure address text width
                         int addressWidth = theme.PrimaryFont.MeasureText(
@@ -140,7 +335,7 @@ namespace Continuum93.ServiceModule.UI
                                 // Check if mouse is over this byte
                                 if (localX >= currentX && localX < currentX + byteWidth)
                                 {
-                                    hoveredByteIndex = j;
+                                    _hoveredByteIndex = j;
                                     break;
                                 }
                                 
@@ -221,7 +416,7 @@ namespace Continuum93.ServiceModule.UI
                 int currentHexX = hexColumnX;
                 for (int j = 0; j < hexParts.Length && j < 16; j++)
                 {
-                    bool isHovered = (i == hoveredLineIndex && j == hoveredByteIndex);
+                    bool isHovered = (i == _hoveredLineIndex && j == _hoveredByteIndex);
                     Color hexColor = isHovered ? highlightColor : theme.MemoryByteColor;
 
                     ServiceGraphics.DrawText(
@@ -260,7 +455,7 @@ namespace Continuum93.ServiceModule.UI
                 int currentAsciiX = asciiColumnX;
                 for (int j = 0; j < bytes.Length && j < 16; j++)
                 {
-                    bool isHovered = (i == hoveredLineIndex && j == hoveredByteIndex);
+                    bool isHovered = (i == _hoveredLineIndex && j == _hoveredByteIndex);
                     bool isAscii = bytes[j] >= 32 && bytes[j] <= 127;
                     
                     string asciiChar = isAscii ? ((char)bytes[j]).ToString() : "?";

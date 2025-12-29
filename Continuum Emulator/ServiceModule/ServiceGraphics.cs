@@ -288,6 +288,9 @@ namespace Continuum93.ServiceModule
 
             _windowManager?.Draw();
 
+            // Draw memory hover pop-up after all windows (it's not managed by WindowManager)
+            _memoryWindow?.DrawHoverPopup();
+
             Renderer.GetSpriteBatch().End();
         }
 
