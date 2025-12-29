@@ -29,7 +29,10 @@ namespace Continuum93.ServiceModule.UI
             const int lineHeight = 18;    // matches font size
             const int charWidth = 13;     // monospaced font width
 
-            int linesPerPage = Math.Max(1, contentRect.Height / lineHeight);
+            // Account for the clipped content area (Window.DrawContentClipped applies a 4px inset scissor)
+            // plus the top padding we use for text.
+            int visibleHeight = Math.Max(1, contentRect.Height - 4 - Padding);
+            int linesPerPage = Math.Max(1, visibleHeight / lineHeight);
             int visibleCount = Math.Min(linesPerPage, lines.Count);
 
             // Get current IP address
@@ -42,6 +45,12 @@ namespace Continuum93.ServiceModule.UI
             int startIndex = Math.Max(0, focusIndex - visibleCount / 2);
             if (startIndex + visibleCount > lines.Count)
                 startIndex = Math.Max(0, lines.Count - visibleCount);
+
+            // Ensure the focused line is actually within the visible slice (in case of rounding)
+            if (focusIndex < startIndex)
+                startIndex = focusIndex;
+            if (focusIndex >= startIndex + visibleCount)
+                startIndex = Math.Max(0, focusIndex - visibleCount + 1);
 
             // max opcode length among visible lines
             int maxOpcodeLen = 0;
