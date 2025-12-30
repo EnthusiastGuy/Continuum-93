@@ -30,6 +30,12 @@ namespace Continuum93.ServiceModule.UI
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
             var theme = ServiceGraphics.Theme;
+            var font = Fonts.ModernDOS_12x18;
+            byte fontFlags = (byte)ServiceFontFlags.DrawOutline;
+
+            // Get font metrics for proper alignment
+            int charWidth = font.MeasureText("M", 0, fontFlags).width;
+            int arrowWidth = font.MeasureText(">", 0, fontFlags).width;
 
             // Connection status
             bool isConnected = Machine.COMPUTER != null;
@@ -41,100 +47,113 @@ namespace Continuum93.ServiceModule.UI
             Color stepByStepColor = stepByStepMode ? theme.TextGreenYellow : theme.VideoPaletteNumber;
             string stepByStepStatus = isConnected ? (stepByStepMode ? "CPU debugging" : "CPU running") : "CPU unknown";
 
-            // History
+            // Measure status labels width for proper spacing
+            int stepByStepStatusWidth = font.MeasureText(stepByStepStatus, 0, fontFlags).width;
+            int connectedStatusWidth = font.MeasureText(connectedStatus, 0, fontFlags).width;
+            int statusLabelsWidth = stepByStepStatusWidth + connectedStatusWidth + 20; // 20px spacing between labels
+
+            // History label
+            int historyLabelWidth = font.MeasureText("HISTORY", 0, fontFlags).width;
+            int currentX = contentRect.X + Padding + historyLabelWidth + 10;
+            int historyY = contentRect.Y + Padding;
+
             ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18,
+                font,
                 "HISTORY",
                 contentRect.X + Padding,
-                contentRect.Y + Padding,
+                historyY,
                 contentRect.Width - Padding * 2,
                 theme.TextTitle,
                 theme.TextOutline,
-                (byte)ServiceFontFlags.DrawOutline,
+                fontFlags,
                 0xFF
             );
 
-            int currentX = contentRect.X + Padding + 64;
-            int historyY = contentRect.Y + Padding;
+            // Calculate available width for history (reserve space for status labels on the right)
+            int availableWidth = Math.Max(0, contentRect.Width - Padding - currentX - statusLabelsWidth - Padding);
 
-            // Reserve space on the right for status labels
-            int statusMargin = 220;
-            int availableWidth = Math.Max(0, contentRect.Width - Padding * 2 - statusMargin - (currentX - contentRect.X));
+            // Get current instruction
+            DissLine current = Disassembled.GetCurentInstruction();
+            int? currentAddress = current?.Address;
 
-            // Show History (fit horizontally, drop oldest that don't fit)
-            List<DissLine> latestHistory = StepHistory.GetFittingWidth(availableWidth, 13, 10);
+            // Get history and filter out current instruction if it's already there (using actual font metrics)
+            List<DissLine> latestHistory = StepHistory.GetFittingWidth(availableWidth, font, fontFlags, arrowWidth, currentAddress);
+            
+            // Draw history (red - already executed)
             for (int i = 0; i < latestHistory.Count; i++)
             {
                 string instruction = latestHistory[i].Instruction ?? "";
-                int width = instruction.Length * 13 + 10; // Approximate width with spacing
+                int instructionWidth = font.MeasureText(instruction, 0, fontFlags).width;
+                
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18,
+                    font,
                     instruction,
                     currentX,
                     historyY,
                     contentRect.Width - Padding * 2,
                     theme.VideoPaletteNumber,
                     theme.TextOutline,
-                    (byte)ServiceFontFlags.DrawOutline,
+                    fontFlags,
                     0xFF
                 );
-                currentX += width;
+                currentX += instructionWidth;
+                
+                // Draw arrow separator
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18,
+                    font,
                     ">",
                     currentX,
                     historyY,
                     contentRect.Width - Padding * 2,
                     theme.VideoPaletteNumber,
                     theme.TextOutline,
-                    (byte)ServiceFontFlags.DrawOutline,
+                    fontFlags,
                     0xFF
                 );
-                currentX += 8;
+                currentX += arrowWidth + 10; // 10px spacing after arrow
             }
 
-            // Current instruction
-            DissLine current = Disassembled.GetCurentInstruction();
-            if (current != null)
+            // Draw current instruction (orange - next to execute) only if it's not already in history
+            if (current != null && (latestHistory.Count == 0 || latestHistory[latestHistory.Count - 1].Address != current.Address))
             {
                 string instruction = current.Instruction ?? "";
                 ServiceGraphics.DrawText(
-                    Fonts.ModernDOS_12x18,
+                    font,
                     instruction,
                     currentX,
                     historyY,
                     contentRect.Width - Padding * 2,
                     theme.TextDarkOrange,
                     theme.TextOutline,
-                    (byte)ServiceFontFlags.DrawOutline,
+                    fontFlags,
                     0xFF
                 );
             }
 
-            // Status indicators (right side)
-            int statusX = contentRect.Right - Padding - 200;
+            // Status indicators (right side) - use actual measured widths
+            int statusX = contentRect.Right - Padding - connectedStatusWidth;
             ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18,
-                stepByStepStatus,
-                statusX,
-                historyY,
-                contentRect.Width - Padding * 2,
-                stepByStepColor,
-                theme.TextOutline,
-                (byte)ServiceFontFlags.DrawOutline,
-                0xFF
-            );
-
-            statusX = contentRect.Right - Padding - 100;
-            ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18,
+                font,
                 connectedStatus,
                 statusX,
                 historyY,
                 contentRect.Width - Padding * 2,
                 connectionColor,
                 theme.TextOutline,
-                (byte)ServiceFontFlags.DrawOutline,
+                fontFlags,
+                0xFF
+            );
+
+            statusX -= stepByStepStatusWidth + 20; // 20px spacing
+            ServiceGraphics.DrawText(
+                font,
+                stepByStepStatus,
+                statusX,
+                historyY,
+                contentRect.Width - Padding * 2,
+                stepByStepColor,
+                theme.TextOutline,
+                fontFlags,
                 0xFF
             );
         }

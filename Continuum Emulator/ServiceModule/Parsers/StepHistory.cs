@@ -1,3 +1,4 @@
+using Continuum93.ServiceModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,15 +44,22 @@ namespace Continuum93.ServiceModule.Parsers
             PushToHistory(current);
         }
 
-        public static List<DissLine> GetFittingWidth(int maxWidth, int charWidth, int paddingPerItem)
+        public static List<DissLine> GetFittingWidth(int maxWidth, ServiceFont font, byte fontFlags, int arrowWidth, int? excludeAddress = null)
         {
             List<DissLine> result = new();
             int widthUsed = 0;
+            int paddingPerItem = arrowWidth + 10; // Arrow + spacing
 
             for (int i = _history.Count - 1; i >= 0; i--)
             {
+                // Skip current instruction if it's already in history
+                if (excludeAddress.HasValue && _history[i].Address == excludeAddress.Value)
+                    continue;
+
                 string instr = _history[i].Instruction ?? string.Empty;
-                int width = instr.Length * charWidth + paddingPerItem;
+                // Measure actual width of instruction text
+                int instructionWidth = font.MeasureText(instr, 0, fontFlags).width;
+                int width = instructionWidth + paddingPerItem;
 
                 if (widthUsed + width > maxWidth)
                     break;

@@ -146,7 +146,7 @@ namespace Continuum93.ServiceModule
                 width: 1500,
                 height: 30,
                 0.6f,
-                false,
+                true,
                 false
             );
             _windowManager.Add(_statusBarWindow);
