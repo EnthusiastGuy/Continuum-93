@@ -35,6 +35,11 @@ namespace Continuum93.ServiceModule.UI
             byte flags = CPUState.Flags;
             byte oldFlags = CPUState.OldFlags;
 
+            // Get font metrics for proper line spacing
+            int fontHeight = theme.PrimaryFont.GlyphCellHeight;
+            const byte characterSpacing = 1; // Matches ServiceFont's internal characterSpacing
+            int lineHeight = fontHeight + characterSpacing;
+
             // Title
             ServiceGraphics.DrawText(
                 Fonts.ModernDOS_12x18,
@@ -55,8 +60,12 @@ namespace Continuum93.ServiceModule.UI
             for (byte i = 0; i < 8; i++)
             {
                 int x = originX + i * (int)(charWidth * 4.5f);
-                int y1 = originY + 12;
-                int y2 = originY + 40;
+                
+                // Calculate Y positions based on actual font height
+                int y1 = originY + lineHeight;           // First row of flag names (positive flags)
+                int y1Value = originY + lineHeight * 2;  // Flag value below first row
+                int y2 = originY + lineHeight * 3;       // Second row of flag names (negative flags)
+                int y2Value = originY + lineHeight * 4;  // Flag value below second row
 
                 bool flagValue = CPUState.GetBitValue(flags, i);
                 bool oldFlagValue = CPUState.GetBitValue(oldFlags, i);
@@ -95,7 +104,7 @@ namespace Continuum93.ServiceModule.UI
                     theme.PrimaryFont,
                     (flagValue ? 1 : 0).ToString(),
                     x,
-                    y1 + 12,
+                    y1Value,
                     contentRect.Width - Padding * 2,
                     markColor,
                     theme.TextOutline,
@@ -107,7 +116,7 @@ namespace Continuum93.ServiceModule.UI
                     theme.PrimaryFont,
                     (flagValue ? 0 : 1).ToString(),
                     x,
-                    y2 + 12,
+                    y2Value,
                     contentRect.Width - Padding * 2,
                     markColor,
                     theme.TextOutline,
