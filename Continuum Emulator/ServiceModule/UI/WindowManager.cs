@@ -108,6 +108,14 @@ namespace Continuum93.ServiceModule.UI
                         break;
                     }
                 }
+                else if (w.Visible && w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
+                {
+                    if (sbw.HoverPopup.HandleInput(mouse, prevMouse))
+                    {
+                        // Popup consumed the input (scrolling)
+                        break;
+                    }
+                }
             }
 
             // Update focus flags (persist focus until another window captures input)
@@ -138,6 +146,10 @@ namespace Continuum93.ServiceModule.UI
                 {
                     mw.GetHoverPopup().Update(gameTime);
                 }
+                else if (w.Visible && w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
+                {
+                    sbw.HoverPopup.Update(gameTime);
+                }
             }
         }
 
@@ -161,6 +173,10 @@ namespace Continuum93.ServiceModule.UI
                 else if (w.Visible && w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible)
                 {
                     mw.GetHoverPopup().Draw();
+                }
+                else if (w.Visible && w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
+                {
+                    sbw.HoverPopup.Draw();
                 }
             }
         }

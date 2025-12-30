@@ -8,7 +8,7 @@ namespace Continuum93.ServiceModule.Parsers
     public static class StepHistory
     {
         private static readonly List<DissLine> _history = new();
-        private const int MAX_HISTORY = 100;
+        private const int MAX_HISTORY = 1000; // Increased buffer for better history viewing
         private static int? _lastAddress;
 
         public static void PushToHistory(DissLine line)
@@ -69,6 +69,11 @@ namespace Continuum93.ServiceModule.Parsers
             }
 
             return result;
+        }
+
+        public static List<DissLine> GetAllHistory()
+        {
+            return new List<DissLine>(_history);
         }
     }
 }

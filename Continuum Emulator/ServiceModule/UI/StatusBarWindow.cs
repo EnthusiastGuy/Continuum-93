@@ -3,6 +3,7 @@ using Continuum93.Emulator;
 using Continuum93.ServiceModule.Parsers;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,13 @@ namespace Continuum93.ServiceModule.UI
 {
     public class StatusBarWindow : Window
     {
+        private HistoryHoverPopup _hoverPopup;
+        private float _hoverTimer = 0f;
+        private const float HoverDelay = 0.3f; // 300ms
+        private Rectangle _historyArea;
+
+        public HistoryHoverPopup HoverPopup => _hoverPopup;
+
         public StatusBarWindow(
             string title,
             int x, int y,
@@ -24,7 +32,123 @@ namespace Continuum93.ServiceModule.UI
 
         protected override void UpdateContent(GameTime gameTime)
         {
-            // Status bar updates automatically
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            var mouse = Mouse.GetState();
+            Point mousePos = new Point(mouse.X, mouse.Y);
+
+            // Update hover popup
+            UpdateHoverPopup(dt, mousePos);
+            
+            // Update popup directly if it exists
+            if (_hoverPopup != null && _hoverPopup.Visible)
+            {
+                _hoverPopup.Update(gameTime);
+            }
+        }
+
+        private void UpdateHoverPopup(float dt, Point mousePos)
+        {
+            // Hide pop-up if StatusBarWindow is not visible
+            if (!Visible)
+            {
+                if (_hoverPopup != null && _hoverPopup.Visible)
+                {
+                    HideHoverPopup();
+                }
+                _hoverTimer = 0f;
+                return;
+            }
+
+            // Check if mouse is over the pop-up (keep it open)
+            bool mouseOverPopup = _hoverPopup != null && _hoverPopup.Visible && _hoverPopup.Bounds.Contains(mousePos);
+            
+            // Check if mouse is over history area
+            bool mouseOverHistory = _historyArea.Contains(mousePos);
+            
+            // If hovering over history area and not over pop-up, increment timer
+            if (mouseOverHistory && !mouseOverPopup)
+            {
+                _hoverTimer += dt;
+                
+                // Show pop-up after delay
+                if (_hoverTimer >= HoverDelay)
+                {
+                    if (_hoverPopup == null || !_hoverPopup.Visible)
+                    {
+                        ShowHoverPopup(mousePos);
+                    }
+                    else
+                    {
+                        // Update pop-up data
+                        UpdateHoverPopupData();
+                    }
+                }
+            }
+            else
+            {
+                // Not hovering over history area, or mouse is outside
+                if (!mouseOverPopup)
+                {
+                    // Hide pop-up if mouse moved away
+                    if (_hoverPopup != null && _hoverPopup.Visible)
+                    {
+                        HideHoverPopup();
+                    }
+                    _hoverTimer = 0f;
+                }
+            }
+        }
+
+        private void ShowHoverPopup(Point mousePos)
+        {
+            // Get current instruction
+            DissLine current = Disassembled.GetCurentInstruction();
+            int? currentAddress = current?.Address;
+            
+            // Position pop-up above the history area, centered horizontally
+            int popupWidth = 600;
+            int popupHeight = 500;
+            int popupX = _historyArea.X + (_historyArea.Width / 2) - (popupWidth / 2);
+            int popupY = _historyArea.Y - popupHeight - 10; // Above the history area
+            
+            // Ensure pop-up stays on screen
+            var device = Renderer.GetGraphicsDevice();
+            if (popupX < 0)
+                popupX = 10;
+            if (popupX + popupWidth > device.Viewport.Width)
+                popupX = device.Viewport.Width - popupWidth - 10;
+            if (popupY < 0)
+                popupY = _historyArea.Bottom + 10; // Show below if no room above
+            
+            if (_hoverPopup == null)
+            {
+                _hoverPopup = new HistoryHoverPopup(popupX, popupY, currentAddress);
+            }
+            else
+            {
+                _hoverPopup.X = popupX;
+                _hoverPopup.Y = popupY;
+                _hoverPopup.UpdateCurrentInstruction(currentAddress);
+                _hoverPopup.Visible = true;
+            }
+        }
+
+        private void UpdateHoverPopupData()
+        {
+            if (_hoverPopup == null)
+                return;
+                
+            DissLine current = Disassembled.GetCurentInstruction();
+            int? currentAddress = current?.Address;
+            _hoverPopup.UpdateCurrentInstruction(currentAddress);
+        }
+
+        private void HideHoverPopup()
+        {
+            if (_hoverPopup != null)
+            {
+                _hoverPopup.Visible = false;
+            }
         }
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
@@ -56,6 +180,7 @@ namespace Continuum93.ServiceModule.UI
             int historyLabelWidth = font.MeasureText("HISTORY", 0, fontFlags).width;
             int currentX = contentRect.X + Padding + historyLabelWidth + 10;
             int historyY = contentRect.Y + Padding;
+            int historyAreaStartX = currentX;
 
             ServiceGraphics.DrawText(
                 font,
@@ -71,6 +196,17 @@ namespace Continuum93.ServiceModule.UI
 
             // Calculate available width for history (reserve space for status labels on the right)
             int availableWidth = Math.Max(0, contentRect.Width - Padding - currentX - statusLabelsWidth - Padding);
+            
+            // Track history area for hover detection
+            int fontHeight = font.GlyphCellHeight;
+            const byte characterSpacing = 1;
+            int lineHeight = fontHeight + characterSpacing;
+            _historyArea = new Rectangle(
+                historyAreaStartX,
+                historyY,
+                availableWidth,
+                lineHeight
+            );
 
             // Get current instruction
             DissLine current = Disassembled.GetCurentInstruction();
