@@ -186,110 +186,8 @@ namespace Continuum93.ServiceModule.UI
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
-            // Don't draw if render target isn't ready or window isn't fully spawned
-            if (_renderTarget == null || ContentRect.Height <= 0 || ContentRect.Width <= 0)
-                return;
-
-            if (Video.Layers == null || Video.PaletteCount == 0)
-                return;
-
-            // Note: spriteBatch is already active from DrawContentClipped
-            // We need to end it temporarily to do 3D rendering
-            spriteBatch.End();
-
-            var device = Renderer.GetGraphicsDevice();
-            var oldViewport = device.Viewport;
-            var oldRenderTarget = device.GetRenderTargets();
-
-            // Set render target
-            device.SetRenderTarget(_renderTarget);
-            device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1.0f, 0);
-
-            // Set up viewport for 3D rendering
-            device.Viewport = new Viewport(0, 0, _renderTarget.Width, _renderTarget.Height);
-
-            // Set up the basic effect
-            _basicEffect.View = Matrix.CreateLookAt(_cameraPosition, new Vector3(), Vector3.Up);
-            _basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView(
-                MathHelper.PiOver4, 
-                (float)_renderTarget.Width / _renderTarget.Height, 
-                0.01f, 
-                20);
-
-            // Create rotation matrices
-            Matrix rotationX = Matrix.CreateRotationX(_rotationAngles.X);
-            Matrix rotationY = Matrix.CreateRotationY(_rotationAngles.Y);
-            Matrix rotationZ = Matrix.CreateRotationZ(_rotationAngles.Z);
-            Matrix pan = Matrix.CreateTranslation(_translation);
-
-            // Apply the rotation to the world matrix
-            Matrix rotationMatrix = pan * rotationX * rotationY * rotationZ;
-
-            // Set rasterizer state
-            device.RasterizerState = new RasterizerState()
-            {
-                CullMode = CullMode.None,
-                MultiSampleAntiAlias = true,
-            };
-
-            device.DepthStencilState = DepthStencilState.Default;
-            device.BlendState = BlendState.NonPremultiplied;
-
-            // Draw each layer
-            int layerCount = Math.Min(Video.PaletteCount, 8);
-
-            for (byte drawIndex = 0; drawIndex < layerCount; drawIndex++)
-            {
-                int sourceIndex = MapLayerIndex(drawIndex, layerCount);
-                if (sourceIndex < 0 || sourceIndex >= Video.Layers.Count)
-                    continue;
-
-                if (Video.Layers[sourceIndex] == null)
-                    continue;
-
-                float z = drawIndex * 0.25f;
-                Matrix depth = Matrix.CreateTranslation(0, 0, z);
-                Matrix finalMatrix = depth * rotationMatrix;
-
-                _basicEffect.World = finalMatrix;
-                _basicEffect.Texture = Video.Layers[sourceIndex];
-
-                // Opaque background writes depth; transparent overlays only read depth
-                device.DepthStencilState = drawIndex == 0 ? DepthStencilState.Default : _transparentDepthState;
-
-                foreach (EffectPass pass in _basicEffect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-
-                    // Draw the quad
-                    device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
-                }
-
-                DrawLayerLabel(device, (byte)sourceIndex, z, rotationMatrix, drawIndex == 0 ? DepthStencilState.Default : _transparentDepthState);
-            }
-
-            // Restore render target and viewport
-            device.SetRenderTargets(oldRenderTarget);
-            device.Viewport = oldViewport;
-
-            // Restart sprite batch for drawing the render target
-            // Use the same rasterizer state that DrawContentClipped set up (with scissor test)
-            var raster = new RasterizerState() { ScissorTestEnable = true };
-            spriteBatch.Begin(
-                rasterizerState: raster,
-                blendState: BlendState.AlphaBlend,
-                samplerState: SamplerState.PointClamp
-            );
-
-            // Draw the render target to the window content
-            spriteBatch.Draw(
-                _renderTarget,
-                new Rectangle(
-                    contentRect.X + Padding,
-                    contentRect.Y + Padding,
-                    contentRect.Width - Padding * 2,
-                    contentRect.Height - Padding * 2),
-                Color.White);
+            return;
+            
         }
 
         // Cleanup resources
@@ -392,12 +290,6 @@ namespace Continuum93.ServiceModule.UI
             _basicEffect.Texture = texture;
             _basicEffect.CurrentTechnique.Passes[0].Apply();
             device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _labelVertices, 0, 2);
-        }
-
-        private static int MapLayerIndex(int drawIndex, int totalCount)
-        {
-            // Map draw order to source layer: furthest uses highest index, nearest uses lowest.
-            return (totalCount - 1) - drawIndex;
         }
     }
 }

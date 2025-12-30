@@ -311,7 +311,7 @@ namespace Continuum93.ServiceModule.UI
             int sourceIndex = MapLayerIndex(drawIndex, layerCount);
             if (sourceIndex >= 0 && sourceIndex < Video.Layers.Count && Video.Layers[sourceIndex] != null)
             {
-                float z = (7 - drawIndex) * 0.25f;  // z = 1.75 for drawIndex 0
+                float z = (layerCount - drawIndex) * 0.25f;  // z = 1.75 for drawIndex 0
                 Matrix depth = Matrix.CreateTranslation(0, 0, z);
                 Matrix finalMatrix = depth * rotationMatrix;
 
@@ -331,7 +331,7 @@ namespace Continuum93.ServiceModule.UI
 
                 device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
 
-                DrawLayerLabel(device, (byte)sourceIndex, z, rotationMatrix, DepthStencilState.Default);
+                DrawLayerLabel(device, (byte)(layerCount - sourceIndex), z, rotationMatrix, DepthStencilState.Default);
             }
 
             // Then draw layers 1-7 back-to-front (transparent, closer to camera)
