@@ -55,6 +55,13 @@ namespace Continuum93.ServiceModule.UI
 
         protected override void UpdateContent(GameTime gameTime)
         {
+            // Skip all updates and rendering if window is not visible (minimized/hidden)
+            // This saves significant performance as 3D rendering is intensive
+            if (!Visible)
+            {
+                return;
+            }
+
             if (!_isInitialized)
             {
                 Initialize();
@@ -73,11 +80,9 @@ namespace Continuum93.ServiceModule.UI
                 _rotationAngles.Y = rockingAngle;
             }
 
-            // Render 3D content to render target when needed
-            // We render every frame when visible since video layers update continuously
-            if (Visible && _isInitialized && _basicEffect != null)
+            // Render 3D content every frame since video layers and auto-rotate update continuously
+            if (_isInitialized && _basicEffect != null)
             {
-                // Always render when visible since video layers and auto-rotate update continuously
                 Render3DContent();
                 RefreshRequired = false;
             }
