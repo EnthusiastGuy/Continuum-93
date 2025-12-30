@@ -28,6 +28,7 @@ namespace Continuum93.ServiceModule.UI
             IsOnTop = true;
             // Set height immediately to full size (no spawn animation)
             Height = PopupHeight;
+            _prevMouseState = Mouse.GetState(); // Initialize previous mouse state
         }
         
         // Override Update to skip spawn animation - pop-up should appear immediately
@@ -40,21 +41,8 @@ namespace Continuum93.ServiceModule.UI
 
         protected override void UpdateContent(GameTime gameTime)
         {
-            // Handle mouse wheel scrolling
-            var mouse = Mouse.GetState();
-            var prevMouse = _prevMouseState;
-            
-            if (Bounds.Contains(mouse.Position))
-            {
-                int scrollDelta = mouse.ScrollWheelValue - prevMouse.ScrollWheelValue;
-                if (scrollDelta != 0)
-                {
-                    _scrollOffset -= scrollDelta / 120 * 20; // Each scroll notch moves 20 pixels
-                    _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, _maxScrollOffset));
-                }
-            }
-            
-            _prevMouseState = mouse;
+            // Update previous mouse state for scroll handling
+            _prevMouseState = Mouse.GetState();
         }
         
         private MouseState _prevMouseState;
@@ -78,9 +66,87 @@ namespace Continuum93.ServiceModule.UI
             
             int lineHeight = 18;
             int sectionSpacing = 10;
-            int y = contentRect.Y + Padding - _scrollOffset;
             int contentWidth = contentRect.Width - Padding * 2;
-            int startY = y;
+            
+            // Calculate content height first (without scroll offset) to determine max scroll
+            int tempY = contentRect.Y + Padding;
+            int startY = tempY;
+
+            // First pass: Calculate total content height (without drawing)
+            void MeasureSectionHeader()
+            {
+                tempY += lineHeight;
+            }
+
+            void MeasureMonoText(string text)
+            {
+                tempY += lineHeight;
+            }
+
+            void MeasureWrappedText(string text)
+            {
+                if (string.IsNullOrEmpty(text))
+                {
+                    tempY += lineHeight;
+                    return;
+                }
+
+                // Simple word wrapping measurement
+                string[] words = text.Split(' ');
+                string currentLine = "";
+                
+                foreach (string word in words)
+                {
+                    string testLine = string.IsNullOrEmpty(currentLine) ? word : currentLine + " " + word;
+                    var size = font.MeasureText(testLine, contentWidth, normalFlags);
+                    
+                    if (size.width > contentWidth && !string.IsNullOrEmpty(currentLine))
+                    {
+                        tempY += lineHeight;
+                        currentLine = word;
+                    }
+                    else
+                    {
+                        currentLine = testLine;
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(currentLine))
+                {
+                    tempY += lineHeight;
+                }
+            }
+
+            // Measure all content
+            MeasureSectionHeader(); // "Instruction:"
+            MeasureMonoText(_fullInstruction);
+            tempY += sectionSpacing;
+            MeasureSectionHeader(); // "Opcodes:"
+            MeasureMonoText(_opcodes);
+            tempY += sectionSpacing;
+
+            if (_meta != null)
+            {
+                MeasureSectionHeader(); // "Description:"
+                MeasureWrappedText(_meta.Description);
+                tempY += sectionSpacing;
+                MeasureSectionHeader(); // "Application:"
+                MeasureWrappedText(_meta.Application);
+                tempY += sectionSpacing;
+                MeasureSectionHeader(); // "Operators:"
+                MeasureWrappedText(_meta.Format);
+            }
+
+            // Calculate max scroll offset - stop when last line is visible at bottom
+            int totalContentHeight = tempY - startY;
+            int visibleHeight = contentRect.Height;
+            _maxScrollOffset = Math.Max(0, totalContentHeight - visibleHeight);
+            
+            // Clamp scroll offset to valid range now that we know the max
+            _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, _maxScrollOffset));
+
+            // Second pass: Draw content with scroll offset applied
+            int y = contentRect.Y + Padding - _scrollOffset;
 
             // Helper to draw a section header
             void DrawSectionHeader(string header)
@@ -210,11 +276,6 @@ namespace Continuum93.ServiceModule.UI
                 DrawWrappedText(_meta.Format, theme.TextSecondary);
             }
 
-            // Calculate max scroll offset
-            int totalContentHeight = y - startY + _scrollOffset;
-            int visibleHeight = contentRect.Height;
-            _maxScrollOffset = Math.Max(0, totalContentHeight - visibleHeight);
-
             // Draw overflow indicator (+) at bottom if content is scrollable
             if (_maxScrollOffset > 0 && _scrollOffset < _maxScrollOffset)
             {
@@ -243,8 +304,12 @@ namespace Continuum93.ServiceModule.UI
                 int scrollDelta = mouse.ScrollWheelValue - prevMouse.ScrollWheelValue;
                 if (scrollDelta != 0)
                 {
+                    // Scroll speed: each notch (120 units) moves 20 pixels
+                    // Positive scrollDelta (scrolling down) should decrease scrollOffset (scroll content down)
                     _scrollOffset -= scrollDelta / 120 * 20;
-                    _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, _maxScrollOffset));
+                    // Clamp scroll offset to valid range (use a large temporary max if not calculated yet)
+                    int maxScroll = _maxScrollOffset > 0 ? _maxScrollOffset : 10000;
+                    _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, maxScroll));
                     return true; // Consume scroll input
                 }
             }

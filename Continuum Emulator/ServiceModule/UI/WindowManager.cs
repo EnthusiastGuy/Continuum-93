@@ -88,6 +88,27 @@ namespace Continuum93.ServiceModule.UI
                     break;
                 }
             }
+            
+            // Handle input for hover popups (for scrolling)
+            foreach (var w in Windows)
+            {
+                if (w.Visible && w is DisassemblerWindow dw && dw.HoverPopup != null && dw.HoverPopup.Visible)
+                {
+                    if (dw.HoverPopup.HandleInput(mouse, prevMouse))
+                    {
+                        // Popup consumed the input (scrolling)
+                        break;
+                    }
+                }
+                else if (w.Visible && w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible)
+                {
+                    if (mw.GetHoverPopup().HandleInput(mouse, prevMouse))
+                    {
+                        // Popup consumed the input (scrolling)
+                        break;
+                    }
+                }
+            }
 
             // Update focus flags (persist focus until another window captures input)
             foreach (var w in Windows)
@@ -104,6 +125,19 @@ namespace Continuum93.ServiceModule.UI
             {
                 if (w.Visible)
                     w.Update(gameTime);
+            }
+            
+            // Update hover popups
+            foreach (var w in Windows)
+            {
+                if (w.Visible && w is DisassemblerWindow dw && dw.HoverPopup != null && dw.HoverPopup.Visible)
+                {
+                    dw.HoverPopup.Update(gameTime);
+                }
+                else if (w.Visible && w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible)
+                {
+                    mw.GetHoverPopup().Update(gameTime);
+                }
             }
         }
 
