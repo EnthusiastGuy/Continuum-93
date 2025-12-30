@@ -17,6 +17,8 @@ namespace Continuum93.ServiceModule.UI
         private const int PopupWidth = 600;
         private const int PopupHeight = 500;
         private int? _currentInstructionAddress;
+        private bool _wasVisible = false;
+        private bool _shouldScrollToBottom = false;
 
         public HistoryHoverPopup(int x, int y, int? currentInstructionAddress)
             : base("Instruction History", x, y, PopupWidth, PopupHeight, 0f, false, false)
@@ -25,10 +27,18 @@ namespace Continuum93.ServiceModule.UI
             IsOnTop = true;
             Height = PopupHeight;
             _prevMouseState = Mouse.GetState();
+            _shouldScrollToBottom = true; // Start scrolled to bottom when first created
         }
 
         public override void Update(GameTime gameTime)
         {
+            // Reset scroll to bottom when popup first becomes visible
+            if (Visible && !_wasVisible)
+            {
+                _shouldScrollToBottom = true;
+            }
+            _wasVisible = Visible;
+            
             if (!Visible) return;
             UpdateContent(gameTime);
         }
@@ -61,6 +71,12 @@ namespace Continuum93.ServiceModule.UI
         public void UpdateCurrentInstruction(int? currentInstructionAddress)
         {
             _currentInstructionAddress = currentInstructionAddress;
+        }
+
+        public void ResetScrollToBottom()
+        {
+            _scrollOffset = int.MaxValue; // Will be set to actual max in DrawContent
+            _shouldScrollToBottom = true;
         }
 
         public override bool HandleInput(MouseState mouse, MouseState prevMouse)
@@ -117,6 +133,15 @@ namespace Continuum93.ServiceModule.UI
             
             // Update max scroll offset (scroll from top, showing newest at bottom by default)
             _maxScrollOffset = Math.Max(0, totalItems - linesPerPage);
+            
+            // Scroll to bottom when popup first becomes visible
+            // This ensures the latest instruction (at bottom) is visible when popup first appears
+            if (_shouldScrollToBottom)
+            {
+                _scrollOffset = _maxScrollOffset;
+                _shouldScrollToBottom = false;
+            }
+            
             _scrollOffset = MathHelper.Clamp(_scrollOffset, 0, _maxScrollOffset);
             
             // Calculate which items to show (start from scroll offset)

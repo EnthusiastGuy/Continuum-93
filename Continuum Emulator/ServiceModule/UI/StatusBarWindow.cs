@@ -14,7 +14,9 @@ namespace Continuum93.ServiceModule.UI
     {
         private HistoryHoverPopup _hoverPopup;
         private float _hoverTimer = 0f;
+        private float _closeTimer = 0f;
         private const float HoverDelay = 0.3f; // 300ms
+        private const float CloseDelay = 0.5f; // 500ms delay before closing
         private Rectangle _historyArea;
 
         public HistoryHoverPopup HoverPopup => _hoverPopup;
@@ -65,36 +67,52 @@ namespace Continuum93.ServiceModule.UI
             // Check if mouse is over history area
             bool mouseOverHistory = _historyArea.Contains(mousePos);
             
-            // If hovering over history area and not over pop-up, increment timer
-            if (mouseOverHistory && !mouseOverPopup)
+            // If hovering over history area or popup, reset close timer and increment hover timer
+            if (mouseOverHistory || mouseOverPopup)
             {
-                _hoverTimer += dt;
+                _closeTimer = 0f; // Reset close timer when mouse is over history or popup
                 
-                // Show pop-up after delay
-                if (_hoverTimer >= HoverDelay)
+                // If hovering over history area and not over pop-up, increment hover timer
+                if (mouseOverHistory && !mouseOverPopup)
                 {
-                    if (_hoverPopup == null || !_hoverPopup.Visible)
+                    _hoverTimer += dt;
+                    
+                    // Show pop-up after delay
+                    if (_hoverTimer >= HoverDelay)
                     {
-                        ShowHoverPopup(mousePos);
+                        if (_hoverPopup == null || !_hoverPopup.Visible)
+                        {
+                            ShowHoverPopup(mousePos);
+                        }
+                        else
+                        {
+                            // Update pop-up data
+                            UpdateHoverPopupData();
+                        }
                     }
-                    else
-                    {
-                        // Update pop-up data
-                        UpdateHoverPopupData();
-                    }
+                }
+                else if (mouseOverPopup)
+                {
+                    // Mouse is over popup, keep it open and reset hover timer
+                    _hoverTimer = 0f;
                 }
             }
             else
             {
-                // Not hovering over history area, or mouse is outside
-                if (!mouseOverPopup)
+                // Not hovering over history area or popup
+                _hoverTimer = 0f; // Reset hover timer
+                
+                // Increment close timer
+                if (_hoverPopup != null && _hoverPopup.Visible)
                 {
-                    // Hide pop-up if mouse moved away
-                    if (_hoverPopup != null && _hoverPopup.Visible)
+                    _closeTimer += dt;
+                    
+                    // Hide pop-up after delay
+                    if (_closeTimer >= CloseDelay)
                     {
                         HideHoverPopup();
+                        _closeTimer = 0f;
                     }
-                    _hoverTimer = 0f;
                 }
             }
         }
@@ -129,6 +147,7 @@ namespace Continuum93.ServiceModule.UI
                 _hoverPopup.X = popupX;
                 _hoverPopup.Y = popupY;
                 _hoverPopup.UpdateCurrentInstruction(currentAddress);
+                _hoverPopup.ResetScrollToBottom(); // Reset scroll to bottom each time popup opens
                 _hoverPopup.Visible = true;
             }
         }
