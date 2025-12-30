@@ -180,20 +180,15 @@ namespace Continuum93.ServiceModule.UI
             int charWidth = font.MeasureText("M", 0, fontFlags).width;
             int arrowWidth = font.MeasureText(">", 0, fontFlags).width;
 
-            // Connection status
-            bool isConnected = Machine.COMPUTER != null;
-            Color connectionColor = isConnected ? theme.TextGreenYellow : theme.TextIndianRed;
-            string connectedStatus = isConnected ? "Connected" : "No signal";
-
             // Step-by-step mode status
+            bool isConnected = Machine.COMPUTER != null;
             bool stepByStepMode = DebugState.StepByStep;
             Color stepByStepColor = stepByStepMode ? theme.TextGreenYellow : theme.VideoPaletteNumber;
             string stepByStepStatus = isConnected ? (stepByStepMode ? "CPU debugging" : "CPU running") : "CPU unknown";
 
-            // Measure status labels width for proper spacing
+            // Measure status label width for proper spacing
             int stepByStepStatusWidth = font.MeasureText(stepByStepStatus, 0, fontFlags).width;
-            int connectedStatusWidth = font.MeasureText(connectedStatus, 0, fontFlags).width;
-            int statusLabelsWidth = stepByStepStatusWidth + connectedStatusWidth + 20; // 20px spacing between labels
+            int statusLabelsWidth = stepByStepStatusWidth;
 
             // History label
             int historyLabelWidth = font.MeasureText("HISTORY", 0, fontFlags).width;
@@ -285,21 +280,8 @@ namespace Continuum93.ServiceModule.UI
                 );
             }
 
-            // Status indicators (right side) - use actual measured widths
-            int statusX = contentRect.Right - Padding - connectedStatusWidth;
-            ServiceGraphics.DrawText(
-                font,
-                connectedStatus,
-                statusX,
-                historyY,
-                contentRect.Width - Padding * 2,
-                connectionColor,
-                theme.TextOutline,
-                fontFlags,
-                0xFF
-            );
-
-            statusX -= stepByStepStatusWidth + 20; // 20px spacing
+            // Status indicator (right side) - CPU debugging/running status
+            int statusX = contentRect.Right - Padding - stepByStepStatusWidth;
             ServiceGraphics.DrawText(
                 font,
                 stepByStepStatus,
