@@ -66,6 +66,8 @@ namespace Continuum93.ServiceModule.Themes
         public Color FlagNameColor { get; set; } = new Color(0.5f, 0.5f, 1f);
         public Color FlagValueChangedColor { get; set; } = Color.DarkOrange;
         public Color FlagValueUnchangedColor { get; set; } = Color.White;
+        public Color FlagValueOneColor { get; set; } = Color.Green;
+        public Color FlagValueZeroColor { get; set; } = Color.Red;
 
         // Stack window colors
         public Color StackValueColor { get; set; } = new Color(127, 255, 212); // Aquamarine

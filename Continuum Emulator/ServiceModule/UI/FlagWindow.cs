@@ -39,22 +39,10 @@ namespace Continuum93.ServiceModule.UI
             int fontHeight = theme.PrimaryFont.GlyphCellHeight;
             const byte characterSpacing = 1; // Matches ServiceFont's internal characterSpacing
             int lineHeight = fontHeight + characterSpacing;
-
-            // Title
-            ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18,
-                "Flags",
-                contentRect.X + Padding,
-                contentRect.Y + Padding,
-                contentRect.Width - Padding * 2,
-                theme.TextTitle,
-                theme.TextOutline,
-                (byte)ServiceFontFlags.DrawOutline,
-                0xFF
-            );
+            const int spacingBetweenPairs = 1; // Extra line height spacing between the two pairs of rows
 
             int originX = contentRect.X + Padding;
-            int originY = contentRect.Y + Padding + 24;
+            int originY = contentRect.Y + Padding;
 
             // Draw flags
             for (byte i = 0; i < 8; i++)
@@ -64,15 +52,15 @@ namespace Continuum93.ServiceModule.UI
                 // Calculate Y positions based on actual font height
                 int y1 = originY + lineHeight;           // First row of flag names (positive flags)
                 int y1Value = originY + lineHeight * 2;  // Flag value below first row
-                int y2 = originY + lineHeight * 3;       // Second row of flag names (negative flags)
-                int y2Value = originY + lineHeight * 4;  // Flag value below second row
+                // Add spacing between the two pairs
+                int y2 = originY + lineHeight * 3 + lineHeight * spacingBetweenPairs;       // Second row of flag names (negative flags)
+                int y2Value = originY + lineHeight * 4 + lineHeight * spacingBetweenPairs;  // Flag value below second row
 
                 bool flagValue = CPUState.GetBitValue(flags, i);
                 bool oldFlagValue = CPUState.GetBitValue(oldFlags, i);
                 bool valueChanged = flagValue != oldFlagValue;
 
                 Color regColor = theme.FlagNameColor;
-                Color markColor = valueChanged ? theme.FlagValueChangedColor : theme.FlagValueUnchangedColor;
 
                 // Flag names (positive and negative)
                 ServiceGraphics.DrawText(
@@ -99,14 +87,17 @@ namespace Continuum93.ServiceModule.UI
                     0xFF
                 );
 
-                // Flag values
+                // Flag values - color based on value: 1 = green, 0 = red
+                Color value1Color = flagValue ? theme.FlagValueOneColor : theme.FlagValueZeroColor;
+                Color value0Color = flagValue ? theme.FlagValueZeroColor : theme.FlagValueOneColor;
+
                 ServiceGraphics.DrawText(
                     theme.PrimaryFont,
                     (flagValue ? 1 : 0).ToString(),
                     x,
                     y1Value,
                     contentRect.Width - Padding * 2,
-                    markColor,
+                    value1Color,
                     theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
@@ -118,7 +109,7 @@ namespace Continuum93.ServiceModule.UI
                     x,
                     y2Value,
                     contentRect.Width - Padding * 2,
-                    markColor,
+                    value0Color,
                     theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF

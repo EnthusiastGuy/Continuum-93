@@ -62,6 +62,8 @@ namespace Continuum93.ServiceModule.Themes
         public string FlagNameColor { get; set; }
         public string FlagValueChangedColor { get; set; }
         public string FlagValueUnchangedColor { get; set; }
+        public string FlagValueOneColor { get; set; }
+        public string FlagValueZeroColor { get; set; }
 
         // Stack window colors
         public string StackValueColor { get; set; }

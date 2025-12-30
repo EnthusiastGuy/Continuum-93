@@ -128,6 +128,10 @@ namespace Continuum93.ServiceModule.Themes
                 theme.FlagValueChangedColor = ColorParser.Parse(data.FlagValueChangedColor);
             if (!string.IsNullOrEmpty(data.FlagValueUnchangedColor))
                 theme.FlagValueUnchangedColor = ColorParser.Parse(data.FlagValueUnchangedColor);
+            if (!string.IsNullOrEmpty(data.FlagValueOneColor))
+                theme.FlagValueOneColor = ColorParser.Parse(data.FlagValueOneColor);
+            if (!string.IsNullOrEmpty(data.FlagValueZeroColor))
+                theme.FlagValueZeroColor = ColorParser.Parse(data.FlagValueZeroColor);
 
             // Stack window colors
             if (!string.IsNullOrEmpty(data.StackValueColor))
@@ -217,6 +221,8 @@ namespace Continuum93.ServiceModule.Themes
                 FlagNameColor = ColorParser.Format(theme.FlagNameColor),
                 FlagValueChangedColor = ColorParser.Format(theme.FlagValueChangedColor),
                 FlagValueUnchangedColor = ColorParser.Format(theme.FlagValueUnchangedColor),
+                FlagValueOneColor = ColorParser.Format(theme.FlagValueOneColor),
+                FlagValueZeroColor = ColorParser.Format(theme.FlagValueZeroColor),
 
                 // Stack window colors
                 StackValueColor = ColorParser.Format(theme.StackValueColor),

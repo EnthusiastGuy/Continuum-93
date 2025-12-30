@@ -29,20 +29,7 @@ namespace Continuum93.ServiceModule.UI
             const int charWidth = 13;
             var theme = ServiceGraphics.Theme;
 
-            // Title
-            ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18,
-                "Stacks",
-                contentRect.X + Padding,
-                contentRect.Y + Padding,
-                contentRect.Width - Padding * 2,
-                theme.TextTitle,
-                theme.TextOutline,
-                (byte)ServiceFontFlags.DrawOutline,
-                0xFF
-            );
-
-            int startY = contentRect.Y + Padding + 24;
+            int startY = contentRect.Y + Padding;
 
             // Register stack label
             ServiceGraphics.DrawText(

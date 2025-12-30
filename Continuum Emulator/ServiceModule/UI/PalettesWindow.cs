@@ -27,21 +27,8 @@ namespace Continuum93.ServiceModule.UI
         {
             var theme = ServiceGraphics.Theme;
 
-            // Title
-            ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18,
-                "Video layers",
-                contentRect.X + Padding,
-                contentRect.Y + Padding,
-                contentRect.Width - Padding * 2,
-                theme.TextTitle,
-                theme.TextOutline,
-                (byte)ServiceFontFlags.DrawOutline,
-                0xFF
-            );
-
             var pixel = Renderer.GetPixelTexture();
-            int startY = contentRect.Y + Padding + 24;
+            int startY = contentRect.Y + Padding;
 
             // Draw palettes
             for (int p = 0; p < Video.PaletteCount; p++)
