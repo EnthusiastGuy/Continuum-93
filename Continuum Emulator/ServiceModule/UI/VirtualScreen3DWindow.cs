@@ -37,6 +37,12 @@ namespace Continuum93.ServiceModule.UI
         private const float LabelX = -2.55f;
         private const float LabelZOffsetTowardCamera = -0.0005f;
         private static readonly Color BorderColor = Color.BlueViolet;
+        
+        // Skybox fields
+        private BasicEffect _skyboxEffect;
+        private VertexPositionTexture[] _skyboxVertices;
+        private Texture2D _skyboxTexture;
+        private const float SkyboxSize = 50f;
 
         public VirtualScreen3DWindow(
             string title,
@@ -138,6 +144,7 @@ namespace Continuum93.ServiceModule.UI
 
             BuildLabelGeometry();
             GenerateLayerLabelTextures();
+            InitializeSkybox(device);
 
             _isInitialized = true;
         }
@@ -245,6 +252,8 @@ namespace Continuum93.ServiceModule.UI
             _renderTarget?.Dispose();
             _basicEffect?.Dispose();
             _borderEffect?.Dispose();
+            _skyboxEffect?.Dispose();
+            _skyboxTexture?.Dispose();
             if (_layerLabelTextures != null)
             {
                 foreach (var tex in _layerLabelTextures)
@@ -304,8 +313,8 @@ namespace Continuum93.ServiceModule.UI
             _basicEffect.Projection = Matrix.CreatePerspectiveFieldOfView(
                 MathHelper.PiOver4, 
                 (float)contentRect.Width / contentRect.Height, 
-                0.01f, 
-                20);
+                0.01f,  // Near plane
+                100f);  // Far plane - increased to properly render skybox at all zoom levels
 
             // Create rotation matrices
             Matrix rotationX = Matrix.CreateRotationX(_rotationAngles.X);
@@ -315,6 +324,12 @@ namespace Continuum93.ServiceModule.UI
 
             // Apply the rotation to the world matrix
             Matrix rotationMatrix = pan * rotationX * rotationY * rotationZ;
+
+            // Render skybox first (at infinite distance)
+            if (_skyboxEffect != null && _skyboxVertices != null && _skyboxTexture != null)
+            {
+                RenderSkybox(device, rotationMatrix);
+            }
 
             // Enable alpha blending to support transparency in layers 1-7
             // Use NonPremultiplied blend state for proper alpha blending with transparent textures
@@ -472,6 +487,230 @@ namespace Continuum93.ServiceModule.UI
             _basicEffect.Texture = _layerLabelTextures[labelIndex];
             _basicEffect.CurrentTechnique.Passes[0].Apply();
             device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _labelVertices, 0, 2);
+        }
+
+        private void InitializeSkybox(GraphicsDevice device)
+        {
+            // Create skybox effect
+            _skyboxEffect = new BasicEffect(device)
+            {
+                TextureEnabled = true,
+                VertexColorEnabled = false,
+                Alpha = 1.0f
+            };
+
+            // Generate starfield texture
+            _skyboxTexture = GenerateStarfieldTexture(device, 1024, 1024);
+
+            // Create skybox cube vertices
+            // We'll create a large cube around the scene
+            float s = SkyboxSize;
+            _skyboxVertices = new VertexPositionTexture[]
+            {
+                // Front face
+                new VertexPositionTexture(new Vector3(-s, s, -s), new Vector2(0, 0)),
+                new VertexPositionTexture(new Vector3(s, s, -s), new Vector2(1, 0)),
+                new VertexPositionTexture(new Vector3(-s, -s, -s), new Vector2(0, 1)),
+                new VertexPositionTexture(new Vector3(s, -s, -s), new Vector2(1, 1)),
+                
+                // Back face
+                new VertexPositionTexture(new Vector3(s, s, s), new Vector2(0, 0)),
+                new VertexPositionTexture(new Vector3(-s, s, s), new Vector2(1, 0)),
+                new VertexPositionTexture(new Vector3(s, -s, s), new Vector2(0, 1)),
+                new VertexPositionTexture(new Vector3(-s, -s, s), new Vector2(1, 1)),
+                
+                // Left face
+                new VertexPositionTexture(new Vector3(-s, s, s), new Vector2(0, 0)),
+                new VertexPositionTexture(new Vector3(-s, s, -s), new Vector2(1, 0)),
+                new VertexPositionTexture(new Vector3(-s, -s, s), new Vector2(0, 1)),
+                new VertexPositionTexture(new Vector3(-s, -s, -s), new Vector2(1, 1)),
+                
+                // Right face
+                new VertexPositionTexture(new Vector3(s, s, -s), new Vector2(0, 0)),
+                new VertexPositionTexture(new Vector3(s, s, s), new Vector2(1, 0)),
+                new VertexPositionTexture(new Vector3(s, -s, -s), new Vector2(0, 1)),
+                new VertexPositionTexture(new Vector3(s, -s, s), new Vector2(1, 1)),
+                
+                // Top face
+                new VertexPositionTexture(new Vector3(-s, s, s), new Vector2(0, 0)),
+                new VertexPositionTexture(new Vector3(s, s, s), new Vector2(1, 0)),
+                new VertexPositionTexture(new Vector3(-s, s, -s), new Vector2(0, 1)),
+                new VertexPositionTexture(new Vector3(s, s, -s), new Vector2(1, 1)),
+                
+                // Bottom face
+                new VertexPositionTexture(new Vector3(-s, -s, -s), new Vector2(0, 0)),
+                new VertexPositionTexture(new Vector3(s, -s, -s), new Vector2(1, 0)),
+                new VertexPositionTexture(new Vector3(-s, -s, s), new Vector2(0, 1)),
+                new VertexPositionTexture(new Vector3(s, -s, s), new Vector2(1, 1))
+            };
+        }
+
+        private Texture2D GenerateStarfieldTexture(GraphicsDevice device, int width, int height)
+        {
+            Texture2D texture = new Texture2D(device, width, height);
+            Color[] data = new Color[width * height];
+            Random random = new Random(42); // Fixed seed for consistent starfield
+
+            // Fill with deep space color (very dark blue/black)
+            Color spaceColor = new Color(5, 8, 15);
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = spaceColor;
+            }
+
+            // Add stars of various sizes and brightness
+            int numStars = width * height / 100; // Density of stars
+            
+            for (int i = 0; i < numStars; i++)
+            {
+                int x = random.Next(width);
+                int y = random.Next(height);
+                int idx = y * width + x;
+
+                // Random star brightness and color
+                float brightness = (float)random.NextDouble();
+                
+                if (brightness > 0.98f)
+                {
+                    // Very bright stars (rare)
+                    Color starColor = GetStarColor(random, 240 + random.Next(15));
+                    data[idx] = starColor;
+                    
+                    // Add glow around bright stars
+                    if (x > 0) data[idx - 1] = Color.Lerp(data[idx - 1], starColor, 0.3f);
+                    if (x < width - 1) data[idx + 1] = Color.Lerp(data[idx + 1], starColor, 0.3f);
+                    if (y > 0) data[idx - width] = Color.Lerp(data[idx - width], starColor, 0.3f);
+                    if (y < height - 1) data[idx + width] = Color.Lerp(data[idx + width], starColor, 0.3f);
+                }
+                else if (brightness > 0.95f)
+                {
+                    // Bright stars
+                    data[idx] = GetStarColor(random, 200 + random.Next(40));
+                }
+                else if (brightness > 0.85f)
+                {
+                    // Medium stars
+                    data[idx] = GetStarColor(random, 150 + random.Next(50));
+                }
+                else if (brightness > 0.7f)
+                {
+                    // Dim stars
+                    data[idx] = GetStarColor(random, 100 + random.Next(50));
+                }
+                else
+                {
+                    // Faint stars
+                    data[idx] = GetStarColor(random, 60 + random.Next(40));
+                }
+            }
+
+            // Add some nebula-like color variations (very subtle)
+            for (int i = 0; i < 50; i++)
+            {
+                int centerX = random.Next(width);
+                int centerY = random.Next(height);
+                int radius = 20 + random.Next(60);
+                
+                Color nebulaColor = random.Next(3) switch
+                {
+                    0 => new Color(20, 15, 30, 30), // Purple
+                    1 => new Color(15, 20, 35, 30), // Blue
+                    _ => new Color(30, 15, 20, 30)  // Red
+                };
+
+                for (int dy = -radius; dy <= radius; dy++)
+                {
+                    for (int dx = -radius; dx <= radius; dx++)
+                    {
+                        int px = centerX + dx;
+                        int py = centerY + dy;
+                        
+                        if (px >= 0 && px < width && py >= 0 && py < height)
+                        {
+                            float distance = MathF.Sqrt(dx * dx + dy * dy);
+                            if (distance <= radius)
+                            {
+                                float falloff = 1.0f - (distance / radius);
+                                falloff = falloff * falloff; // Smooth falloff
+                                
+                                int idx = py * width + px;
+                                data[idx] = Color.Lerp(data[idx], nebulaColor, falloff * 0.15f);
+                            }
+                        }
+                    }
+                }
+            }
+
+            texture.SetData(data);
+            return texture;
+        }
+
+        private Color GetStarColor(Random random, int baseBrightness)
+        {
+            // Stars have different colors based on temperature
+            float temp = (float)random.NextDouble();
+            
+            if (temp > 0.95f)
+            {
+                // Blue-white hot stars
+                return new Color(baseBrightness, baseBrightness, 255);
+            }
+            else if (temp > 0.8f)
+            {
+                // White stars
+                return new Color(baseBrightness, baseBrightness, baseBrightness);
+            }
+            else if (temp > 0.5f)
+            {
+                // Yellow-white stars
+                return new Color(baseBrightness, baseBrightness, (int)(baseBrightness * 0.8f));
+            }
+            else if (temp > 0.2f)
+            {
+                // Orange stars
+                return new Color(baseBrightness, (int)(baseBrightness * 0.8f), (int)(baseBrightness * 0.5f));
+            }
+            else
+            {
+                // Red stars
+                return new Color(baseBrightness, (int)(baseBrightness * 0.6f), (int)(baseBrightness * 0.4f));
+            }
+        }
+
+        private void RenderSkybox(GraphicsDevice device, Matrix rotationMatrix)
+        {
+            // Set up skybox effect
+            // Skybox rotates slightly with the scene but doesn't translate
+            // We only want to apply rotation, not translation
+            Matrix skyboxRotation = Matrix.CreateRotationX(_rotationAngles.X * 0.2f) * 
+                                    Matrix.CreateRotationY(_rotationAngles.Y * 0.2f);
+            
+            _skyboxEffect.World = skyboxRotation;
+            _skyboxEffect.View = _basicEffect.View;
+            _skyboxEffect.Projection = _basicEffect.Projection;
+            _skyboxEffect.Texture = _skyboxTexture;
+
+            // Disable depth writes but enable depth test
+            // This ensures skybox is always behind everything
+            device.DepthStencilState = new DepthStencilState
+            {
+                DepthBufferEnable = true,
+                DepthBufferWriteEnable = false,
+                DepthBufferFunction = CompareFunction.LessEqual
+            };
+            
+            device.BlendState = BlendState.Opaque;
+            device.RasterizerState = new RasterizerState
+            {
+                CullMode = CullMode.None
+            };
+
+            // Draw each face of the skybox cube
+            for (int face = 0; face < 6; face++)
+            {
+                _skyboxEffect.CurrentTechnique.Passes[0].Apply();
+                device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _skyboxVertices, face * 4, 2);
+            }
         }
 
         private static int MapLayerIndex(int drawIndex, int totalCount)
