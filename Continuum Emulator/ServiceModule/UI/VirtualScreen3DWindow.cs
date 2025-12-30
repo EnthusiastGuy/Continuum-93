@@ -307,38 +307,38 @@ namespace Continuum93.ServiceModule.UI
             // This makes layer 0 at z=1.75 (furthest), layer 7 at z=0 (closest)
             
             // First, draw the furthest layer (drawIndex 0) using mapped source layer
-            byte drawIndex = 0;
-            int sourceIndex = MapLayerIndex(drawIndex, layerCount);
-            if (sourceIndex >= 0 && sourceIndex < Video.Layers.Count && Video.Layers[sourceIndex] != null)
-            {
-                float z = sourceIndex * 0.25f;  // z = 1.75 for drawIndex 0
-                Matrix depth = Matrix.CreateTranslation(0, 0, z);
-                Matrix finalMatrix = depth * rotationMatrix;
+            //byte drawIndex = 0;
+            //int sourceIndex = MapLayerIndex(drawIndex, layerCount);
+            //if (sourceIndex >= 0 && sourceIndex < Video.Layers.Count && Video.Layers[sourceIndex] != null)
+            //{
+            //    float z = sourceIndex * 0.25f;  // z = 1.75 for drawIndex 0
+            //    Matrix depth = Matrix.CreateTranslation(0, 0, z);
+            //    Matrix finalMatrix = depth * rotationMatrix;
 
-                _basicEffect.World = finalMatrix;
-                _basicEffect.Texture = Video.Layers[sourceIndex];
+            //    _basicEffect.World = finalMatrix;
+            //    _basicEffect.Texture = Video.Layers[sourceIndex];
 
-                // Layer 0 is opaque, use normal depth state with writes enabled
-                device.DepthStencilState = DepthStencilState.Default;
+            //    // Layer 0 is opaque, use normal depth state with writes enabled
+            //    device.DepthStencilState = DepthStencilState.Default;
 
-                _basicEffect.CurrentTechnique.Passes[0].Apply();
+            //    _basicEffect.CurrentTechnique.Passes[0].Apply();
 
-                device.RasterizerState = new RasterizerState()
-                {
-                    CullMode = CullMode.None,
-                    MultiSampleAntiAlias = true,
-                };
+            //    device.RasterizerState = new RasterizerState()
+            //    {
+            //        CullMode = CullMode.None,
+            //        MultiSampleAntiAlias = true,
+            //    };
 
-                device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
+            //    device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
 
-                DrawLayerLabel(device, drawIndex, (byte)sourceIndex, z, rotationMatrix, DepthStencilState.Default);
-            }
+            //    DrawLayerLabel(device, drawIndex, (byte)sourceIndex, z, rotationMatrix, DepthStencilState.Default);
+            //}
 
             // Then draw layers 1-7 back-to-front (transparent, closer to camera)
             // Depth test stays enabled to respect actual 3D ordering; depth writes stay disabled
             device.DepthStencilState = TransparentDepthState;
 
-            for (int layerIndex = 1; layerIndex < layerCount; layerIndex++)
+            for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
             {
                 byte drawIdx = (byte)layerIndex;
                 int srcIndex = MapLayerIndex(drawIdx, layerCount);
