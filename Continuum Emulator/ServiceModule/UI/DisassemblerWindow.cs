@@ -8,6 +8,13 @@ namespace Continuum93.ServiceModule.UI
 {
     public class DisassemblerWindow : Window
     {
+        private DisassemblerHoverPopup _hoverPopup;
+        private int _hoveredLineIndex = -1;          // Absolute index in the lines list
+        private int _hoveredVisibleIndex = -1;       // Index in the visible range (for positioning)
+        private int _previousHoveredLineIndex = -1;
+        private float _hoverTimer = 0f;
+        private const float HoverDelay = 0.5f; // 500ms delay before showing popup
+        
         public DisassemblerWindow(
             string title,
             int x, int y,
@@ -18,6 +25,159 @@ namespace Continuum93.ServiceModule.UI
             : base(title, x, y, width, height, spawnDelaySeconds, canResize, canClose)
         {
         }
+        
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+            
+            if (!Visible) return;
+            
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            var mouse = Mouse.GetState();
+            Point mousePos = new(mouse.X, mouse.Y);
+            
+            UpdateHoverPopup(dt, mousePos);
+        }
+        
+        private void UpdateHoverPopup(float dt, Point mousePos)
+        {
+            // Hide pop-up if DisassemblerWindow is not visible
+            if (!Visible)
+            {
+                if (_hoverPopup != null && _hoverPopup.Visible)
+                {
+                    HideHoverPopup();
+                }
+                _hoverTimer = 0f;
+                return;
+            }
+
+            // Check if mouse is over the pop-up (keep it open)
+            bool mouseOverPopup = _hoverPopup != null && _hoverPopup.Visible && _hoverPopup.Bounds.Contains(mousePos);
+            
+            // If mouse moved to a different line, reset timer
+            if (_hoveredLineIndex != _previousHoveredLineIndex)
+            {
+                _hoverTimer = 0f;
+                _previousHoveredLineIndex = _hoveredLineIndex;
+            }
+
+            // If hovering over a valid line and not over pop-up, increment timer
+            if (_hoveredLineIndex >= 0 && !mouseOverPopup)
+            {
+                _hoverTimer += dt;
+                
+                // Show pop-up after delay
+                if (_hoverTimer >= HoverDelay)
+                {
+                    if (_hoverPopup == null || !_hoverPopup.Visible)
+                    {
+                        ShowHoverPopup();
+                    }
+                    else
+                    {
+                        // Update pop-up data if line changed
+                        UpdateHoverPopupData();
+                    }
+                }
+            }
+            else
+            {
+                // Not hovering over a line, or mouse is outside
+                if (!mouseOverPopup)
+                {
+                    // Hide pop-up if mouse moved away
+                    if (_hoverPopup != null && _hoverPopup.Visible)
+                    {
+                        HideHoverPopup();
+                    }
+                    _hoverTimer = 0f;
+                }
+            }
+        }
+
+        private void ShowHoverPopup()
+        {
+            if (_hoveredLineIndex < 0 || _hoveredVisibleIndex < 0)
+                return;
+
+            var lines = Parsers.Disassembled.Lines;
+            if (_hoveredLineIndex >= lines.Count)
+                return;
+
+            var line = lines[_hoveredLineIndex];
+            
+            // Extract instruction name (first word of instruction)
+            string instruction = line.Instruction ?? "";
+            string instructionName = instruction.Split(' ')[0].Trim();
+            
+            if (string.IsNullOrEmpty(instructionName))
+                return;
+
+            // Calculate position for popup using visible index
+            const int lineHeight = 18;
+            int lineY = ContentRect.Y + Padding + _hoveredVisibleIndex * lineHeight;
+            
+            // Position pop-up to the right of the window
+            int popupX = Bounds.Right + 10;
+            int popupY = lineY;
+            
+            // Ensure pop-up stays on screen
+            var device = Renderer.GetGraphicsDevice();
+            int popupWidth = 500;
+            int popupHeight = 400;
+            if (popupX + popupWidth > device.Viewport.Width)
+                popupX = Bounds.Left - popupWidth - 10; // Show to the left instead
+            if (popupY + popupHeight > device.Viewport.Height)
+                popupY = device.Viewport.Height - popupHeight - 10;
+
+            if (_hoverPopup == null)
+            {
+                _hoverPopup = new DisassemblerHoverPopup(
+                    popupX, popupY, 
+                    instructionName, 
+                    line.Instruction, 
+                    line.OpCodes ?? ""
+                );
+            }
+            else
+            {
+                _hoverPopup.X = popupX;
+                _hoverPopup.Y = popupY;
+                _hoverPopup.UpdateData(instructionName, line.Instruction, line.OpCodes ?? "");
+                _hoverPopup.Visible = true;
+            }
+        }
+
+        private void UpdateHoverPopupData()
+        {
+            if (_hoverPopup == null || _hoveredLineIndex < 0)
+                return;
+
+            var lines = Parsers.Disassembled.Lines;
+            if (_hoveredLineIndex >= lines.Count)
+                return;
+
+            var line = lines[_hoveredLineIndex];
+            string instruction = line.Instruction ?? "";
+            string instructionName = instruction.Split(' ')[0].Trim();
+            
+            if (string.IsNullOrEmpty(instructionName))
+                return;
+
+            _hoverPopup.UpdateData(instructionName, line.Instruction, line.OpCodes ?? "");
+        }
+
+        private void HideHoverPopup()
+        {
+            if (_hoverPopup != null)
+            {
+                _hoverPopup.Visible = false;
+            }
+        }
+        
+        // Public accessor so the window manager can draw the popup on top
+        public DisassemblerHoverPopup HoverPopup => _hoverPopup;
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
@@ -52,15 +212,6 @@ namespace Continuum93.ServiceModule.UI
             if (focusIndex >= startIndex + visibleCount)
                 startIndex = Math.Max(0, focusIndex - visibleCount + 1);
 
-            // max opcode length among visible lines
-            int maxOpcodeLen = 0;
-            for (int i = 0; i < visibleCount; i++)
-            {
-                var op = lines[startIndex + i].OpCodes ?? string.Empty;
-                if (op.Length > maxOpcodeLen)
-                    maxOpcodeLen = op.Length;
-            }
-
             // assume addresses are fixed-width already, but compute max just in case
             int maxAddrLen = 0;
             for (int i = 0; i < visibleCount; i++)
@@ -70,12 +221,10 @@ namespace Continuum93.ServiceModule.UI
                     maxAddrLen = addr.Length;
             }
 
-            // column X positions
+            // column X positions (no opcodes column anymore)
             int addrColumnX = contentRect.X + Padding;
             int addrColumnWidth = maxAddrLen * charWidth;
-            int opcodeColumnX = addrColumnX + addrColumnWidth + charWidth;                // +1 space
-            int opcodeColumnWidth = maxOpcodeLen * charWidth;
-            int instrColumnX = opcodeColumnX + opcodeColumnWidth + charWidth;           // +1 space
+            int instrColumnX = addrColumnX + addrColumnWidth + (charWidth * 2);  // +2 spaces for separation
 
             var theme = ServiceGraphics.Theme;
             Color addrFull = theme.DisassemblerAddressFull;
@@ -94,6 +243,8 @@ namespace Continuum93.ServiceModule.UI
 
             // figure out which line (if any) is hovered
             int hoverIndex = -1;
+            _hoveredLineIndex = -1;
+            _hoveredVisibleIndex = -1;
             if (contentRect.Contains(mousePos))
             {
                 int localY = mousePos.Y - (contentRect.Y + Padding);
@@ -101,7 +252,11 @@ namespace Continuum93.ServiceModule.UI
                 {
                     int idx = localY / lineHeight;
                     if (idx >= 0 && idx < visibleCount)
+                    {
                         hoverIndex = idx;
+                        _hoveredLineIndex = startIndex + idx;  // Store absolute index
+                        _hoveredVisibleIndex = idx;            // Store visible index
+                    }
                 }
             }
 
@@ -188,25 +343,6 @@ namespace Continuum93.ServiceModule.UI
                         0xFF
                     );
                 }
-
-                // --- opcodes column (dark blue, padded to maxOpcodeLen) ---
-                string opcodes = line.OpCodes ?? string.Empty;
-                if (opcodes.Length > maxOpcodeLen)
-                    opcodes = opcodes.Substring(0, maxOpcodeLen);
-                else
-                    opcodes = opcodes.PadRight(maxOpcodeLen, ' ');
-
-                ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
-                    opcodes,
-                    opcodeColumnX,
-                    y,
-                    contentRect.Width - Padding * 2,
-                    opcodeColor,
-                    theme.TextOutline,
-                    fontFlags,
-                    0xFF
-                );
 
                 // --- instruction (orange) ---
                 string instr = line.Instruction ?? string.Empty;

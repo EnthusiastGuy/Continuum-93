@@ -116,6 +116,19 @@ namespace Continuum93.ServiceModule.UI
             }
 
             Taskbar?.Draw();
+            
+            // Draw hover popups on top of everything
+            foreach (var w in Windows)
+            {
+                if (w.Visible && w is DisassemblerWindow dw && dw.HoverPopup != null && dw.HoverPopup.Visible)
+                {
+                    dw.HoverPopup.Draw();
+                }
+                else if (w.Visible && w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible)
+                {
+                    mw.GetHoverPopup().Draw();
+                }
+            }
         }
     }
 }

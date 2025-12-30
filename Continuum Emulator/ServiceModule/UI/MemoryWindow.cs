@@ -39,6 +39,9 @@ namespace Continuum93.ServiceModule.UI
                 _hoverPopup.Draw();
             }
         }
+        
+        // Public accessor so the window manager can draw the popup on top
+        public MemoryHoverPopup GetHoverPopup() => _hoverPopup;
 
         protected override void UpdateContent(GameTime gameTime)
         {
