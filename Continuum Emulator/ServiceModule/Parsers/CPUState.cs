@@ -35,14 +35,21 @@ namespace Continuum93.ServiceModule.Parsers
             var cpu = Machine.COMPUTER.CPU;
             var memc = Machine.COMPUTER.MEMC;
 
+            // Clear register change flags at the start of each update
+            // This ensures flags are only set for one step, then reset
+            for (int i = 0; i < 26; i++)
+            {
+                _regModified[i] = false;
+            }
+
             // Update registers
             var newRegs = cpu.REGS.GetCurrentRegisterPageData();
             bool anyRegisterChanged = false;
             for (int i = 0; i < 26; i++)
             {
-                _regModified[i] = newRegs[i] != _regPage0[i];
-                if (_regModified[i])
+                if (newRegs[i] != _regPage0[i])
                 {
+                    _regModified[i] = true;
                     anyRegisterChanged = true;
                 }
             }

@@ -14,7 +14,7 @@ namespace Continuum93.ServiceModule.Themes
         public Color WindowTitleBarFocused { get; set; } = new Color(40, 40, 80);
         public Color WindowTitleBarOnTop { get; set; } = new Color(60, 60, 120);
         public Color WindowBackgroundUnfocused { get; set; } = new Color(5, 5, 5, 250);
-        public Color WindowBackgroundFocused { get; set; } = new Color(5, 5, 5, 128);
+        public Color WindowBackgroundFocused { get; set; } = new Color(5, 5, 5, 220);
         public Color WindowResizeGrip { get; set; } = Color.DimGray;
         public Color WindowCloseButton { get; set; } = Color.Red;
         public Color WindowTitleText { get; set; } = Color.DarkOrange;
