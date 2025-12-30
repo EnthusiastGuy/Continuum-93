@@ -15,6 +15,7 @@ namespace Continuum93.ServiceModule.Parsers
         private static byte _flags = 0;
         private static byte[] _regMemoryData = new byte[26 * 16];
         private static int _ipAddress = 0;
+        private static int _previousIpAddress = 0;
         private static bool[] _regModified = new bool[26];
 
         public static byte[] RegPage0 => _regPage0;
@@ -35,32 +36,41 @@ namespace Continuum93.ServiceModule.Parsers
             var cpu = Machine.COMPUTER.CPU;
             var memc = Machine.COMPUTER.MEMC;
 
-            // Clear register change flags at the start of each update
-            // This ensures flags are only set for one step, then reset
-            for (int i = 0; i < 26; i++)
-            {
-                _regModified[i] = false;
-            }
+            // Update IP address first to detect new instruction execution
+            int newIpAddress = (int)cpu.REGS.IPO;
+            bool newInstructionExecuted = (newIpAddress != _ipAddress);
+            _ipAddress = newIpAddress;
 
             // Update registers
             var newRegs = cpu.REGS.GetCurrentRegisterPageData();
-            bool anyRegisterChanged = false;
+            
+            // Only clear register change flags when a new instruction has executed
+            // This ensures flags persist for the duration of the frame until next instruction
+            if (newInstructionExecuted)
+            {
+                for (int i = 0; i < 26; i++)
+                {
+                    _regModified[i] = false;
+                }
+            }
+
+            // Only update old values when a new instruction has executed
+            // This preserves the previous instruction's register values for comparison
+            if (newInstructionExecuted)
+            {
+                Array.Copy(_regPage0, _regPageOld, 26);
+            }
+
+            // Check which registers changed by comparing new values with current values
+            // Only registers that change in THIS update will be marked as modified
             for (int i = 0; i < 26; i++)
             {
                 if (newRegs[i] != _regPage0[i])
                 {
                     _regModified[i] = true;
-                    anyRegisterChanged = true;
                 }
             }
             
-            // Only update old values when registers actually change
-            // This ensures step-by-step mode properly highlights changes
-            if (anyRegisterChanged)
-            {
-                // Copy current values to old before updating to new
-                Array.Copy(_regPage0, _regPageOld, 26);
-            }
             _regPage0 = newRegs;
             _regPageIndex = cpu.REGS.GetRegisterBank();
 
@@ -74,9 +84,6 @@ namespace Continuum93.ServiceModule.Parsers
             // Update flags
             _oldFlags = _flags;
             _flags = cpu.FLAGS.GetFlagsByte();
-
-            // Update IP address
-            _ipAddress = (int)cpu.REGS.IPO;
 
             // Update memory pointed by registers
             _regMemoryData = memc.GetMemoryPointedByAllAddressingRegisters();
