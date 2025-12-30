@@ -72,17 +72,27 @@ namespace Continuum93.ServiceModule.Parsers
             var videoBuffer = graphics.GetVideoBuffer();
             for (int p = 0; p < PaletteCount && p < 8; p++)
             {
+                // Start each layer fully transparent so color index 0 (background) is see-through for layers 1-7
+                // Layer 0 will overwrite with its palette value (including index 0)
+                for (int i = 0; i < _layerColorData.Length; i++)
+                {
+                    _layerColorData[i] = Color.Transparent;
+                }
+
                 int videoOffset = p * (int)Constants.V_SIZE;
                 for (int i = 0; i < Constants.V_SIZE; i++)
                 {
                     if (videoOffset + i < videoBuffer.Length)
                     {
                         byte colorIndex = videoBuffer[videoOffset + i];
-                        if (colorIndex == 0 && p > 0)
+                        // For layers 1-7, palette index 0 is transparent; layer 0 keeps palette color 0
+                        if (colorIndex == 0 && p < 7)
                         {
                             _layerColorData[i] = Color.Transparent;
+                            continue; // keep transparent explicitly
                         }
-                        else if (p < Palettes.Length && Palettes[p] != null && colorIndex < Palettes[p].Length)
+
+                        if (p < Palettes.Length && Palettes[p] != null && colorIndex < Palettes[p].Length)
                         {
                             _layerColorData[i] = Palettes[p][colorIndex];
                         }

@@ -22,6 +22,18 @@ namespace Continuum93.ServiceModule.UI
         private bool _isInitialized = false;
         private RenderTarget2D _renderTarget;
         private bool _renderTargetDirty = true;
+        private static readonly DepthStencilState TransparentDepthState = new DepthStencilState
+        {
+            DepthBufferEnable = true,
+            DepthBufferWriteEnable = false
+        };
+        private Texture2D[] _layerLabelTextures;
+        private VertexPositionTexture[] _labelVertices;
+        private const float LabelBaseY = 1.1f;
+        private const float LabelStepY = -0.32f;
+        // Place label just outside the quad's left edge (quad spans -2.4..2.4 in X)
+        private const float LabelX = -2.55f;
+        private const float LabelZOffsetTowardCamera = -0.0005f;
 
         public VirtualScreen3DWindow(
             string title,
@@ -102,6 +114,9 @@ namespace Continuum93.ServiceModule.UI
                 new VertexPositionTexture(new Vector3(-2.40f, -1.35f, 0), new Vector2(0, 1)),
                 new VertexPositionTexture(new Vector3(2.40f, -1.35f, 0), new Vector2(1, 1))
             };
+
+            BuildLabelGeometry();
+            GenerateLayerLabelTextures();
 
             _isInitialized = true;
         }
@@ -208,6 +223,13 @@ namespace Continuum93.ServiceModule.UI
         {
             _renderTarget?.Dispose();
             _basicEffect?.Dispose();
+            if (_layerLabelTextures != null)
+            {
+                foreach (var tex in _layerLabelTextures)
+                {
+                    tex?.Dispose();
+                }
+            }
         }
 
         private void Render3DContent()
@@ -276,22 +298,25 @@ namespace Continuum93.ServiceModule.UI
             // Use NonPremultiplied blend state for proper alpha blending with transparent textures
             device.BlendState = BlendState.NonPremultiplied;
 
+            int layerCount = Math.Min(Video.PaletteCount, 8);
+
             // Draw layers in correct order for transparency:
             // 1. Draw layer 0 first (opaque, furthest back) with depth writes enabled
-            // 2. Draw layers 7-1 back-to-front (transparent, closer) with depth writes disabled
+            // 2. Draw layers 1-7 back-to-front (transparent) with depth test on but depth writes off
             // INVERT z values so layer 0 is furthest: z = (7 - i) * 0.25f
             // This makes layer 0 at z=1.75 (furthest), layer 7 at z=0 (closest)
             
-            // First, draw layer 0 (opaque, furthest)
-            byte layer0 = 0;
-            if (layer0 < Video.PaletteCount && layer0 < Video.Layers.Count && Video.Layers[layer0] != null)
+            // First, draw the furthest layer (drawIndex 0) using mapped source layer
+            byte drawIndex = 0;
+            int sourceIndex = MapLayerIndex(drawIndex, layerCount);
+            if (sourceIndex >= 0 && sourceIndex < Video.Layers.Count && Video.Layers[sourceIndex] != null)
             {
-                float z = (7 - layer0) * 0.25f;  // z = 1.75
+                float z = (7 - drawIndex) * 0.25f;  // z = 1.75 for drawIndex 0
                 Matrix depth = Matrix.CreateTranslation(0, 0, z);
                 Matrix finalMatrix = depth * rotationMatrix;
 
                 _basicEffect.World = finalMatrix;
-                _basicEffect.Texture = Video.Layers[layer0];
+                _basicEffect.Texture = Video.Layers[sourceIndex];
 
                 // Layer 0 is opaque, use normal depth state with writes enabled
                 device.DepthStencilState = DepthStencilState.Default;
@@ -305,33 +330,27 @@ namespace Continuum93.ServiceModule.UI
                 };
 
                 device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
+
+                DrawLayerLabel(device, (byte)sourceIndex, z, rotationMatrix, DepthStencilState.Default);
             }
 
-            // Then draw layers 7-1 back-to-front (transparent, closer to camera)
-            // For proper transparency with multiple overlapping layers:
-            // - Disable depth testing entirely for transparent layers
-            //   This ensures all transparent layers render regardless of depth
-            // - Disable depth writes (so transparent pixels don't block later layers)
-            // - Draw back-to-front so transparency blends correctly
-            // Note: We rely on draw order (back-to-front) for correct layering
-            device.DepthStencilState = new DepthStencilState
-            {
-                DepthBufferEnable = false,  // Disable depth testing for transparent layers
-                DepthBufferWriteEnable = false  // Don't write depth
-            };
+            // Then draw layers 1-7 back-to-front (transparent, closer to camera)
+            // Depth test stays enabled to respect actual 3D ordering; depth writes stay disabled
+            device.DepthStencilState = TransparentDepthState;
 
-            for (int layerIndex = 7; layerIndex >= 1; layerIndex--)
+            for (int layerIndex = 1; layerIndex < layerCount; layerIndex++)
             {
-                byte i = (byte)layerIndex;
-                if (i < Video.PaletteCount && i < Video.Layers.Count && Video.Layers[i] != null)
+                byte drawIdx = (byte)layerIndex;
+                int srcIndex = MapLayerIndex(drawIdx, layerCount);
+                if (srcIndex >= 0 && srcIndex < Video.Layers.Count && Video.Layers[srcIndex] != null)
                 {
                     // Invert z: layer 7 at z=0 (closest), layer 1 at z=1.5
-                    float z = (7 - i) * 0.25f;
+                    float z = (7 - drawIdx) * 0.25f;
                     Matrix depth = Matrix.CreateTranslation(0, 0, z);
                     Matrix finalMatrix = depth * rotationMatrix;
 
                     _basicEffect.World = finalMatrix;
-                    _basicEffect.Texture = Video.Layers[i];
+                    _basicEffect.Texture = Video.Layers[srcIndex];
 
                     // Start rendering with the basic effect
                     _basicEffect.CurrentTechnique.Passes[0].Apply();
@@ -344,6 +363,8 @@ namespace Continuum93.ServiceModule.UI
 
                     // Draw the quad
                     device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
+
+                    DrawLayerLabel(device, (byte)srcIndex, z, rotationMatrix, TransparentDepthState);
                 }
             }
 
@@ -362,6 +383,98 @@ namespace Continuum93.ServiceModule.UI
             // Just draw the pre-rendered 3D content as a texture
             // The sprite batch is already active, so we can draw directly
             spriteBatch.Draw(_renderTarget, contentRect, Color.White);
+        }
+
+        private void BuildLabelGeometry()
+        {
+            _labelVertices = new VertexPositionTexture[]
+            {
+                new VertexPositionTexture(new Vector3(-0.35f, 0.15f, 0), new Vector2(0, 0)),
+                new VertexPositionTexture(new Vector3( 0.35f, 0.15f, 0), new Vector2(1, 0)),
+                new VertexPositionTexture(new Vector3(-0.35f,-0.15f, 0), new Vector2(0, 1)),
+                new VertexPositionTexture(new Vector3( 0.35f,-0.15f, 0), new Vector2(1, 1))
+            };
+        }
+
+        private void GenerateLayerLabelTextures()
+        {
+            var device = Renderer.GetGraphicsDevice();
+            var spriteBatch = Renderer.GetSpriteBatch();
+            var font = Fonts.ModernDOS_12x18 ?? Fonts.ModernDOS_10x16 ?? Fonts.ModernDOS_10x15;
+
+            if (device == null || spriteBatch == null || font == null)
+                return;
+
+            _layerLabelTextures = new Texture2D[8];
+
+            // Preserve current state
+            var oldTargets = device.GetRenderTargets();
+            var oldViewport = device.Viewport;
+
+            for (int i = 0; i < 8; i++)
+            {
+                var rt = new RenderTarget2D(device, 64, 32, false, SurfaceFormat.Color, DepthFormat.None);
+                device.SetRenderTarget(rt);
+                device.Clear(Color.Transparent);
+
+                spriteBatch.Begin(
+                    SpriteSortMode.Deferred,
+                    BlendState.NonPremultiplied,
+                    SamplerState.PointClamp,
+                    DepthStencilState.None,
+                    RasterizerState.CullNone);
+
+                string label = i.ToString();
+                var (w, h, _) = font.MeasureText(label, 0, 0);
+                float x = (rt.Width - w) * 0.5f;
+                float y = (rt.Height - h) * 0.5f;
+
+                font.DrawString(
+                    label,
+                    x,
+                    y,
+                    Color.Yellow,
+                    rt.Width,
+                    0,
+                    Color.Black,
+                    0);
+
+                spriteBatch.End();
+
+                device.SetRenderTargets(oldTargets);
+                device.Viewport = oldViewport;
+
+                _layerLabelTextures[i] = rt;
+            }
+        }
+
+        private void DrawLayerLabel(GraphicsDevice device, byte layerIndex, float layerZ, Matrix rotationMatrix, DepthStencilState depthState)
+        {
+            if (_layerLabelTextures == null ||
+                layerIndex >= _layerLabelTextures.Length ||
+                _layerLabelTextures[layerIndex] == null ||
+                _labelVertices == null)
+                return;
+
+            // Keep label on same plane, tiny nudge toward camera to avoid z-fighting
+            float z = layerZ + LabelZOffsetTowardCamera;
+            Matrix labelOffset = Matrix.CreateTranslation(LabelX, LabelBaseY + LabelStepY * layerIndex, 0);
+            Matrix depth = Matrix.CreateTranslation(0, 0, z);
+            Matrix finalMatrix = labelOffset * depth * rotationMatrix;
+
+            device.DepthStencilState = depthState;
+            device.BlendState = BlendState.NonPremultiplied;
+
+            _basicEffect.World = finalMatrix;
+            _basicEffect.Texture = _layerLabelTextures[layerIndex];
+            _basicEffect.CurrentTechnique.Passes[0].Apply();
+            device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _labelVertices, 0, 2);
+        }
+
+        private static int MapLayerIndex(int drawIndex, int totalCount)
+        {
+            // Map draw order to source layer: furthest uses highest index, nearest uses lowest.
+            return (totalCount - 1) - drawIndex;
         }
     }
 }
