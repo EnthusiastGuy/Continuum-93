@@ -20,15 +20,8 @@ namespace Continuum93.ServiceModule.UI
         private Vector3 _cameraPosition = new(0, 0, 6);
         private Vector3 _lastMousePosition;
         private bool _autoRotate = true;
-        private double _localTimeMS = 0;
         private bool _isInitialized = false;
         private RenderTarget2D _renderTarget;
-        private bool _renderTargetDirty = true;
-        private static readonly DepthStencilState TransparentDepthState = new DepthStencilState
-        {
-            DepthBufferEnable = true,
-            DepthBufferWriteEnable = false
-        };
         private Texture2D[] _layerLabelTextures;
         private VertexPositionTexture[] _labelVertices;
         private const float LabelBaseY = 1.1f;
@@ -43,6 +36,11 @@ namespace Continuum93.ServiceModule.UI
         private VertexPositionTexture[] _skyboxVertices;
         private Texture2D _skyboxTexture;
         private const float SkyboxSize = 50f;
+        
+        // Cached graphics states to avoid per-frame allocations
+        private static RasterizerState _rasterizerState;
+        private static DepthStencilState _skyboxDepthState;
+        private static DepthStencilState _layerDepthState;
 
         public VirtualScreen3DWindow(
             string title,
@@ -73,25 +71,15 @@ namespace Continuum93.ServiceModule.UI
 
                 float rockingAngle = amplitude * MathF.Sin(frequency * time);
                 _rotationAngles.Y = rockingAngle;
-                _renderTargetDirty = true;
             }
 
             // Render 3D content to render target when needed
             // We render every frame when visible since video layers update continuously
             if (Visible && _isInitialized && _basicEffect != null)
             {
-                if (_renderTargetDirty || RefreshRequired)
-                {
-                    Render3DContent();
-                    _renderTargetDirty = false;
-                    RefreshRequired = false;
-                }
-                else
-                {
-                    // Also render if video layers are available (they update every frame)
-                    // This ensures the 3D view stays in sync with video updates
-                    Render3DContent();
-                }
+                // Always render when visible since video layers and auto-rotate update continuously
+                Render3DContent();
+                RefreshRequired = false;
             }
         }
 
@@ -145,6 +133,7 @@ namespace Continuum93.ServiceModule.UI
             BuildLabelGeometry();
             GenerateLayerLabelTextures();
             InitializeSkybox(device);
+            InitializeGraphicsStates();
 
             _isInitialized = true;
         }
@@ -176,12 +165,10 @@ namespace Continuum93.ServiceModule.UI
             if (scrollWheelValue > _lastMousePosition.Z)
             {
                 _cameraPosition.Z -= _zoomSpeed;
-                _renderTargetDirty = true;
             }
             else if (scrollWheelValue < _lastMousePosition.Z)
             {
                 _cameraPosition.Z += _zoomSpeed;
-                _renderTargetDirty = true;
             }
 
             Vector3 currentMousePosition = new(mouse.X, mouse.Y, scrollWheelValue);
@@ -207,7 +194,6 @@ namespace Continuum93.ServiceModule.UI
                 // Update rotation angles based on mouse movement
                 _rotationAngles.Y += mouseDelta.X * _rotationSpeed; // Y-axis rotation
                 _rotationAngles.X += mouseDelta.Y * _rotationSpeed; // X-axis rotation
-                _renderTargetDirty = true;
             }
             else if (mouse.MiddleButton == ButtonState.Pressed)
             {
@@ -223,7 +209,6 @@ namespace Continuum93.ServiceModule.UI
                 mouseDelta = currentMousePosition - _lastMousePosition;
                 _translation.X += mouseDelta.X * 0.01f;
                 _translation.Y -= mouseDelta.Y * 0.01f;
-                _renderTargetDirty = true;
             }
 
             // Always update last mouse position (matching ContinuumTools)
@@ -238,13 +223,12 @@ namespace Continuum93.ServiceModule.UI
         protected override void OnResized()
         {
             base.OnResized();
-            // Recreate render target if needed
+            // Recreate render target on next render
             if (_renderTarget != null)
             {
                 _renderTarget.Dispose();
                 _renderTarget = null;
             }
-            _renderTargetDirty = true;
         }
 
         public void Dispose()
@@ -260,7 +244,11 @@ namespace Continuum93.ServiceModule.UI
                 {
                     tex?.Dispose();
                 }
+                _layerLabelTextures = null;
             }
+            
+            // Note: Static graphics states are shared and should only be disposed when no windows exist
+            // We don't dispose them here as other instances might still be using them
         }
 
         private void Render3DContent()
@@ -339,7 +327,8 @@ namespace Continuum93.ServiceModule.UI
 
             // Then draw layers 1-7 back-to-front (transparent, closer to camera)
             // Depth test stays enabled to respect actual 3D ordering; depth writes stay disabled
-            device.DepthStencilState = DepthStencilState.None;
+            device.DepthStencilState = _layerDepthState;
+            device.RasterizerState = _rasterizerState;
 
             // Draw layers back-to-front (nearest to farthest) for proper transparency
             for (int layerIndex = layerCount - 1; layerIndex >= 0; layerIndex--)
@@ -358,16 +347,10 @@ namespace Continuum93.ServiceModule.UI
 
                     _basicEffect.CurrentTechnique.Passes[0].Apply();
 
-                    device.RasterizerState = new RasterizerState()
-                    {
-                        CullMode = CullMode.None,
-                        MultiSampleAntiAlias = true,
-                    };
-
                     device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
 
                     DrawLayerBorder(device, finalMatrix);
-                    DrawLayerLabel(device, drawIdx, (byte)(layerCount - srcIndex - 1), z, rotationMatrix, DepthStencilState.None);
+                    DrawLayerLabel(device, drawIdx, (byte)(layerCount - srcIndex - 1), z, rotationMatrix, _layerDepthState);
                 }
             }
 
@@ -487,6 +470,34 @@ namespace Continuum93.ServiceModule.UI
             _basicEffect.Texture = _layerLabelTextures[labelIndex];
             _basicEffect.CurrentTechnique.Passes[0].Apply();
             device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _labelVertices, 0, 2);
+        }
+
+        private void InitializeGraphicsStates()
+        {
+            // Create graphics states once and cache them to avoid per-frame allocations
+            if (_rasterizerState == null)
+            {
+                _rasterizerState = new RasterizerState
+                {
+                    CullMode = CullMode.None,
+                    MultiSampleAntiAlias = true
+                };
+            }
+
+            if (_skyboxDepthState == null)
+            {
+                _skyboxDepthState = new DepthStencilState
+                {
+                    DepthBufferEnable = true,
+                    DepthBufferWriteEnable = false,
+                    DepthBufferFunction = CompareFunction.LessEqual
+                };
+            }
+
+            if (_layerDepthState == null)
+            {
+                _layerDepthState = DepthStencilState.None;
+            }
         }
 
         private void InitializeSkybox(GraphicsDevice device)
@@ -690,20 +701,10 @@ namespace Continuum93.ServiceModule.UI
             _skyboxEffect.Projection = _basicEffect.Projection;
             _skyboxEffect.Texture = _skyboxTexture;
 
-            // Disable depth writes but enable depth test
-            // This ensures skybox is always behind everything
-            device.DepthStencilState = new DepthStencilState
-            {
-                DepthBufferEnable = true,
-                DepthBufferWriteEnable = false,
-                DepthBufferFunction = CompareFunction.LessEqual
-            };
-            
+            // Use cached states to avoid per-frame allocations
+            device.DepthStencilState = _skyboxDepthState;
             device.BlendState = BlendState.Opaque;
-            device.RasterizerState = new RasterizerState
-            {
-                CullMode = CullMode.None
-            };
+            device.RasterizerState = _rasterizerState;
 
             // Draw each face of the skybox cube
             for (int face = 0; face < 6; face++)
