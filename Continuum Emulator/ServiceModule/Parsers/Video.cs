@@ -11,6 +11,8 @@ namespace Continuum93.ServiceModule.Parsers
         public static Color[][] Palettes = new Color[16][];
         public static List<Texture2D> Layers = new List<Texture2D>();
         private static Color[] _layerColorData = new Color[(int)Constants.V_SIZE];
+        private static int _updateFrameCounter = 0;
+        private const int UpdateThrottleFrames = 2; // Only update textures every N frames
 
         public static void InitializeLayers()
         {
@@ -69,40 +71,48 @@ namespace Continuum93.ServiceModule.Parsers
                 InitializeLayers();
             }
 
-            var videoBuffer = graphics.GetVideoBuffer();
-            for (int p = 0; p < PaletteCount && p < 8; p++)
+            // Throttle texture updates to reduce expensive SetData() calls
+            // This significantly improves performance in Debug mode
+            _updateFrameCounter++;
+            bool shouldUpdateTextures = (_updateFrameCounter % UpdateThrottleFrames) == 0;
+
+            if (shouldUpdateTextures)
             {
-                // Start each layer fully transparent so color index 0 (background) is see-through for layers 1-7
-                // Layer 0 will overwrite with its palette value (including index 0)
-                for (int i = 0; i < _layerColorData.Length; i++)
+                var videoBuffer = graphics.GetVideoBuffer();
+                for (int p = 0; p < PaletteCount && p < 8; p++)
                 {
-                    _layerColorData[i] = Color.Transparent;
-                }
-
-                int videoOffset = p * (int)Constants.V_SIZE;
-                for (int i = 0; i < Constants.V_SIZE; i++)
-                {
-                    if (videoOffset + i < videoBuffer.Length)
+                    // Start each layer fully transparent so color index 0 (background) is see-through for layers 1-7
+                    // Layer 0 will overwrite with its palette value (including index 0)
+                    for (int i = 0; i < _layerColorData.Length; i++)
                     {
-                        byte colorIndex = videoBuffer[videoOffset + i];
-                        // For layers 1-7, palette index 0 is transparent; layer 0 keeps palette color 0
-                        if (colorIndex == 0 && p < 7)
-                        {
-                            _layerColorData[i] = Color.Transparent;
-                            continue; // keep transparent explicitly
-                        }
+                        _layerColorData[i] = Color.Transparent;
+                    }
 
-                        if (p < Palettes.Length && Palettes[p] != null && colorIndex < Palettes[p].Length)
+                    int videoOffset = p * (int)Constants.V_SIZE;
+                    for (int i = 0; i < Constants.V_SIZE; i++)
+                    {
+                        if (videoOffset + i < videoBuffer.Length)
                         {
-                            _layerColorData[i] = Palettes[p][colorIndex];
-                        }
-                        else
-                        {
-                            _layerColorData[i] = Color.Black;
+                            byte colorIndex = videoBuffer[videoOffset + i];
+                            // For layers 1-7, palette index 0 is transparent; layer 0 keeps palette color 0
+                            if (colorIndex == 0 && p < 7)
+                            {
+                                _layerColorData[i] = Color.Transparent;
+                                continue; // keep transparent explicitly
+                            }
+
+                            if (p < Palettes.Length && Palettes[p] != null && colorIndex < Palettes[p].Length)
+                            {
+                                _layerColorData[i] = Palettes[p][colorIndex];
+                            }
+                            else
+                            {
+                                _layerColorData[i] = Color.Black;
+                            }
                         }
                     }
+                    Layers[p].SetData(_layerColorData);
                 }
-                Layers[p].SetData(_layerColorData);
             }
         }
     }
