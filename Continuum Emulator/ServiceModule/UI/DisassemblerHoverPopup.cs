@@ -137,10 +137,11 @@ namespace Continuum93.ServiceModule.UI
                 MeasureWrappedText(_meta.Format);
             }
 
-            // Calculate max scroll offset - stop when last line is visible at bottom
+            // Calculate max scroll offset - stop when last line is fully visible at bottom
             int totalContentHeight = tempY - startY;
             int visibleHeight = contentRect.Height;
-            _maxScrollOffset = Math.Max(0, totalContentHeight - visibleHeight);
+            // Add extra padding (one line height) to ensure last line is fully visible
+            _maxScrollOffset = Math.Max(0, totalContentHeight - visibleHeight + lineHeight);
             
             // Clamp scroll offset to valid range now that we know the max
             _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, _maxScrollOffset));
