@@ -18,16 +18,18 @@ namespace Continuum93.ServiceModule
         private const string LayoutPath = "Data/serviceState/layout.json";
         private static UIManager _windowManager;
         private static ImmediateWindow _immediateWindow;
+        private static WatcherWindow _watcherWindow;
         private static int _pendingMainWidth;
         private static int _pendingMainHeight;
         private static int _preServiceWidth;
         private static int _preServiceHeight;
         private static bool _hasPreServiceSize;
 
-        public static void Initialize(UIManager wm, ImmediateWindow immediateWindow)
+        public static void Initialize(UIManager wm, ImmediateWindow immediateWindow, WatcherWindow watcherWindow)
         {
             _windowManager = wm;
             _immediateWindow = immediateWindow;
+            _watcherWindow = watcherWindow;
             Directory.CreateDirectory(Path.GetDirectoryName(LayoutPath)!);
         }
 
@@ -66,6 +68,11 @@ namespace Continuum93.ServiceModule
                 {
                     _immediateWindow.SetText(state.ImmediateText);
                 }
+
+                if (_watcherWindow != null && !string.IsNullOrEmpty(state.WatcherText))
+                {
+                    _watcherWindow.SetText(state.WatcherText);
+                }
             }
             catch
             {
@@ -83,7 +90,8 @@ namespace Continuum93.ServiceModule
                 MainWidth = GameWindowManager.GetClientWidth(),
                 MainHeight = GameWindowManager.GetClientHeight(),
                 Windows = new List<WindowLayoutDto>(),
-                ImmediateText = _immediateWindow?.GetText() ?? string.Empty
+                ImmediateText = _immediateWindow?.GetText() ?? string.Empty,
+                WatcherText = _watcherWindow?.GetText() ?? string.Empty
             };
 
             foreach (var w in _windowManager.Windows)
@@ -142,6 +150,7 @@ namespace Continuum93.ServiceModule
         public int MainHeight { get; set; }
         public List<WindowLayoutDto> Windows { get; set; } = [];
         public string ImmediateText { get; set; }
+        public string WatcherText { get; set; }
     }
 
     public class WindowLayoutDto

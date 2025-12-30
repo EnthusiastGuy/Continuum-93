@@ -27,6 +27,7 @@ namespace Continuum93.ServiceModule
         private static StatusBarWindow _statusBarWindow;
         private static PalettesWindow _palettesWindow;
         private static VirtualScreen3DWindow _virtualScreen3DWindow;
+        private static WatcherWindow _watcherWindow;
 
         // Expose to ServiceInput so it can send mouse events
         public static WindowManager WindowManager => _windowManager;
@@ -177,7 +178,20 @@ namespace Continuum93.ServiceModule
             );
             _windowManager.Add(_virtualScreen3DWindow);
 
-            ServiceLayoutManager.Initialize(_windowManager, _immediateWindow);
+            // Watcher window
+            _watcherWindow = new WatcherWindow(
+                "WATCHER",
+                x: 1160,
+                y: 800,
+                width: 420,
+                height: 200,
+                0.85f,
+                true,
+                false
+            );
+            _windowManager.Add(_watcherWindow);
+
+            ServiceLayoutManager.Initialize(_windowManager, _immediateWindow, _watcherWindow);
             ServiceLayoutManager.LoadIfPresent();
         }
 
