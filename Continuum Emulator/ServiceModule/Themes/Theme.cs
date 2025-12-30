@@ -71,6 +71,7 @@ namespace Continuum93.ServiceModule.Themes
 
         // Stack window colors
         public Color StackValueColor { get; set; } = new Color(127, 255, 212); // Aquamarine
+        public Color StackLastValueColor { get; set; } = new Color(64, 128, 160); // Darker blue
 
         // Taskbar colors
         public Color TaskbarBackground { get; set; } = new Color(10, 10, 20, 220);

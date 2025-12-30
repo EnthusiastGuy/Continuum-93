@@ -136,6 +136,8 @@ namespace Continuum93.ServiceModule.Themes
             // Stack window colors
             if (!string.IsNullOrEmpty(data.StackValueColor))
                 theme.StackValueColor = ColorParser.Parse(data.StackValueColor);
+            if (!string.IsNullOrEmpty(data.StackLastValueColor))
+                theme.StackLastValueColor = ColorParser.Parse(data.StackLastValueColor);
 
             // Taskbar colors
             if (!string.IsNullOrEmpty(data.TaskbarBackground))
@@ -226,6 +228,7 @@ namespace Continuum93.ServiceModule.Themes
 
                 // Stack window colors
                 StackValueColor = ColorParser.Format(theme.StackValueColor),
+                StackLastValueColor = ColorParser.Format(theme.StackLastValueColor),
 
                 // Taskbar colors
                 TaskbarBackground = ColorParser.Format(theme.TaskbarBackground),

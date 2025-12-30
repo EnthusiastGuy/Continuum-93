@@ -33,13 +33,11 @@ namespace Continuum93.ServiceModule.UI
             var theme = ServiceGraphics.Theme;
 
             byte flags = CPUState.Flags;
-            byte oldFlags = CPUState.OldFlags;
 
             // Get font metrics for proper line spacing
             int fontHeight = theme.PrimaryFont.GlyphCellHeight;
             const byte characterSpacing = 1; // Matches ServiceFont's internal characterSpacing
             int lineHeight = fontHeight + characterSpacing;
-            const int spacingBetweenPairs = 1; // Extra line height spacing between the two pairs of rows
 
             int originX = contentRect.X + Padding;
             int originY = contentRect.Y + Padding;
@@ -50,26 +48,25 @@ namespace Continuum93.ServiceModule.UI
                 int x = originX + i * (int)(charWidth * 4.5f);
                 
                 // Calculate Y positions based on actual font height
-                int y1 = originY + lineHeight;           // First row of flag names (positive flags)
-                int y1Value = originY + lineHeight * 2;  // Flag value below first row
-                // Add spacing between the two pairs
-                int y2 = originY + lineHeight * 3 + lineHeight * spacingBetweenPairs;       // Second row of flag names (negative flags)
-                int y2Value = originY + lineHeight * 4 + lineHeight * spacingBetweenPairs;  // Flag value below second row
+                int y1 = originY;                       // First row of flag names (positive flags)
+                int y2 = originY + lineHeight;          // Second row of flag names (negative flags)
 
                 bool flagValue = CPUState.GetBitValue(flags, i);
-                bool oldFlagValue = CPUState.GetBitValue(oldFlags, i);
-                bool valueChanged = flagValue != oldFlagValue;
 
-                Color regColor = theme.FlagNameColor;
+                // Color flag names based on value: 1 = green, 0 = red
+                // Positive flags: green if 1, red if 0
+                Color positiveFlagColor = flagValue ? theme.FlagValueOneColor : theme.FlagValueZeroColor;
+                // Negative flags: red if 1, green if 0 (inverse)
+                Color negativeFlagColor = flagValue ? theme.FlagValueZeroColor : theme.FlagValueOneColor;
 
-                // Flag names (positive and negative)
+                // Flag names (positive and negative) - colored by their value
                 ServiceGraphics.DrawText(
                     theme.PrimaryFont,
                     FLAGNAMES[8 + i],
                     x,
                     y1,
                     contentRect.Width - Padding * 2,
-                    regColor,
+                    positiveFlagColor,
                     theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF
@@ -81,35 +78,7 @@ namespace Continuum93.ServiceModule.UI
                     x,
                     y2,
                     contentRect.Width - Padding * 2,
-                    regColor,
-                    theme.TextOutline,
-                    (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
-                    0xFF
-                );
-
-                // Flag values - color based on value: 1 = green, 0 = red
-                Color value1Color = flagValue ? theme.FlagValueOneColor : theme.FlagValueZeroColor;
-                Color value0Color = flagValue ? theme.FlagValueZeroColor : theme.FlagValueOneColor;
-
-                ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
-                    (flagValue ? 1 : 0).ToString(),
-                    x,
-                    y1Value,
-                    contentRect.Width - Padding * 2,
-                    value1Color,
-                    theme.TextOutline,
-                    (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
-                    0xFF
-                );
-
-                ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
-                    (flagValue ? 0 : 1).ToString(),
-                    x,
-                    y2Value,
-                    contentRect.Width - Padding * 2,
-                    value0Color,
+                    negativeFlagColor,
                     theme.TextOutline,
                     (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline),
                     0xFF

@@ -67,6 +67,7 @@ namespace Continuum93.ServiceModule.Themes
 
         // Stack window colors
         public string StackValueColor { get; set; }
+        public string StackLastValueColor { get; set; }
 
         // Taskbar colors
         public string TaskbarBackground { get; set; }

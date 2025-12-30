@@ -181,7 +181,7 @@ namespace Continuum93.ServiceModule.UI
 
             // Position pop-up near the hovered byte
             const int lineHeight = 18;
-            int startY = ContentRect.Y + Padding + 24;
+            int startY = ContentRect.Y + Padding;
             int byteY = startY + _hoveredLineIndex * lineHeight;
             
             var theme = ServiceGraphics.Theme;
@@ -269,20 +269,7 @@ namespace Continuum93.ServiceModule.UI
             const int lineHeight = 18;
             var theme = ServiceGraphics.Theme;
 
-            // Title
-            ServiceGraphics.DrawText(
-                Fonts.ModernDOS_12x18,
-                "Memory view",
-                contentRect.X + Padding,
-                contentRect.Y + Padding,
-                contentRect.Width - Padding * 2,
-                theme.TextTitle,
-                theme.TextOutline,
-                (byte)ServiceFontFlags.DrawOutline,
-                0xFF
-            );
-
-            int startY = contentRect.Y + Padding + 24;
+            int startY = contentRect.Y + Padding;
 
             // Draw memory lines
             var lines = Memory.Lines;
