@@ -524,6 +524,9 @@
     <None Update="Data\filesystem\splash.png.data">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\filesystem\tests\layers.asm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\fonts\CleanCut.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -674,6 +677,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Data\filesystem\mosaic\fonts\" />
+    <Folder Include="Data\filesystem\tests\" />
     <Folder Include="Data\filesystem\programs\cube3d\" />
     <Folder Include="Data\filesystem\programs\CPU benchmark\" />
     <Folder Include="Data\filesystem\programs\simple-loop\" />

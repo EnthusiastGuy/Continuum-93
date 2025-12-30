@@ -311,7 +311,7 @@ namespace Continuum93.ServiceModule.UI
             int sourceIndex = MapLayerIndex(drawIndex, layerCount);
             if (sourceIndex >= 0 && sourceIndex < Video.Layers.Count && Video.Layers[sourceIndex] != null)
             {
-                float z = (layerCount - drawIndex) * 0.25f;  // z = 1.75 for drawIndex 0
+                float z = sourceIndex * 0.25f;  // z = 1.75 for drawIndex 0
                 Matrix depth = Matrix.CreateTranslation(0, 0, z);
                 Matrix finalMatrix = depth * rotationMatrix;
 
@@ -331,7 +331,7 @@ namespace Continuum93.ServiceModule.UI
 
                 device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
 
-                DrawLayerLabel(device, (byte)(layerCount - sourceIndex), z, rotationMatrix, DepthStencilState.Default);
+                DrawLayerLabel(device, drawIndex, (byte)sourceIndex, z, rotationMatrix, DepthStencilState.Default);
             }
 
             // Then draw layers 1-7 back-to-front (transparent, closer to camera)
@@ -364,7 +364,7 @@ namespace Continuum93.ServiceModule.UI
                     // Draw the quad
                     device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
 
-                    DrawLayerLabel(device, (byte)srcIndex, z, rotationMatrix, TransparentDepthState);
+                    DrawLayerLabel(device, drawIdx, (byte)srcIndex, z, rotationMatrix, TransparentDepthState);
                 }
             }
 
@@ -448,17 +448,17 @@ namespace Continuum93.ServiceModule.UI
             }
         }
 
-        private void DrawLayerLabel(GraphicsDevice device, byte layerIndex, float layerZ, Matrix rotationMatrix, DepthStencilState depthState)
+        private void DrawLayerLabel(GraphicsDevice device, byte placementIndex, byte labelIndex, float layerZ, Matrix rotationMatrix, DepthStencilState depthState)
         {
             if (_layerLabelTextures == null ||
-                layerIndex >= _layerLabelTextures.Length ||
-                _layerLabelTextures[layerIndex] == null ||
+                labelIndex >= _layerLabelTextures.Length ||
+                _layerLabelTextures[labelIndex] == null ||
                 _labelVertices == null)
                 return;
 
             // Keep label on same plane, tiny nudge toward camera to avoid z-fighting
             float z = layerZ + LabelZOffsetTowardCamera;
-            Matrix labelOffset = Matrix.CreateTranslation(LabelX, LabelBaseY + LabelStepY * layerIndex, 0);
+            Matrix labelOffset = Matrix.CreateTranslation(LabelX, LabelBaseY + LabelStepY * placementIndex, 0);
             Matrix depth = Matrix.CreateTranslation(0, 0, z);
             Matrix finalMatrix = labelOffset * depth * rotationMatrix;
 
@@ -466,7 +466,7 @@ namespace Continuum93.ServiceModule.UI
             device.BlendState = BlendState.NonPremultiplied;
 
             _basicEffect.World = finalMatrix;
-            _basicEffect.Texture = _layerLabelTextures[layerIndex];
+            _basicEffect.Texture = _layerLabelTextures[labelIndex];
             _basicEffect.CurrentTechnique.Passes[0].Apply();
             device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _labelVertices, 0, 2);
         }
@@ -474,7 +474,7 @@ namespace Continuum93.ServiceModule.UI
         private static int MapLayerIndex(int drawIndex, int totalCount)
         {
             // Map draw order to source layer: furthest uses highest index, nearest uses lowest.
-            return (totalCount - 1) - drawIndex;
+            return drawIndex;
         }
     }
 }
