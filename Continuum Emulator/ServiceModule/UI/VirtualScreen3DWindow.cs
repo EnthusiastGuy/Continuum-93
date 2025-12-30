@@ -10,7 +10,9 @@ namespace Continuum93.ServiceModule.UI
     public class VirtualScreen3DWindow : Window
     {
         private BasicEffect _basicEffect;
+        private BasicEffect _borderEffect;
         private VertexPositionTexture[] _vertices;
+        private VertexPositionColor[] _borderVertices;
         private Vector3 _rotationAngles;
         private Vector3 _translation;
         private readonly float _rotationSpeed = 0.01f;
@@ -34,6 +36,7 @@ namespace Continuum93.ServiceModule.UI
         // Place label just outside the quad's left edge (quad spans -2.4..2.4 in X)
         private const float LabelX = -2.55f;
         private const float LabelZOffsetTowardCamera = -0.0005f;
+        private static readonly Color BorderColor = Color.BlueViolet;
 
         public VirtualScreen3DWindow(
             string title,
@@ -104,6 +107,14 @@ namespace Continuum93.ServiceModule.UI
                 VertexColorEnabled = false  // Don't use vertex colors, use texture colors
             };
 
+            // Create a basic effect for borders
+            _borderEffect = new BasicEffect(device)
+            {
+                TextureEnabled = false,
+                VertexColorEnabled = true,
+                Alpha = 1.0f
+            };
+
             // Define the vertices of the 3D quad and their UV coordinates
             // Aspect ratio: 480x270 = 16:9, so width:height = 1.777...
             // Scale to match: width 2.40, height 1.35 (2.40/1.35 = 1.777...)
@@ -113,6 +124,16 @@ namespace Continuum93.ServiceModule.UI
                 new VertexPositionTexture(new Vector3(2.40f, 1.35f, 0), new Vector2(1, 0)),
                 new VertexPositionTexture(new Vector3(-2.40f, -1.35f, 0), new Vector2(0, 1)),
                 new VertexPositionTexture(new Vector3(2.40f, -1.35f, 0), new Vector2(1, 1))
+            };
+
+            // Define border vertices (line loop around the quad)
+            _borderVertices = new VertexPositionColor[]
+            {
+                new VertexPositionColor(new Vector3(-2.40f, 1.35f, 0), BorderColor),   // Top-left
+                new VertexPositionColor(new Vector3(2.40f, 1.35f, 0), BorderColor),    // Top-right
+                new VertexPositionColor(new Vector3(2.40f, -1.35f, 0), BorderColor),   // Bottom-right
+                new VertexPositionColor(new Vector3(-2.40f, -1.35f, 0), BorderColor),  // Bottom-left
+                new VertexPositionColor(new Vector3(-2.40f, 1.35f, 0), BorderColor)    // Back to top-left to close loop
             };
 
             BuildLabelGeometry();
@@ -223,6 +244,7 @@ namespace Continuum93.ServiceModule.UI
         {
             _renderTarget?.Dispose();
             _basicEffect?.Dispose();
+            _borderEffect?.Dispose();
             if (_layerLabelTextures != null)
             {
                 foreach (var tex in _layerLabelTextures)
@@ -329,6 +351,7 @@ namespace Continuum93.ServiceModule.UI
 
                     device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
 
+                    DrawLayerBorder(device, finalMatrix);
                     DrawLayerLabel(device, drawIdx, (byte)(layerCount - srcIndex - 1), z, rotationMatrix, DepthStencilState.None);
                 }
             }
@@ -411,6 +434,21 @@ namespace Continuum93.ServiceModule.UI
 
                 _layerLabelTextures[i] = rt;
             }
+        }
+
+        private void DrawLayerBorder(GraphicsDevice device, Matrix worldMatrix)
+        {
+            if (_borderEffect == null || _borderVertices == null)
+                return;
+
+            // Set up border effect with same view/projection as main effect
+            _borderEffect.World = worldMatrix;
+            _borderEffect.View = _basicEffect.View;
+            _borderEffect.Projection = _basicEffect.Projection;
+
+            // Apply the effect and draw the border as a line strip
+            _borderEffect.CurrentTechnique.Passes[0].Apply();
+            device.DrawUserPrimitives(PrimitiveType.LineStrip, _borderVertices, 0, _borderVertices.Length - 1);
         }
 
         private void DrawLayerLabel(GraphicsDevice device, byte placementIndex, byte labelIndex, float layerZ, Matrix rotationMatrix, DepthStencilState depthState)
