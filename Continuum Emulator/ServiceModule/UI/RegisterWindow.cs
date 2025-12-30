@@ -4,12 +4,26 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Globalization;
 
 namespace Continuum93.ServiceModule.UI
 {
     public class RegisterWindow : Window
     {
         private const int ColumnSpacing = 20; // Spacing between columns
+
+        // Hover pop-up tracking
+        private RegisterHoverPopup _hoverPopup;
+        private int _hoveredRegIndex = -1;
+        private int _hoveredColumn = -1; // 0 = 32-bit, 1 = 8-bit, 2 = 16-bit, 3 = 24-bit
+        private int _previousHoveredRegIndex = -1;
+        private int _previousHoveredColumn = -1;
+        private float _hoverTimer = 0f;
+        private const float HoverDelay = 0.3f; // 300ms
+
+        // Store column positions for hover detection
+        private int[] _columnXPositions = new int[4];
+        private int[] _columnWidths = new int[4];
 
         public RegisterWindow(
             string title,
@@ -22,9 +36,171 @@ namespace Continuum93.ServiceModule.UI
         {
         }
 
+        // Draw the pop-up (called from ServiceGraphics after all windows are drawn)
+        public void DrawHoverPopup()
+        {
+            if (_hoverPopup != null && _hoverPopup.Visible)
+            {
+                _hoverPopup.Draw();
+            }
+        }
+
+        // Public accessor so the window manager can draw the popup on top
+        public RegisterHoverPopup GetHoverPopup() => _hoverPopup;
+
         protected override void UpdateContent(GameTime gameTime)
         {
             CPUState.Update();
+
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            var mouse = Mouse.GetState();
+            Point mousePos = new Point(mouse.X, mouse.Y);
+
+            // Update hover pop-up
+            UpdateHoverPopup(dt, mousePos);
+
+            // Update pop-up directly (not managed by WindowManager)
+            if (_hoverPopup != null && _hoverPopup.Visible)
+            {
+                _hoverPopup.Update(gameTime);
+            }
+        }
+
+        private void UpdateHoverPopup(float dt, Point mousePos)
+        {
+            // Hide pop-up if RegisterWindow is not visible
+            if (!Visible)
+            {
+                if (_hoverPopup != null && _hoverPopup.Visible)
+                {
+                    HideHoverPopup();
+                }
+                _hoverTimer = 0f;
+                return;
+            }
+
+            // Check if mouse is over the pop-up (keep it open)
+            bool mouseOverPopup = _hoverPopup != null && _hoverPopup.Visible && _hoverPopup.Bounds.Contains(mousePos);
+
+            // If mouse moved to a different register/column or outside, reset timer
+            if (_hoveredRegIndex != _previousHoveredRegIndex || _hoveredColumn != _previousHoveredColumn)
+            {
+                _hoverTimer = 0f;
+                _previousHoveredRegIndex = _hoveredRegIndex;
+                _previousHoveredColumn = _hoveredColumn;
+            }
+
+            // If hovering over a valid register and not over pop-up, increment timer
+            if (_hoveredRegIndex >= 0 && _hoveredColumn >= 0 && !mouseOverPopup)
+            {
+                _hoverTimer += dt;
+
+                // Show pop-up after delay
+                if (_hoverTimer >= HoverDelay)
+                {
+                    if (_hoverPopup == null || !_hoverPopup.Visible)
+                    {
+                        ShowHoverPopup();
+                    }
+                    else
+                    {
+                        // Update pop-up data if register changed
+                        UpdateHoverPopupData();
+                    }
+                }
+            }
+            else
+            {
+                // Not hovering over a register, or mouse is outside
+                if (!mouseOverPopup)
+                {
+                    // Hide pop-up if mouse moved away
+                    if (_hoverPopup != null && _hoverPopup.Visible)
+                    {
+                        HideHoverPopup();
+                    }
+                    _hoverTimer = 0f;
+                }
+            }
+        }
+
+        private void ShowHoverPopup()
+        {
+            if (_hoveredRegIndex < 0 || _hoveredColumn < 0)
+                return;
+
+            byte[] regPage0 = CPUState.RegPage0;
+            byte[] regPageOld = CPUState.RegPageOld;
+
+            // Calculate bit width: 0 = 32-bit (4), 1 = 8-bit (1), 2 = 16-bit (2), 3 = 24-bit (3)
+            int colPosition = (_hoveredColumn + 3) % 4; // Convert to internal column order
+            int bitWidth = colPosition + 1;
+
+            // Get current and previous values
+            uint currentValue = GetRegisterValue(_hoveredRegIndex, bitWidth, regPage0);
+            uint previousValue = GetRegisterValue(_hoveredRegIndex, bitWidth, regPageOld);
+
+            // Calculate position for popup
+            const int lineHeight = 18;
+            int startY = ContentRect.Y + Padding + 24;
+            int regY = startY + _hoveredRegIndex * lineHeight;
+
+            // Position pop-up to the right of the hovered register value
+            int popupX = _columnXPositions[_hoveredColumn] + _columnWidths[_hoveredColumn] + 10;
+            int popupY = regY;
+
+            // Ensure pop-up stays on screen
+            var device = Renderer.GetGraphicsDevice();
+            int popupWidth = 350;
+            int popupHeight = 200;
+            if (popupX + popupWidth > device.Viewport.Width)
+                popupX = _columnXPositions[_hoveredColumn] - popupWidth - 10; // Show to the left instead
+            if (popupY + popupHeight > device.Viewport.Height)
+                popupY = device.Viewport.Height - popupHeight - 10;
+
+            if (_hoverPopup == null)
+            {
+                _hoverPopup = new RegisterHoverPopup(popupX, popupY, _hoveredRegIndex, bitWidth, currentValue, previousValue);
+            }
+            else
+            {
+                _hoverPopup.X = popupX;
+                _hoverPopup.Y = popupY;
+                _hoverPopup.UpdateData(_hoveredRegIndex, bitWidth, currentValue, previousValue);
+                _hoverPopup.Visible = true;
+            }
+        }
+
+        private void UpdateHoverPopupData()
+        {
+            if (_hoverPopup == null || _hoveredRegIndex < 0 || _hoveredColumn < 0)
+                return;
+
+            byte[] regPage0 = CPUState.RegPage0;
+            byte[] regPageOld = CPUState.RegPageOld;
+
+            int colPosition = (_hoveredColumn + 3) % 4;
+            int bitWidth = colPosition + 1;
+
+            uint currentValue = GetRegisterValue(_hoveredRegIndex, bitWidth, regPage0);
+            uint previousValue = GetRegisterValue(_hoveredRegIndex, bitWidth, regPageOld);
+
+            _hoverPopup.UpdateData(_hoveredRegIndex, bitWidth, currentValue, previousValue);
+        }
+
+        private void HideHoverPopup()
+        {
+            if (_hoverPopup != null)
+            {
+                _hoverPopup.Visible = false;
+            }
+        }
+
+        private uint GetRegisterValue(int regIndex, int bitWidth, byte[] regs)
+        {
+            // Build hex string from register bytes
+            string hexValue = RegistryUtils.GetHexValueForNBitRegister(regIndex, bitWidth, regs);
+            return uint.Parse(hexValue, NumberStyles.HexNumber);
         }
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
@@ -37,6 +213,14 @@ namespace Continuum93.ServiceModule.UI
             byte[] regPageOld = CPUState.RegPageOld;
             byte regPageIndex = CPUState.RegPageIndex;
             byte[] regMemoryData = CPUState.RegMemoryData;
+
+            // Get mouse position for hover detection
+            var mouse = Mouse.GetState();
+            Point mousePos = new Point(mouse.X, mouse.Y);
+
+            // Reset hover state
+            _hoveredRegIndex = -1;
+            _hoveredColumn = -1;
 
             // Title
             ServiceGraphics.DrawText(
@@ -87,6 +271,22 @@ namespace Continuum93.ServiceModule.UI
                         contentRect.Width - Padding * 2,
                         fontFlags
                     ).width;
+
+                    // Store column position and width for hover detection (only for first row)
+                    if (i == 0)
+                    {
+                        _columnXPositions[j] = currentX;
+                        _columnWidths[j] = columnWidth;
+                    }
+
+                    // Check if mouse is hovering over this register value
+                    if (ContentRect.Contains(mousePos) && 
+                        mousePos.Y >= y && mousePos.Y < y + lineHeight &&
+                        mousePos.X >= currentX && mousePos.X < currentX + columnWidth)
+                    {
+                        _hoveredRegIndex = i;
+                        _hoveredColumn = j;
+                    }
 
                     // Register name
                     ServiceGraphics.DrawText(

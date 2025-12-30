@@ -37,11 +37,23 @@ namespace Continuum93.ServiceModule.Parsers
 
             // Update registers
             var newRegs = cpu.REGS.GetCurrentRegisterPageData();
+            bool anyRegisterChanged = false;
             for (int i = 0; i < 26; i++)
             {
                 _regModified[i] = newRegs[i] != _regPage0[i];
+                if (_regModified[i])
+                {
+                    anyRegisterChanged = true;
+                }
             }
-            _regPageOld = _regPage0;
+            
+            // Only update old values when registers actually change
+            // This ensures step-by-step mode properly highlights changes
+            if (anyRegisterChanged)
+            {
+                // Copy current values to old before updating to new
+                Array.Copy(_regPage0, _regPageOld, 26);
+            }
             _regPage0 = newRegs;
             _regPageIndex = cpu.REGS.GetRegisterBank();
 
