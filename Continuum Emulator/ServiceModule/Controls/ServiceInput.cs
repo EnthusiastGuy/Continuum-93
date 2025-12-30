@@ -1,4 +1,5 @@
 ﻿using Continuum93.CodeAnalysis;
+using Continuum93.Emulator.AutoDocs.MetaInfo;
 using Continuum93.Emulator.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -19,6 +20,7 @@ namespace Continuum93.ServiceModule.Controls
 
                 if (!wasServiceMode && Service.STATE.ServiceMode)
                 {
+                    ASMMetaInfo.Initialize();
                     ServiceLayoutManager.CapturePreServiceSize();
                     ServiceLayoutManager.OnServiceModeEntered();
                     DebugState.StepByStep = true;
@@ -27,6 +29,7 @@ namespace Continuum93.ServiceModule.Controls
                 }
                 else if (wasServiceMode && !Service.STATE.ServiceMode)
                 {
+                    ASMMetaInfo.DeInitialize();
                     ServiceLayoutManager.RestorePreServiceSize();
                 }
             }

@@ -577,5 +577,11 @@ namespace Continuum93.Emulator.AutoDocs.MetaInfo
             ));
             */
         }
+
+        public static void DeInitialize()
+        {
+            MetaData.Clear();
+        }
+
     }
 }
