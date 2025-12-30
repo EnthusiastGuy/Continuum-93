@@ -329,7 +329,7 @@ namespace Continuum93.ServiceModule.UI
 
                     device.DrawUserPrimitives(PrimitiveType.TriangleStrip, _vertices, 0, 2);
 
-                    DrawLayerLabel(device, drawIdx, (byte)srcIndex, z, rotationMatrix, DepthStencilState.None);
+                    DrawLayerLabel(device, drawIdx, (byte)(layerCount - srcIndex - 1), z, rotationMatrix, DepthStencilState.None);
                 }
             }
 
@@ -398,7 +398,7 @@ namespace Continuum93.ServiceModule.UI
                     label,
                     x,
                     y,
-                    Color.Yellow,
+                    Color.BlueViolet,
                     rt.Width,
                     0,
                     Color.Black,
