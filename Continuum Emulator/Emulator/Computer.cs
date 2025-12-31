@@ -4,6 +4,8 @@ using Continuum93.Emulator.Audio;
 using Continuum93.Emulator.Audio.Ogg;
 using Continuum93.Emulator.CPU;
 using Continuum93.Emulator.RAM;
+using Continuum93.ServiceModule;
+using Continuum93.ServiceModule.UI;
 using Continuum93.Tools;
 using System;
 using System.Threading;
@@ -136,6 +138,10 @@ namespace Continuum93.Emulator
                     {
                         ExecuteNextInstruction();
                         //CPUBenchmark.IncrementInstructions();
+                        
+                        // Check watcher conditions synchronously right after instruction execution
+                        // This ensures we catch conditions before the next instruction executes
+                        WatcherWindow.CheckConditionsSynchronously();
                     }
 
                     DebuggerTrap();

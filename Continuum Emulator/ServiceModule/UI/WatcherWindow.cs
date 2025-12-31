@@ -36,6 +36,9 @@ namespace Continuum93.ServiceModule.UI
         private readonly List<WatchCondition> _conditions = new();
         private bool _conditionsValid = true;
 
+        // Static reference for synchronous condition checking during instruction execution
+        private static WatcherWindow _instance;
+
         public WatcherWindow(
             string title,
             int x, int y,
@@ -47,6 +50,20 @@ namespace Continuum93.ServiceModule.UI
         {
             _lineHeight = _font.GlyphCellHeight;
             _charWidth = _font.GlyphCellWidth;
+            _instance = this; // Set static instance for synchronous condition checking
+        }
+
+        /// <summary>
+        /// Checks watcher conditions synchronously during instruction execution.
+        /// This should be called right after each instruction executes to catch conditions
+        /// before the next instruction potentially changes register/memory values.
+        /// </summary>
+        public static void CheckConditionsSynchronously()
+        {
+            if (_instance == null || !Service.STATE.ServiceMode || Machine.COMPUTER == null)
+                return;
+
+            _instance.ParseAndEvaluateConditions();
         }
 
         protected override void UpdateContent(GameTime gameTime)
