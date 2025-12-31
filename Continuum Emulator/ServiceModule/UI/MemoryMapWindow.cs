@@ -34,14 +34,11 @@ namespace Continuum93.ServiceModule.UI
         private MouseState _previousMouse;
 
         private int _zoomSteps;
-        private float _scrollX;
         private float _scrollY;
         private float _pollAccumulator;
         private float _activityFadeSeconds = DefaultActivityFadeSeconds;
 
-        private bool _draggingH;
         private bool _draggingV;
-        private int _dragOffsetH;
         private int _dragOffsetV;
 
         private LayoutState _layout;
@@ -66,14 +63,10 @@ namespace Continuum93.ServiceModule.UI
             public int MapRows;
             public int VisibleColumns;
             public int VisibleRows;
-            public int ScrollColumn;
             public int ScrollRow;
             public Rectangle AreaRect;
             public Rectangle ControlRect;
-            public bool ShowHScroll;
             public bool ShowVScroll;
-            public Rectangle HScrollRect;
-            public Rectangle HThumbRect;
             public Rectangle VScrollRect;
             public Rectangle VThumbRect;
             public Rectangle ClearButtonRect;
@@ -194,33 +187,34 @@ namespace Continuum93.ServiceModule.UI
             int pad = Padding;
             int availableWidth = Math.Max(1, contentRect.Width - pad * 2);
             int availableHeight = Math.Max(1, contentRect.Height - pad * 2 - ControlBarHeight);
-
-            // Initial area assumes no scrollbars
-            bool needH = false;
-            bool needV = false;
+            uint totalBytes = Machine.COMPUTER?.MEMC.RAM.Size ?? 0;
 
             LayoutState layout = new()
             {
                 BrickStride = BrickSize + BrickSpacing
             };
 
+            // Only vertical scrollbar supported: adjust width when needed
             ComputeLayoutForArea(ref layout, availableWidth, availableHeight);
-
-            needH = layout.MapColumns > layout.VisibleColumns;
-            needV = layout.MapRows > layout.VisibleRows;
+            bool needV = layout.MapRows > layout.VisibleRows;
 
             int adjustedWidth = availableWidth - (needV ? ScrollbarThickness : 0);
-            int adjustedHeight = availableHeight - (needH ? ScrollbarThickness : 0);
+            int adjustedHeight = availableHeight;
 
             ComputeLayoutForArea(ref layout, adjustedWidth, adjustedHeight);
 
             int maxScrollCols = Math.Max(0, layout.MapColumns - layout.VisibleColumns);
-            int maxScrollRows = Math.Max(0, layout.MapRows - layout.VisibleRows);
+            int totalBricksData = layout.BrickCapacity > 0
+                ? (int)Math.Ceiling(totalBytes / (double)layout.BrickCapacity)
+                : 0;
+            int totalRowsData = layout.MapColumns > 0
+                ? (int)Math.Ceiling(totalBricksData / (double)layout.MapColumns)
+                : 0;
 
-            layout.ScrollColumn = maxScrollCols == 0 ? 0 : (int)Math.Round(MathHelper.Clamp(_scrollX, 0f, 1f) * maxScrollCols);
+            int maxScrollRows = Math.Max(0, totalRowsData - layout.VisibleRows);
+
             layout.ScrollRow = maxScrollRows == 0 ? 0 : (int)Math.Round(MathHelper.Clamp(_scrollY, 0f, 1f) * maxScrollRows);
 
-            layout.ShowHScroll = layout.MapColumns > layout.VisibleColumns;
             layout.ShowVScroll = layout.MapRows > layout.VisibleRows;
 
             layout.AreaRect = new Rectangle(
@@ -234,26 +228,6 @@ namespace Continuum93.ServiceModule.UI
                 contentRect.Bottom - ControlBarHeight,
                 contentRect.Width - pad * 2,
                 ControlBarHeight);
-
-            if (layout.ShowHScroll)
-            {
-                layout.HScrollRect = new Rectangle(
-                    layout.AreaRect.X,
-                    layout.AreaRect.Bottom,
-                    layout.AreaRect.Width,
-                    ScrollbarThickness);
-
-                float thumbWidthRatio = layout.VisibleColumns / (float)layout.MapColumns;
-                int thumbWidth = Math.Max(8, (int)(layout.HScrollRect.Width * thumbWidthRatio));
-                int maxThumbTravel = Math.Max(1, layout.HScrollRect.Width - thumbWidth);
-                int thumbX = layout.HScrollRect.X + (int)(maxThumbTravel * (_scrollX = MathHelper.Clamp(_scrollX, 0f, 1f)));
-
-                layout.HThumbRect = new Rectangle(
-                    thumbX,
-                    layout.HScrollRect.Y,
-                    thumbWidth,
-                    ScrollbarThickness);
-            }
 
             if (layout.ShowVScroll)
             {
@@ -294,7 +268,7 @@ namespace Continuum93.ServiceModule.UI
             layout.BrickCapacity = CalculateBrickCapacity(bricksX, bricksY);
             int totalBricks = (int)Math.Ceiling(0x1000000d / (double)layout.BrickCapacity);
 
-            layout.MapColumns = Math.Max(bricksX, (int)Math.Ceiling(Math.Sqrt(totalBricks)));
+            layout.MapColumns = bricksX; // wrap horizontally; no horizontal scroll
             layout.MapRows = (totalBricks + layout.MapColumns - 1) / layout.MapColumns;
 
             layout.VisibleColumns = Math.Min(bricksX, layout.MapColumns);
@@ -351,30 +325,10 @@ namespace Continuum93.ServiceModule.UI
             bool leftJustPressed = leftPressed && _previousMouse.LeftButton == ButtonState.Released;
             bool leftJustReleased = !leftPressed && _previousMouse.LeftButton == ButtonState.Pressed;
 
-            if (leftJustPressed && _layout.ShowHScroll && _layout.HThumbRect.Contains(mousePos))
-            {
-                _draggingH = true;
-                _dragOffsetH = mousePos.X - _layout.HThumbRect.X;
-            }
-
             if (leftJustPressed && _layout.ShowVScroll && _layout.VThumbRect.Contains(mousePos))
             {
                 _draggingV = true;
                 _dragOffsetV = mousePos.Y - _layout.VThumbRect.Y;
-            }
-
-            if (_draggingH)
-            {
-                if (leftPressed)
-                {
-                    int travel = _layout.HScrollRect.Width - _layout.HThumbRect.Width;
-                    float ratio = (mousePos.X - _layout.HScrollRect.X - _dragOffsetH) / (float)Math.Max(1, travel);
-                    _scrollX = MathHelper.Clamp(ratio, 0f, 1f);
-                }
-                else if (leftJustReleased)
-                {
-                    _draggingH = false;
-                }
             }
 
             if (_draggingV)
@@ -394,10 +348,8 @@ namespace Continuum93.ServiceModule.UI
 
         private void ClampScroll()
         {
-            int maxScrollCols = Math.Max(0, _layout.MapColumns - _layout.VisibleColumns);
             int maxScrollRows = Math.Max(0, _layout.MapRows - _layout.VisibleRows);
 
-            _scrollX = maxScrollCols == 0 ? 0f : MathHelper.Clamp(_scrollX, 0f, 1f);
             _scrollY = maxScrollRows == 0 ? 0f : MathHelper.Clamp(_scrollY, 0f, 1f);
         }
 
@@ -439,12 +391,14 @@ namespace Continuum93.ServiceModule.UI
 
             var ram = computer.MEMC.RAM.Data;
             uint totalBytes = computer.MEMC.RAM.Size;
+            if (totalBytes == 0 || _layout.BrickCapacity <= 0)
+                return;
 
             for (int row = 0; row < _layout.VisibleRows; row++)
             {
                 for (int col = 0; col < _layout.VisibleColumns; col++)
                 {
-                    int globalColumn = _layout.ScrollColumn + col;
+                    int globalColumn = col;
                     int globalRow = _layout.ScrollRow + row;
                     int globalIndex = globalRow * _layout.MapColumns + globalColumn;
 
@@ -622,12 +576,6 @@ namespace Continuum93.ServiceModule.UI
 
         private void DrawScrollbars(SpriteBatch spriteBatch, Texture2D pixel, Themes.Theme theme)
         {
-            if (_layout.ShowHScroll)
-            {
-                spriteBatch.Draw(pixel, _layout.HScrollRect, theme.TaskbarItemNormalBackground);
-                spriteBatch.Draw(pixel, _layout.HThumbRect, theme.TaskbarItemActiveBackground);
-            }
-
             if (_layout.ShowVScroll)
             {
                 spriteBatch.Draw(pixel, _layout.VScrollRect, theme.TaskbarItemNormalBackground);
@@ -645,7 +593,7 @@ namespace Continuum93.ServiceModule.UI
 
             var computer = Machine.COMPUTER;
             uint totalBytes = computer?.MEMC.RAM.Size ?? 0;
-            uint viewStart = (uint)((_layout.ScrollRow * _layout.MapColumns + _layout.ScrollColumn) * _layout.BrickCapacity);
+            uint viewStart = (uint)((_layout.ScrollRow * _layout.MapColumns) * _layout.BrickCapacity);
             uint viewEnd = viewStart + (uint)(_layout.VisibleColumns * _layout.VisibleRows * _layout.BrickCapacity);
             if (viewEnd > totalBytes)
                 viewEnd = totalBytes == 0 ? 0 : totalBytes - 1;
