@@ -1,3 +1,4 @@
+using Continuum93.Emulator;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -150,8 +151,9 @@ namespace Continuum93.ServiceModule.UI
 
                 uint addr = _startAddress + (uint)index;
                 byte value = _data[index];
-                string line = $"{addr:X6} : {value:X2} ({value})";
+                string line = $"{addr:X6} : {value:X2} ({value,3})";
 
+                // Draw address and value
                 ServiceGraphics.DrawText(
                     font,
                     line,
@@ -163,6 +165,55 @@ namespace Continuum93.ServiceModule.UI
                     fontFlags,
                     0xFF
                 );
+
+                // Measure the width of the address/value line to position ASCII column
+                var lineSize = font.MeasureText(
+                    line,
+                    0,
+                    fontFlags
+                );
+                int asciiX = contentRect.X + Padding + lineSize.width + 20; // 20px spacing
+
+                // Draw ASCII representation
+                bool isAscii = value >= 32 && value <= 127;
+                string asciiChar = isAscii ? ((char)value).ToString() : "?";
+                Color asciiColor = isAscii ? theme.MemoryAsciiColor : theme.MemoryAsciiNonAsciiColor;
+                
+                string asciiText = $"'{asciiChar}'";
+                ServiceGraphics.DrawText(
+                    font,
+                    asciiText,
+                    asciiX,
+                    y,
+                    contentRect.Width - asciiX - Padding,
+                    asciiColor,
+                    theme.TextOutline,
+                    fontFlags,
+                    0xFF
+                );
+
+                // Measure ASCII text to position bit pattern
+                var asciiSize = font.MeasureText(asciiText, 0, fontFlags);
+                int bitPatternX = asciiX + asciiSize.width + 12; // 12px spacing after ASCII
+
+                // Draw 8-bit pattern visualization
+                const int bitSquareSize = 6;
+                const int bitSpacing = 1;
+                var pixel = Renderer.GetPixelTexture();
+                Color bitZeroColor = new Color(64, 64, 64); // Dark gray for 0
+                Color bitOneColor = Color.White; // White for 1
+
+                int bitY = y + (lineHeight - bitSquareSize) / 2; // Center vertically with text
+                for (int bit = 7; bit >= 0; bit--) // MSB to LSB
+                {
+                    bool bitSet = (value & (1 << bit)) != 0;
+                    Color bitColor = bitSet ? bitOneColor : bitZeroColor;
+                    int bitX = bitPatternX + (7 - bit) * (bitSquareSize + bitSpacing);
+                    
+                    Rectangle bitRect = new Rectangle(bitX, bitY, bitSquareSize, bitSquareSize);
+                    spriteBatch.Draw(pixel, bitRect, bitColor);
+                }
+
                 y += lineHeight;
                 linesDrawn++;
             }
