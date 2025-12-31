@@ -16,6 +16,7 @@ namespace Continuum93.ServiceModule.UI
         private const int ControlBarHeight = 36;
         private const int ScrollbarThickness = 12;
         private const float HoverDelay = 0.3f;
+        private const float CloseDelay = 0.2f; // Delay before closing popup when mouse leaves
         private const float PollIntervalSeconds = 1f / 30f;
         private const float DefaultActivityFadeSeconds = 0.5f;
         private const int MinZoomSteps = -6;
@@ -27,6 +28,7 @@ namespace Continuum93.ServiceModule.UI
 
         private MemoryMapHoverPopup _hoverPopup;
         private float _hoverTimer;
+        private float _closeTimer;
         private int _hoveredIndex = -1;
         private int _previousHoveredIndex = -1;
 
@@ -488,50 +490,75 @@ namespace Continuum93.ServiceModule.UI
         private void UpdateHover(Point mousePos, float dt)
         {
             bool mouseOverPopup = _hoverPopup != null && _hoverPopup.Visible && _hoverPopup.Bounds.Contains(mousePos);
+            bool mouseOverArea = _layout.AreaRect.Contains(mousePos);
 
-            if (!_layout.AreaRect.Contains(mousePos) && !mouseOverPopup)
+            // If mouse is over area or popup, reset close timer and handle normal hover logic
+            if (mouseOverArea || mouseOverPopup)
             {
-                HideHoverPopup();
-                _hoveredIndex = -1;
-                _hoverTimer = 0f;
-                return;
-            }
+                _closeTimer = 0f; // Reset close timer when mouse re-enters
 
-            int hovered = -1;
-            for (int i = 0; i < _visibleBricks.Count; i++)
-            {
-                if (_visibleBricks[i].Rect.Contains(mousePos))
+                int hovered = -1;
+                for (int i = 0; i < _visibleBricks.Count; i++)
                 {
-                    hovered = i;
-                    break;
+                    if (_visibleBricks[i].Rect.Contains(mousePos))
+                    {
+                        hovered = i;
+                        break;
+                    }
+                }
+
+                if (hovered != _previousHoveredIndex)
+                {
+                    _hoverTimer = 0f;
+                    _previousHoveredIndex = hovered;
+                }
+
+                _hoveredIndex = hovered;
+
+                if (_hoveredIndex >= 0 && !mouseOverPopup)
+                {
+                    _hoverTimer += dt;
+                    if (_hoverTimer >= HoverDelay)
+                    {
+                        ShowHoverPopup(_visibleBricks[_hoveredIndex]);
+                    }
+                }
+                else if (!mouseOverPopup && _hoveredIndex < 0)
+                {
+                    // Mouse is over area but not a brick - keep popup if it's visible
+                    // Don't hide it here, let the close timer handle it if mouse leaves
+                }
+
+                if (_hoverPopup != null && _hoverPopup.Visible)
+                {
+                    _hoverPopup.Update(new GameTime());
                 }
             }
-
-            if (hovered != _previousHoveredIndex)
+            else
             {
-                _hoverTimer = 0f;
-                _previousHoveredIndex = hovered;
-            }
-
-            _hoveredIndex = hovered;
-
-            if (_hoveredIndex >= 0 && !mouseOverPopup)
-            {
-                _hoverTimer += dt;
-                if (_hoverTimer >= HoverDelay)
+                // Mouse is not over area or popup - start close timer
+                if (_hoverPopup != null && _hoverPopup.Visible)
                 {
-                    ShowHoverPopup(_visibleBricks[_hoveredIndex]);
+                    _closeTimer += dt;
+                    if (_closeTimer >= CloseDelay)
+                    {
+                        HideHoverPopup();
+                        _hoveredIndex = -1;
+                        _hoverTimer = 0f;
+                        _closeTimer = 0f;
+                    }
+                    else
+                    {
+                        // Keep popup visible during delay, but don't update it
+                        _hoverPopup.Update(new GameTime());
+                    }
                 }
-            }
-            else if (!mouseOverPopup)
-            {
-                HideHoverPopup();
-                _hoverTimer = 0f;
-            }
-
-            if (_hoverPopup != null && _hoverPopup.Visible)
-            {
-                _hoverPopup.Update(new GameTime());
+                else
+                {
+                    _hoveredIndex = -1;
+                    _hoverTimer = 0f;
+                    _closeTimer = 0f;
+                }
             }
         }
 
