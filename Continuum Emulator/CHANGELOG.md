@@ -10,11 +10,17 @@
 - Small refactor on the AND instructions. Nothing essential changed, just cleaned up the codebase a bit.
 - In preparation to deprecating Continuum Tools: Implemented an integrated Service Mode overlay (accessible always with F1) with a smooth animated transition
 - The emulator now renders using an aspect-correct destination rectangle with automatic letterboxing/pillarboxing to preserve the 16:9 ratio on any resolution, and it automatically switches between pixel-perfect PointClamp scaling for integer multiples and LinearClamp for non-integer scales to avoid visual artifacts on awkward resolutions.
-- Started working on a new integrated "Service Mode" to eventually replace Continuum Tools. Currently, it supports:
-  - Toggling to service with F1;
-  - Disassembler view;
-  - Configurable windows layout;
-  - work in progress...
+- **Service Module**: Complete implementation of an integrated debugging and service interface to replace Continuum Tools. Features include:
+  - Toggle with **F1** key with smooth animated transitions between normal and service modes;
+  - **Window-based debugging interface** with 12 specialized windows: Disassembler, Registers (integer and float), Flags, Stacks, Memory viewer, Memory map, Palettes, 3D video layer visualization, Status bar, Watcher, Immediate command window, and Emulator preview;
+  - **Immediate window** for writing and executing assembly code snippets — text persists while the game runs, and pressing **Ctrl+Enter** compiles the code to address `0xC00000` and executes it (automatically wraps with `#ORG`, `#RUN`, and `RET`; shows compilation errors and execution status);
+  - **Configurable and persistent window layouts** — all window positions, sizes, and visibility states are saved to `Data/serviceState/layout.json` and restored on next launch;
+  - **Step-by-step debugging controls**: **F5** to toggle step mode, **F8** to continue execution, **F9** to advance one step, **F10** or **Enter** to refresh disassembly;
+  - **Memory activity tracking** automatically enabled in service mode for visual memory access monitoring;
+  - **Theme system** supporting customizable color schemes;
+  - **Window management** with drag, resize, show/hide, and taskbar integration;
+  - **Automatic window size management** — main window size is saved when entering service mode and restored when exiting.
+- **C98Basic compiler** (work in progress, not yet functional): Initial implementation of a BASIC-to-assembly compiler has been started, including lexer, parser, AST nodes, and code emitter components. The compiler architecture supports label-based program structure and is designed to compile BASIC source code to Continuum assembly. **Note: This feature is incomplete and not yet ready for use.**
 
 ## 2.1.212 — 25.10.2025
 
