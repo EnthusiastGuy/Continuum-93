@@ -158,10 +158,77 @@ namespace Continuum93.ServiceModule.UI
         // PER-FRAME LOGIC – this will be called from ServiceGraphics.Update
         public void Update(GameTime gameTime)
         {
+            var mouse = Mouse.GetState();
+            Point mousePos = new(mouse.X, mouse.Y);
+
+            // Determine if a popup is under the mouse
+            Window popupOwner = null;
             foreach (var w in Windows)
             {
-                if (w.Visible)
-                    w.Update(gameTime);
+                if (!w.Visible) continue;
+
+                if (w is DisassemblerWindow dw && dw.HoverPopup != null && dw.HoverPopup.Visible && dw.HoverPopup.Bounds.Contains(mousePos))
+                {
+                    popupOwner = dw;
+                    break;
+                }
+                if (w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible && mw.GetHoverPopup().Bounds.Contains(mousePos))
+                {
+                    popupOwner = mw;
+                    break;
+                }
+                if (w is MemoryMapWindow mmw && mmw.GetHoverPopup() != null && mmw.GetHoverPopup().Visible && mmw.GetHoverPopup().Bounds.Contains(mousePos))
+                {
+                    popupOwner = mmw;
+                    break;
+                }
+                if (w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible && sbw.HoverPopup.Bounds.Contains(mousePos))
+                {
+                    popupOwner = sbw;
+                    break;
+                }
+                if (w is RegisterWindow rw && rw.GetHoverPopup() != null && rw.GetHoverPopup().Visible && rw.GetHoverPopup().Bounds.Contains(mousePos))
+                {
+                    popupOwner = rw;
+                    break;
+                }
+            }
+
+            Window topUnderMouse = null;
+            if (popupOwner == null)
+            {
+                for (int i = Windows.Count - 1; i >= 0; i--)
+                {
+                    var w = Windows[i];
+                    if (!w.Visible) continue;
+                    if (w.Bounds.Contains(mousePos))
+                    {
+                        topUnderMouse = w;
+                        break;
+                    }
+                }
+            }
+
+            foreach (var w in Windows)
+            {
+                if (!w.Visible)
+                    continue;
+
+                bool mouseOverPopup = popupOwner != null;
+                if (mouseOverPopup)
+                {
+                    // Only the popup owner processes updates when mouse is over a popup
+                    if (w == popupOwner)
+                        w.Update(gameTime);
+                    else if (!w.Bounds.Contains(mousePos))
+                        w.Update(gameTime);
+                }
+                else
+                {
+                    // Without popup: only the top-most window under the mouse processes hover-sensitive updates
+                    if (topUnderMouse == null || w == topUnderMouse || !w.Bounds.Contains(mousePos))
+                        w.Update(gameTime);
+                }
             }
             
             // Update hover popups
