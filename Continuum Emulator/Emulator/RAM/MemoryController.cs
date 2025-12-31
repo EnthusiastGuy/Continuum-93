@@ -19,6 +19,7 @@ namespace Continuum93.Emulator.RAM
         public Memory RSRAM = new(SIZE_4MB);        // RAM reserved for the register stack
         public StackMemory CSRAM = new(SIZE_1MB);   // RAM reserved for the call stack
         public HardwareMemory HMEM = new(SIZE_64K); // Memory reserved for hardware internals
+        public MemoryActivityTracker ActivityTracker { get; } = new();
 
         private readonly Computer _computer = computer;
 
@@ -95,7 +96,7 @@ namespace Continuum93.Emulator.RAM
         }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte GetSafe8bitFromRAM(uint address) => RAM[address % 0x1000000];
+        public byte GetSafe8bitFromRAM(uint address) => Get8bitFromRAM(address % 0x1000000);
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ushort GetSafe16bitFromRAM(uint address) =>
@@ -110,23 +111,36 @@ namespace Continuum93.Emulator.RAM
             Get32bitFromRAM(address % 0x1000000);
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte Get8bitFromRAM(uint address) => RAM[address];
+        public byte Get8bitFromRAM(uint address)
+        {
+            TrackRead(address, 1);
+            return RAM[address];
+        }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public sbyte GetSigned8bitFromRAM(uint address) => (sbyte)RAM[address];
+        public sbyte GetSigned8bitFromRAM(uint address) => (sbyte)Get8bitFromRAM(address);
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ushort Get16bitFromRAM(uint address) => (ushort)((RAM[address] << 8) + RAM[address + 1]);
+        public ushort Get16bitFromRAM(uint address)
+        {
+            TrackRead(address, 2);
+            return (ushort)((RAM[address] << 8) + RAM[address + 1]);
+        }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public short GetSigned16bitFromRAM(uint address) => (short)((RAM[address] << 8) + RAM[address + 1]);
+        public short GetSigned16bitFromRAM(uint address) => (short)Get16bitFromRAM(address);
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint Get24bitFromRAM(uint address) => (uint)((RAM[address] << 16) + (RAM[address + 1] << 8) + RAM[address + 2]);
+        public uint Get24bitFromRAM(uint address)
+        {
+            TrackRead(address, 3);
+            return (uint)((RAM[address] << 16) + (RAM[address + 1] << 8) + RAM[address + 2]);
+        }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetSigned24bitFromRAM(uint address)
         {
+            TrackRead(address, 3);
             int value = (RAM[address] << 16) + (RAM[address + 1] << 8) + RAM[address + 2];
 
             if ((value & 0x00800000) == 0)
@@ -138,24 +152,41 @@ namespace Continuum93.Emulator.RAM
         }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint Get32bitFromRAM(uint address) => (uint)((RAM[address] << 24) + (RAM[address + 1] << 16) + (RAM[address + 2] << 8) + RAM[address + 3]);
+        public uint Get32bitFromRAM(uint address)
+        {
+            TrackRead(address, 4);
+            return (uint)((RAM[address] << 24) + (RAM[address + 1] << 16) + (RAM[address + 2] << 8) + RAM[address + 3]);
+        }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetSigned32bitFromRAM(uint address) => (RAM[address] << 24) + (RAM[address + 1] << 16) + (RAM[address + 2] << 8) + RAM[address + 3];
+        public int GetSigned32bitFromRAM(uint address)
+        {
+            TrackRead(address, 4);
+            return (RAM[address] << 24) + (RAM[address + 1] << 16) + (RAM[address + 2] << 8) + RAM[address + 3];
+        }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float GetFloatFromRAM(uint address) => FloatPointUtils.BytesToFloat(
+        public float GetFloatFromRAM(uint address)
+        {
+            TrackRead(address, 4);
+            return FloatPointUtils.BytesToFloat(
             [
                 RAM[address % 0x1000000], RAM[(address + 1) % 0x1000000], RAM[(address + 2) % 0x1000000], RAM[(address + 3) % 0x1000000]
             ]);
+        }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Set8bitToRAM(uint address, byte value) => RAM[address] = value;
+        public void Set8bitToRAM(uint address, byte value)
+        {
+            TrackWrite(address, 1);
+            RAM[address] = value;
+        }
 
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set16bitToRAM(uint address, ushort value)
         {
             ushort val = (ushort)(value & 0b1111111111111111);
+            TrackWrite(address, 2);
             RAM[address] = (byte)(val >> 8);
             RAM[address + 1] = (byte)(val & 0b11111111);
         }
@@ -164,6 +195,7 @@ namespace Continuum93.Emulator.RAM
         public void Set24bitToRAM(uint address, uint value)
         {
             uint val = value & 0b111111111111111111111111;
+            TrackWrite(address, 3);
             RAM[address] = (byte)(val >> 16);
             RAM[address + 1] = (byte)(val >> 8 & 0b11111111);
             RAM[address + 2] = (byte)(val & 0b11111111);
@@ -172,6 +204,7 @@ namespace Continuum93.Emulator.RAM
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set32bitToRAM(uint address, uint value)
         {
+            TrackWrite(address, 4);
             RAM[address] = (byte)(value >> 24);
             RAM[address + 1] = (byte)(value >> 16 & 0b11111111);
             RAM[address + 2] = (byte)(value >> 8 & 0b11111111);
@@ -182,6 +215,7 @@ namespace Continuum93.Emulator.RAM
         public void SetFloatToRam(uint address, float value)
         {
             byte[] bytes = FloatPointUtils.FloatToBytes(value);
+            TrackWrite(address, 4);
             RAM[address] = bytes[0];
             RAM[address + 1] = bytes[1];
             RAM[address + 2] = bytes[2];
@@ -201,6 +235,8 @@ namespace Continuum93.Emulator.RAM
         {
             // Convert the string to a UTF8 byte array
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(str);
+
+            TrackWrite(address, bytes.Length + 1);
 
             // Copy each byte from the string to the RAM array starting at the given address
             for (int i = 0; i < bytes.Length; i++)
@@ -332,5 +368,11 @@ namespace Continuum93.Emulator.RAM
             Array.Copy(RAM.Data, (int)address, response, 0, length);
             return response;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void TrackRead(uint address, int length = 1) => ActivityTracker.RecordRead(address, length);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void TrackWrite(uint address, int length = 1) => ActivityTracker.RecordWrite(address, length);
     }
 }

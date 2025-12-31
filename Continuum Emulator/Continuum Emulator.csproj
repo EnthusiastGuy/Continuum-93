@@ -12,11 +12,11 @@
     <AssemblyName>Continuum93</AssemblyName>
     <RootNamespace>Continuum93</RootNamespace>
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
-    <Version>$(VersionPrefix)1.1.200</Version>
+    <Version>$(VersionPrefix)2.1.220</Version>
     <Copyright>Enthusiast guy</Copyright>
     <PackageProjectUrl>http://continuum-93.com</PackageProjectUrl>
-    <AssemblyVersion>1.1.200</AssemblyVersion>
-    <FileVersion>1.1.200</FileVersion>
+    <AssemblyVersion>2.1.220</AssemblyVersion>
+    <FileVersion>2.1.220</FileVersion>
     <EnableNETAnalyzers>False</EnableNETAnalyzers>
     <AnalysisLevel>none</AnalysisLevel>
     <ApplicationIcon>icons\Icon.ico</ApplicationIcon>
@@ -131,16 +131,49 @@
     <None Update="Data\filesystem\experiments\rectangle\rectangle.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\filesystem\fonts\Adventure 8x8.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\Adventure 8x9.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\Adventure 9x9.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\filesystem\fonts\CleanCut.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\filesystem\fonts\DoctorJack.font">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\filesystem\fonts\ModernDOS 8x8.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\ModernDOS-8x13.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\ModernDOS-8x15.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\ModernDOS-8x15.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\ModernDOS-9x13.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\ModernDOS-9x15.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\ModernDOS-9x8.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\filesystem\fonts\SlickAntsContour.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\filesystem\fonts\SlickAntsContourSlim.font">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\fonts\v1QKQ6n.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\filesystem\games\Seymour - Take 1 V2\gfx\Seymour_10x10 - Bold capitals.png">
@@ -320,10 +353,19 @@
     <None Update="Data\filesystem\programs\cube3d\cube3D.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\filesystem\programs\delete-test\font3.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\programs\delete-test\test.asm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\filesystem\programs\font-test\Adventure.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\filesystem\programs\font-test\font-test.asm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\programs\font-test\fonts-showcase.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\filesystem\programs\font-test\RealityOneWideFont.png">
@@ -437,6 +479,12 @@
     <None Update="Data\filesystem\programs\mouse-test\mouse-test.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\filesystem\programs\oldOS\os v2.asm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\filesystem\programs\oldOS\os.asm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\filesystem\programs\palette-shift\palette.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -476,6 +524,9 @@
     <None Update="Data\filesystem\splash.png.data">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\filesystem\tests\layers.asm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\fonts\CleanCut.font">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -483,6 +534,33 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\fonts\DoctorJack.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-10x15.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-10x16.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-10x16.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-12x18-thin.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-12x18.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-8x15.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-8x15.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-9x15.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\fonts\ModernDOS-9x15.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\fonts\SlickAntsContour.font">
@@ -575,6 +653,9 @@
     <None Update="Data\sample-1.ogg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\themes\default.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\w98.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -596,9 +677,11 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Data\filesystem\mosaic\fonts\" />
+    <Folder Include="Data\filesystem\tests\" />
     <Folder Include="Data\filesystem\programs\cube3d\" />
     <Folder Include="Data\filesystem\programs\CPU benchmark\" />
     <Folder Include="Data\filesystem\programs\simple-loop\" />
+    <Folder Include="Emulator\Compilers\C93Basic\" />
   </ItemGroup>
   <Target Name="RestoreDotnetTools" BeforeTargets="Restore">
     <Message Text="Restoring dotnet tools" Importance="High" />

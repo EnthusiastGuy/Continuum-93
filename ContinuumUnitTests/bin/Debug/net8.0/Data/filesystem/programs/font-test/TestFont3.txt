@@ -1,3 +1,0 @@
-# Kerning values
-
-Co: 0

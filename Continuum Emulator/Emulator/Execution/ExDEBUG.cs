@@ -1,6 +1,7 @@
 ﻿using Continuum93.Emulator;
 using Continuum93.CodeAnalysis;
 using Continuum93.CodeAnalysis.Network;
+using Continuum93.ServiceModule;
 
 namespace Continuum93.Emulator.Execution
 {
@@ -16,16 +17,11 @@ namespace Continuum93.Emulator.Execution
                 ClientActions.StartStepByStepMode();
             }
 
-            //tempLog += $"State:{Machine.COMPUTER.CPU.FREGS.GetRegistersState()}{Environment.NewLine}";
-
-
-
-            // Dump regs
-            //Debug.WriteLine(Machine.COMPUTER.CPU.REGS.EFG);
-            //string path = Machine.COMPUTER.MEMC.GetStringAt(Machine.COMPUTER.CPU.REGS.ABCD);
-            //byte[] bytes1 = Machine.COMPUTER.MEMC.DumpMemAt(Machine.COMPUTER.CPU.REGS.CDE, 8);
-            //byte[] bytes2 = Machine.COMPUTER.MEMC.DumpMemAt(Machine.COMPUTER.CPU.REGS.FGH, 8);
-            //Debug.WriteLine(Machine.COMPUTER.CPU.REGS.RST);
+            // Enter Service mode here
+            Service.STATE.ServiceMode = true;
+            DebugState.StepByStep = true;
+            DebugState.MoveNext = false;
+            Operations.Disassemble();
         }
     }
 }

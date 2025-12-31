@@ -26,5 +26,10 @@ namespace Continuum93.Emulator
         {
             return _gameTime.TotalGameTime.Ticks;
         }
+
+        public static double GetTotalSeconds()
+        {
+            return _gameTime != null ? _gameTime.TotalGameTime.TotalSeconds : 0;
+        }
     }
 }

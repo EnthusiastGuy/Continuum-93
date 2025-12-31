@@ -5,7 +5,7 @@
   },
   "projects": {
     "D:\\Projects\\Continuum-93\\Continuum Emulator\\Continuum Emulator.csproj": {
-      "version": "1.1.200",
+      "version": "2.1.220",
       "restore": {
         "projectUniqueName": "D:\\Projects\\Continuum-93\\Continuum Emulator\\Continuum Emulator.csproj",
         "projectName": "Continuum93",
@@ -54,7 +54,7 @@
             "Microsoft.NET.ILLink.Tasks": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[8.0.21, )",
+              "version": "[8.0.22, )",
               "autoReferenced": true
             },
             "MonoGame.Content.Builder.Task": {
@@ -86,7 +86,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -178,7 +178,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

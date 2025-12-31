@@ -20,11 +20,16 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.IO;
 using System.Threading;
+using Continuum93.ServiceModule;
 
 namespace Continuum93
 {
-    public class Continuum : Game
+    public sealed class Continuum : Game
     {
+        private readonly bool _mouseEnabled;
+        private readonly bool _debugEnabled;
+        private readonly bool _startFullscreen;
+
         public Continuum(string[] args)
         {
             Log.WriteLine("Continuum started.");
@@ -32,11 +37,16 @@ namespace Continuum93
             if (args.Length > 0)
                 UtilsManager.Arguments = args;
 
-            Renderer.RegisterGraphicsDeviceManager(new GraphicsDeviceManager(this) { GraphicsProfile = GraphicsProfile.Reach });
+            Renderer.RegisterGraphicsDeviceManager(new GraphicsDeviceManager(this) { GraphicsProfile = GraphicsProfile.Reach }, this);
             Log.WriteLine("Registered the GDM");
 
             Content.RootDirectory = "Content";
-            if (!SettingsManager.GetBoleanSettingsValue("disableMouse")) { IsMouseVisible = false; }
+
+            _mouseEnabled = !SettingsManager.GetBoleanSettingsValue("disableMouse");
+            _debugEnabled = true;// SettingsManager.GetBoleanSettingsValue("enableDebugging");
+            _startFullscreen = SettingsManager.GetBoleanSettingsValue("fullscreen");
+
+            IsMouseVisible = _mouseEnabled;
 
         }
 
@@ -72,17 +82,20 @@ namespace Continuum93
             //Renderer.InterlaceEffect = Content.Load<Effect>("InterlaceShader");
             //Watcher.WatchDirectoryOfFile(SettingsManager.GetSettingValue("bootProgram"));
 
-            Renderer.SetFullScreen(SettingsManager.GetBoleanSettingsValue("fullscreen"));
+            Renderer.SetFullScreen(_startFullscreen);
 
-            if (SettingsManager.GetBoleanSettingsValue("enableDebugging"))
+            if (_debugEnabled)
             {
                 Thread.Sleep(10);
                 Log.WriteLine("Starting server");
                 Server.Start();
                 Log.WriteLine("Starting machine");
             }
+
+            ServiceGraphics.Initialize();
         }
 
+        // Deprecated, kept for reference
         private void UpdateAdmin()
         {
             if (InputKeyboard.KeyPressed(Keys.D))
@@ -118,16 +131,19 @@ namespace Continuum93
                 UtilsManager.ProcessArguments();
                 Machine.COMPUTER.Stop();
                 Exit();
+                return;
             }
 
             InputKeyboard.Update();
             //InputGamepad.Update();
             GamepadStateExts.Update();
             WindowManager.Update();
-            if (!SettingsManager.GetBoleanSettingsValue("disableMouse")) { InputMouse.Update(); }
+            if (_mouseEnabled) { InputMouse.Update(); }
             ImageLoadState.Update();
-            GameTimePlus.Update(gameTime);
+            Service.INPUT.Update(gameTime);
+            Service.GRAPHICS.Update(gameTime);
 
+            GameTimePlus.Update(gameTime);
 
             //UpdateAdmin();
 
@@ -158,9 +174,6 @@ namespace Continuum93
                     WaveTypeValues = { { XSoundParams.WaveTypes.TAN, 5 }, { XSoundParams.WaveTypes.RINGMODULATION, 95 } },
                     DutyCycle = 0.8f, DutyCycleRamp = 0.0f,
                     EnvelopeAttack = 0, EnvelopeDecay = 0,
-                    
-                    
-                    
                 });
             };
 
@@ -182,7 +195,12 @@ namespace Continuum93
 
         protected override void Draw(GameTime gameTime)
         {
-            Machine.COMPUTER.GRAPHICS.Draw();
+            if (Service.STATE.UseServiceView)
+            {
+                Service.GRAPHICS.Draw();    // Includes drawing the emulated machine screen inside the service view
+            } else {
+                Machine.COMPUTER?.GRAPHICS.Draw();  // Normal, non-service rendering: full-screen emulated machine
+            }
 
             base.Draw(gameTime);
         }

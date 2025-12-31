@@ -10,7 +10,7 @@ namespace Continuum93.Utils
 
         public Kerning(string filePath)
         {
-            kerningPairs = new List<(byte, byte, sbyte)>();
+            kerningPairs = [];
 
             // Check if the file exists
             if (!File.Exists(filePath))

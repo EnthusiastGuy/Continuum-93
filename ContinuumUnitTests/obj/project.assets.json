@@ -1765,7 +1765,7 @@
           "build/netcoreapp3.1/xunit.runner.visualstudio.props": {}
         }
       },
-      "Continuum93/1.1.200": {
+      "Continuum93/2.1.220": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
@@ -5911,7 +5911,7 @@
         "xunit.runner.visualstudio.nuspec"
       ]
     },
-    "Continuum93/1.1.200": {
+    "Continuum93/2.1.220": {
       "type": "project",
       "path": "../Continuum Emulator/Continuum Emulator.csproj",
       "msbuildProject": "../Continuum Emulator/Continuum Emulator.csproj"
@@ -5919,7 +5919,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
-      "Continuum93 >= 1.1.200",
+      "Continuum93 >= 2.1.220",
       "Microsoft.NET.Test.Sdk >= 17.3.2",
       "coverlet.collector >= 3.1.2",
       "xunit >= 2.4.2",
@@ -6018,7 +6018,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

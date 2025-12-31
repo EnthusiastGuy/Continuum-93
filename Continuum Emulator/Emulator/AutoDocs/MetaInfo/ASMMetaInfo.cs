@@ -19,6 +19,19 @@ namespace Continuum93.Emulator.AutoDocs.MetaInfo
             return "";
         }
 
+        public static ASMMeta GetMeta(string op)
+        {
+            foreach (ASMMeta meta in MetaData)
+            {
+                if (meta.Operators.Contains(op))
+                {
+                    return meta;
+                }
+            }
+
+            return null;
+        }
+
         public static void Initialize()
         {
             MetaData.Add(ASMMeta.Create(
@@ -564,5 +577,11 @@ namespace Continuum93.Emulator.AutoDocs.MetaInfo
             ));
             */
         }
+
+        public static void DeInitialize()
+        {
+            MetaData.Clear();
+        }
+
     }
 }

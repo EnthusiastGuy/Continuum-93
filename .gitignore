@@ -1,2 +1,8 @@
 ﻿[Oo]bj/
 [Bb]in/
+/.vscode
+/Continuum Emulator/.vscode
+/ContinuumUnitTests/obj/
+/ContinuumUnitTests/bin/
+/Automated reports/
+/Continuum Emulator/Emulator/Compilers/C93Basic/C93Basic.zip

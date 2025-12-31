@@ -3,6 +3,8 @@ using Continuum93.Emulator.Interrupts;
 using Continuum93.CodeAnalysis;
 using Continuum93.Emulator;
 using Microsoft.Xna.Framework;
+using Continuum93.Emulator.States;
+using Continuum93.ServiceModule;
 
 namespace Continuum93.Emulator.Window
 {
@@ -43,12 +45,22 @@ namespace Continuum93.Emulator.Window
 
             if (_oldState.ClientWidth != _newState.ClientWidth || _oldState.ClientHeight != _newState.ClientHeight)
             {
-
-                int newWidth = (int)(_newState.ClientHeight * 1.7777777777777777777777777777777777f);
-                Renderer.SetPreferredBackBufferSize(newWidth, _newState.ClientHeight);
+                // In service mode, allow free resizing (no enforced aspect)
+                if (!Service.STATE.ServiceMode)
+                {
+                    int newWidth = (int)(_newState.ClientHeight * 1.7777777777777777777777777777777777f);
+                    Renderer.SetPreferredBackBufferSize(newWidth, _newState.ClientHeight);
+                }
+                else
+                {
+                    // Accept user-chosen size
+                    Renderer.SetPreferredBackBufferSize(_newState.ClientWidth, _newState.ClientHeight);
+                    ServiceLayoutManager.Save();
+                }
             }
 
-            _gameWindow.Title = $"Continuum 93    {Version.GetVersion()} {(DebugState.ClientConnected ? "- tools connected" : "")}{(DebugState.StepByStep ? ", debugging" : "")}";
+            _gameWindow.Title = 
+                $"Continuum 93    {Version.GetVersion()} {(Service.STATE.ServiceMode ? "- Service mode, \"" + Service.STATE.ServiceKey + "\" exits" : "")} {(DebugState.ClientConnected ? "- tools connected" : "")}{(DebugState.StepByStep ? ", debugging" : "")}";
         }
 
         public static void SetWindowSize(float ratio)
