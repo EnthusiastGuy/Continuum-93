@@ -252,7 +252,7 @@ namespace Continuum93.ServiceModule.UI
             // Clear button placed on the right side of the control bar
             int buttonWidth = 160;
             layout.ClearButtonRect = new Rectangle(
-                layout.ControlRect.Right - buttonWidth - pad,
+                layout.ControlRect.Right - buttonWidth - pad * 2,
                 layout.ControlRect.Y + 6,
                 buttonWidth,
                 layout.ControlRect.Height - 12);
@@ -313,6 +313,27 @@ namespace Continuum93.ServiceModule.UI
 
             int delta = mouse.ScrollWheelValue - _previousWheel;
             if (delta == 0)
+                return;
+
+            bool ctrl = Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl);
+
+            // If hovering over popup, don't forward wheel to the map.
+            if (_hoverPopup != null && _hoverPopup.Visible && _hoverPopup.Bounds.Contains(mousePos))
+                return;
+
+            // Ctrl + wheel: scroll vertically (no zoom)
+            if (ctrl)
+            {
+                int direction = delta > 0 ? -1 : 1;
+                float step = _layout.MapRows > 0
+                    ? (_layout.VisibleRows / (float)Math.Max(1, _layout.MapRows))
+                    : 0.1f;
+                _scrollY = MathHelper.Clamp(_scrollY + direction * step, 0f, 1f);
+                return;
+            }
+
+            // Stop zooming in once brick capacity is 1 byte
+            if (delta > 0 && _layout.BrickCapacity <= 1)
                 return;
 
             int next = _zoomSteps + (delta > 0 ? 1 : -1);
@@ -629,7 +650,7 @@ namespace Continuum93.ServiceModule.UI
             spriteBatch.Draw(pixel, _layout.ClearButtonRect, buttonColor);
 
             ServiceGraphics.DrawText(
-                theme.PrimaryFont,
+                Fonts.ModernDOS_9x15,
                 "Clear Activity Map",
                 _layout.ClearButtonRect.X + 10,
                 _layout.ClearButtonRect.Y + 6,

@@ -97,12 +97,13 @@ namespace Continuum93.ServiceModule.UI
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)
         {
             var theme = ServiceGraphics.Theme;
+            var font = Fonts.ModernDOS_9x15;
             byte fontFlags = (byte)(ServiceFontFlags.Monospace | ServiceFontFlags.DrawOutline);
-            int lineHeight = 18;
+            int lineHeight = 16;
             int y = contentRect.Y + Padding;
 
             ServiceGraphics.DrawText(
-                theme.PrimaryFont,
+                font,
                 $"Start: 0x{_startAddress:X6} ({_startAddress})",
                 contentRect.X + Padding,
                 y,
@@ -115,7 +116,7 @@ namespace Continuum93.ServiceModule.UI
             y += lineHeight;
 
             ServiceGraphics.DrawText(
-                theme.PrimaryFont,
+                font,
                 $"Bytes: {_byteCount}",
                 contentRect.X + Padding,
                 y,
@@ -128,7 +129,7 @@ namespace Continuum93.ServiceModule.UI
             y += lineHeight;
 
             ServiceGraphics.DrawText(
-                theme.PrimaryFont,
+                font,
                 "Values:",
                 contentRect.X + Padding,
                 y,
@@ -152,7 +153,7 @@ namespace Continuum93.ServiceModule.UI
                 string line = $"{addr:X6} : {value:X2} ({value})";
 
                 ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
+                    font,
                     line,
                     contentRect.X + Padding,
                     y,
@@ -169,7 +170,7 @@ namespace Continuum93.ServiceModule.UI
             if (linesDrawn == 0)
             {
                 ServiceGraphics.DrawText(
-                    theme.PrimaryFont,
+                    font,
                     "(no data)",
                     contentRect.X + Padding,
                     y,
