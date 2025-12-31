@@ -250,9 +250,9 @@ namespace Continuum93.ServiceModule.UI
             }
 
             // Clear button placed on the right side of the control bar
-            int buttonWidth = 160;
+            int buttonWidth = 195;
             layout.ClearButtonRect = new Rectangle(
-                layout.ControlRect.Right - buttonWidth - pad * 2,
+                layout.ControlRect.Right - buttonWidth - pad * 4,
                 layout.ControlRect.Y + 6,
                 buttonWidth,
                 layout.ControlRect.Height - 12);
@@ -628,17 +628,6 @@ namespace Continuum93.ServiceModule.UI
                 textY,
                 _layout.ControlRect.Width - Padding * 2,
                 theme.TextPrimary,
-                theme.TextOutline,
-                fontFlags,
-                0xFF);
-
-            ServiceGraphics.DrawText(
-                theme.PrimaryFont,
-                $"View: 0x{viewStart:X6} - 0x{viewEnd:X6}",
-                textX,
-                textY + 16,
-                _layout.ControlRect.Width - Padding * 2,
-                theme.TextInfo,
                 theme.TextOutline,
                 fontFlags,
                 0xFF);
