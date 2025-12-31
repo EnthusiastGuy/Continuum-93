@@ -79,6 +79,14 @@ namespace Continuum93.ServiceModule.UI
                         break;
                     }
                 }
+                else if (w is MemoryMapWindow mmw && mmw.GetHoverPopup() != null && mmw.GetHoverPopup().Visible)
+                {
+                    if (mmw.GetHoverPopup().Bounds.Contains(mousePos))
+                    {
+                        hoverPopup = mmw.GetHoverPopup();
+                        break;
+                    }
+                }
                 else if (w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
                 {
                     if (sbw.HoverPopup.Bounds.Contains(mousePos))
@@ -167,6 +175,10 @@ namespace Continuum93.ServiceModule.UI
                 {
                     mw.GetHoverPopup().Update(gameTime);
                 }
+                else if (w.Visible && w is MemoryMapWindow mmw && mmw.GetHoverPopup() != null && mmw.GetHoverPopup().Visible)
+                {
+                    mmw.GetHoverPopup().Update(gameTime);
+                }
                 else if (w.Visible && w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
                 {
                     sbw.HoverPopup.Update(gameTime);
@@ -198,6 +210,10 @@ namespace Continuum93.ServiceModule.UI
                 else if (w.Visible && w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible)
                 {
                     mw.GetHoverPopup().Draw();
+                }
+                else if (w.Visible && w is MemoryMapWindow mmw && mmw.GetHoverPopup() != null && mmw.GetHoverPopup().Visible)
+                {
+                    mmw.GetHoverPopup().Draw();
                 }
                 else if (w.Visible && w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
                 {

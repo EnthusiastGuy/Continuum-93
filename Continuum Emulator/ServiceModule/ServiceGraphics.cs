@@ -24,6 +24,7 @@ namespace Continuum93.ServiceModule
         private static FlagWindow _flagWindow;
         private static StacksWindow _stacksWindow;
         private static MemoryWindow _memoryWindow;
+        private static MemoryMapWindow _memoryMapWindow;
         private static StatusBarWindow _statusBarWindow;
         private static PalettesWindow _palettesWindow;
         private static VirtualScreen3DWindow _virtualScreen3DWindow;
@@ -138,6 +139,18 @@ namespace Continuum93.ServiceModule
                 false
             );
             _windowManager.Add(_memoryWindow);
+
+            _memoryMapWindow = new MemoryMapWindow(
+                "MEMORY MAP",
+                x: 1480,
+                y: 560,
+                width: 400,
+                height: 320,
+                0.55f,
+                true,
+                false
+            );
+            _windowManager.Add(_memoryMapWindow);
 
             // Status bar window
             _statusBarWindow = new StatusBarWindow(
@@ -325,6 +338,7 @@ namespace Continuum93.ServiceModule
 
             // Draw memory hover pop-up after all windows (it's not managed by WindowManager)
             _memoryWindow?.DrawHoverPopup();
+            _memoryMapWindow?.DrawHoverPopup();
 
             Renderer.GetSpriteBatch().End();
         }

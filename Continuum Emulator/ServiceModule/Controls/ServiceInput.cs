@@ -1,4 +1,5 @@
 ﻿using Continuum93.CodeAnalysis;
+using Continuum93.Emulator;
 using Continuum93.Emulator.AutoDocs.MetaInfo;
 using Continuum93.Emulator.Controls;
 using Microsoft.Xna.Framework;
@@ -20,6 +21,11 @@ namespace Continuum93.ServiceModule.Controls
 
                 if (!wasServiceMode && Service.STATE.ServiceMode)
                 {
+                    Machine.COMPUTER?.MEMC.ActivityTracker.Clear();
+                    if (Machine.COMPUTER != null)
+                    {
+                        Machine.COMPUTER.MEMC.ActivityTracker.Enabled = true;
+                    }
                     ASMMetaInfo.Initialize();
                     ServiceLayoutManager.CapturePreServiceSize();
                     ServiceLayoutManager.OnServiceModeEntered();
@@ -29,6 +35,11 @@ namespace Continuum93.ServiceModule.Controls
                 }
                 else if (wasServiceMode && !Service.STATE.ServiceMode)
                 {
+                    if (Machine.COMPUTER != null)
+                    {
+                        Machine.COMPUTER.MEMC.ActivityTracker.Enabled = false;
+                        Machine.COMPUTER.MEMC.ActivityTracker.Clear();
+                    }
                     ASMMetaInfo.DeInitialize();
                     ServiceLayoutManager.RestorePreServiceSize();
                 }
