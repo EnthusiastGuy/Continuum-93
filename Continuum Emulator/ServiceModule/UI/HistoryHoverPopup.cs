@@ -81,7 +81,16 @@ namespace Continuum93.ServiceModule.UI
 
         public override bool HandleInput(MouseState mouse, MouseState prevMouse)
         {
-            // Allow scrolling but don't capture other input
+            if (!Visible)
+                return false;
+            
+            // Block all input when mouse is over the pop-up to prevent it from reaching windows underneath
+            Point mousePos = new Point(mouse.X, mouse.Y);
+            if (Bounds.Contains(mousePos))
+            {
+                return true; // Consume input to prevent it from bubbling down
+            }
+            
             return false;
         }
 

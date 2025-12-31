@@ -154,10 +154,19 @@ namespace Continuum93.ServiceModule.UI
                 Height - BorderWidth * 2
             );
 
-        // Override to prevent input capture - pop-up should not be interactive
+        // Override to block input from reaching windows underneath
         public override bool HandleInput(MouseState mouse, MouseState prevMouse)
         {
-            // Don't capture any input - let it pass through
+            if (!Visible)
+                return false;
+            
+            // Block all input when mouse is over the pop-up to prevent it from reaching windows underneath
+            Point mousePos = new Point(mouse.X, mouse.Y);
+            if (Bounds.Contains(mousePos))
+            {
+                return true; // Consume input to prevent it from bubbling down
+            }
+            
             return false;
         }
     }

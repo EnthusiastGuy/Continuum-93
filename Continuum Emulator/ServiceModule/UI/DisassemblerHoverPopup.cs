@@ -296,12 +296,16 @@ namespace Continuum93.ServiceModule.UI
             }
         }
 
-        // Override to prevent input capture - pop-up should not be interactive except for scrolling
+        // Override to block input from reaching windows underneath, but allow scrolling
         public override bool HandleInput(MouseState mouse, MouseState prevMouse)
         {
-            // Only handle scroll wheel input if mouse is over the popup
+            if (!Visible)
+                return false;
+            
+            // Only handle input if mouse is over the popup
             if (Bounds.Contains(mouse.Position))
             {
+                // Handle scroll wheel input
                 int scrollDelta = mouse.ScrollWheelValue - prevMouse.ScrollWheelValue;
                 if (scrollDelta != 0)
                 {
@@ -311,10 +315,11 @@ namespace Continuum93.ServiceModule.UI
                     // Clamp scroll offset to valid range (use a large temporary max if not calculated yet)
                     int maxScroll = _maxScrollOffset > 0 ? _maxScrollOffset : 10000;
                     _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, maxScroll));
-                    return true; // Consume scroll input
                 }
+                // Always return true when mouse is over pop-up to block input from reaching windows underneath
+                return true;
             }
-            return false; // Don't capture other input
+            return false;
         }
     }
 }

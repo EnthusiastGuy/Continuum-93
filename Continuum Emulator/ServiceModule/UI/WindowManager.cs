@@ -56,7 +56,57 @@ namespace Continuum93.ServiceModule.UI
 
             var mousePos = new Point(mouse.X, mouse.Y);
 
-            // Let the topmost window under the mouse update the cursor
+            // FIRST: Check if any pop-up is visible and contains the mouse
+            // Pop-ups should block all input from reaching windows underneath
+            Window hoverPopup = null;
+            foreach (var w in Windows)
+            {
+                if (!w.Visible) continue;
+                
+                if (w is DisassemblerWindow dw && dw.HoverPopup != null && dw.HoverPopup.Visible)
+                {
+                    if (dw.HoverPopup.Bounds.Contains(mousePos))
+                    {
+                        hoverPopup = dw.HoverPopup;
+                        break;
+                    }
+                }
+                else if (w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible)
+                {
+                    if (mw.GetHoverPopup().Bounds.Contains(mousePos))
+                    {
+                        hoverPopup = mw.GetHoverPopup();
+                        break;
+                    }
+                }
+                else if (w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
+                {
+                    if (sbw.HoverPopup.Bounds.Contains(mousePos))
+                    {
+                        hoverPopup = sbw.HoverPopup;
+                        break;
+                    }
+                }
+                else if (w is RegisterWindow rw && rw.GetHoverPopup() != null && rw.GetHoverPopup().Visible)
+                {
+                    if (rw.GetHoverPopup().Bounds.Contains(mousePos))
+                    {
+                        hoverPopup = rw.GetHoverPopup();
+                        break;
+                    }
+                }
+            }
+
+            // If a pop-up is under the mouse, handle its input first and block everything else
+            if (hoverPopup != null)
+            {
+                hoverPopup.HandleInput(mouse, prevMouse);
+                hoverPopup.UpdateCursor(mouse);
+                // Don't process regular windows - pop-up blocks all input
+                return;
+            }
+
+            // Let the topmost window under the mouse update the cursor (only if no pop-up is blocking)
             Window hover = null;
             for (int i = Windows.Count - 1; i >= 0; i--)
             {
@@ -75,7 +125,7 @@ namespace Continuum93.ServiceModule.UI
                 hover.UpdateCursor(mouse);
             }
 
-            // Normal input handling (drag, resize, clicks)
+            // Normal input handling (drag, resize, clicks) - only if no pop-up is blocking
             for (int i = Windows.Count - 1; i >= 0; i--)
             {
                 var w = Windows[i];
@@ -86,43 +136,6 @@ namespace Continuum93.ServiceModule.UI
                     _focusedWindow = w;
                     BringToFront(w);
                     break;
-                }
-            }
-            
-            // Handle input for hover popups (for scrolling)
-            foreach (var w in Windows)
-            {
-                if (w.Visible && w is DisassemblerWindow dw && dw.HoverPopup != null && dw.HoverPopup.Visible)
-                {
-                    if (dw.HoverPopup.HandleInput(mouse, prevMouse))
-                    {
-                        // Popup consumed the input (scrolling)
-                        break;
-                    }
-                }
-                else if (w.Visible && w is MemoryWindow mw && mw.GetHoverPopup() != null && mw.GetHoverPopup().Visible)
-                {
-                    if (mw.GetHoverPopup().HandleInput(mouse, prevMouse))
-                    {
-                        // Popup consumed the input (scrolling)
-                        break;
-                    }
-                }
-                else if (w.Visible && w is StatusBarWindow sbw && sbw.HoverPopup != null && sbw.HoverPopup.Visible)
-                {
-                    if (sbw.HoverPopup.HandleInput(mouse, prevMouse))
-                    {
-                        // Popup consumed the input (scrolling)
-                        break;
-                    }
-                }
-                else if (w.Visible && w is RegisterWindow rw && rw.GetHoverPopup() != null && rw.GetHoverPopup().Visible)
-                {
-                    if (rw.GetHoverPopup().HandleInput(mouse, prevMouse))
-                    {
-                        // Popup consumed the input (scrolling)
-                        break;
-                    }
                 }
             }
 
