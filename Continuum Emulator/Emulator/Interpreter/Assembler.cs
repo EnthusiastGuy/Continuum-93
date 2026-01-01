@@ -252,7 +252,7 @@ namespace Continuum93.Emulator.Interpreter
             foreach (string arg in args)
                 IdentifyArgument(arg.Trim());
 
-            if (Op == "LD") // temporary
+            if (Op == "LD" || Op == "ADD") // temporary
             {
                 if (Arguments.Count == 2)
                 {

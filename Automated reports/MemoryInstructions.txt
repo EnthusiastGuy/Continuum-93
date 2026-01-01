@@ -1,10 +1,10 @@
 Nr.     Instruction   Modes                                             
 ------------------------------------------------------------------------
     1   ABS           NONE                                              
-    2   ADD           (nnn),(nnn)                                       
-    3   ADD16         (nnn),(nnn)                                       
-    4   ADD24         (nnn),(nnn)                                       
-    5   ADD32         (nnn),(nnn)                                       
+    2   ADD           NONE                                              
+    3   ADD16         NONE                                              
+    4   ADD24         NONE                                              
+    5   ADD32         NONE                                              
     6   AND           NONE                                              
     7   AND16         NONE                                              
     8   AND24         NONE                                              

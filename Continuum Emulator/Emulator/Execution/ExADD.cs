@@ -1,1305 +1,567 @@
 ﻿using Continuum93.Emulator;
-using Continuum93.Emulator.Mnemonics;
+using Continuum93.Emulator.CPU;
+using Continuum93.Emulator.RAM;
 using Continuum93.Tools;
 using System;
 
 namespace Continuum93.Emulator.Execution
 {
+    /// <summary>
+    /// ADD execution unit updated to use the shared Instructions sub-opcodes
+    /// (the same addressing matrix used by LD). Only the core addressing
+    /// patterns are implemented; any unhandled sub-ops act as no-ops.
+    /// </summary>
     public static class ExADD
     {
+        private enum Width : byte
+        {
+            Byte = 1,
+            Word = 2,
+            TriByte = 3,
+            DWord = 4
+        }
+
         static readonly Action<Computer>[] _dispatch = BuildDispatchTable();
 
         private static Action<Computer>[] BuildDispatchTable()
         {
             var table = new Action<Computer>[256];
-
-            // -----------------------
-            // Integer register ADDs
-            // -----------------------
-
-            table[Mnem.ADDSUB_r_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                byte regValue = mem.Fetch();
-
-                regs.AddTo8BitRegister(register, regValue);
-            };
-
-            table[Mnem.ADDSUB_r_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo8BitRegister(
-                    reg1,
-                    regs.Get8BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_r_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo8BitRegister(
-                    register,
-                    mem.Get8bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB_r_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo8BitRegister(
-                    reg1,
-                    mem.Get8bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB_rr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                ushort regValue = mem.Fetch();
-
-                regs.AddTo16BitRegister(register, regValue);
-            };
-
-            table[Mnem.ADDSUB16_rr_nn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                ushort regValue = mem.Fetch16();
-
-                regs.AddTo16BitRegister(register, regValue);
-            };
-
-            table[Mnem.ADDSUB_rr_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo16BitRegister(reg1, regs.Get8BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rr_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo16BitRegister(reg1, regs.Get16BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo16BitRegister(
-                    register,
-                    mem.Get8bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB16_rr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo16BitRegister(
-                    register,
-                    mem.Get16bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB_rr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo16BitRegister(
-                    reg1,
-                    mem.Get8bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB16_rr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo16BitRegister(
-                    reg1,
-                    mem.Get16bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB_rrr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg = (byte)(mem.Fetch() & 0b00011111);
-                regs.AddTo24BitRegister(reg, mem.Fetch());
-            };
-
-            table[Mnem.ADDSUB16_rrr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg = (byte)(mem.Fetch() & 0b00011111);
-                regs.AddTo24BitRegister(reg, mem.Fetch16());
-            };
-
-            table[Mnem.ADDSUB24_rrr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg = (byte)(mem.Fetch() & 0b00011111);
-                regs.AddTo24BitRegister(reg, mem.Fetch24());
-            };
-
-            table[Mnem.ADDSUB_rrr_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo24BitRegister(reg1, regs.Get8BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rrr_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo24BitRegister(reg1, regs.Get16BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rrr_rrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo24BitRegister(reg1, regs.Get24BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rrr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo24BitRegister(
-                    register,
-                    mem.Get8bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB16_rrr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo24BitRegister(
-                    register,
-                    mem.Get16bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB24_rrr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo24BitRegister(
-                    register,
-                    mem.Get24bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB_rrr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo24BitRegister(
-                    reg1,
-                    mem.Get8bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB16_rrr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo24BitRegister(
-                    reg1,
-                    mem.Get16bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB24_rrr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo24BitRegister(
-                    reg1,
-                    mem.Get24bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB_rrrr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg = (byte)(mem.Fetch() & 0b00011111);
-                regs.AddTo32BitRegister(reg, mem.Fetch());
-            };
-
-            table[Mnem.ADDSUB16_rrrr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg = (byte)(mem.Fetch() & 0b00011111);
-                regs.AddTo32BitRegister(reg, mem.Fetch16());
-            };
-
-            table[Mnem.ADDSUB24_rrrr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg = (byte)(mem.Fetch() & 0b00011111);
-                regs.AddTo32BitRegister(reg, mem.Fetch24());
-            };
-
-            table[Mnem.ADDSUB32_rrrr_n] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg = (byte)(mem.Fetch() & 0b00011111);
-                regs.AddTo32BitRegister(reg, mem.Fetch32());
-            };
-
-            table[Mnem.ADDSUB_rrrr_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(reg1, regs.Get8BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rrrr_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(reg1, regs.Get16BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rrrr_rrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(reg1, regs.Get24BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rrrr_rrrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(reg1, regs.Get32BitRegister(reg2));
-            };
-
-            table[Mnem.ADDSUB_rrrr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo32BitRegister(
-                    register,
-                    mem.Get8bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB16_rrrr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo32BitRegister(
-                    register,
-                    mem.Get16bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB24_rrrr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo32BitRegister(
-                    register,
-                    mem.Get24bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB32_rrrr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte register = (byte)(mem.Fetch() & 0b00011111);
-                uint address = mem.Fetch24();
-
-                regs.AddTo32BitRegister(
-                    register,
-                    mem.Get32bitFromRAM(address));
-            };
-
-            table[Mnem.ADDSUB_rrrr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(
-                    reg1,
-                    mem.Get8bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB16_rrrr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(
-                    reg1,
-                    mem.Get16bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB24_rrrr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(
-                    reg1,
-                    mem.Get24bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            table[Mnem.ADDSUB32_rrrr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                byte reg1 = (byte)(mem.Fetch() & 0b00011111);
-                byte reg2 = (byte)(mem.Fetch() & 0b00011111);
-
-                regs.AddTo32BitRegister(
-                    reg1,
-                    mem.Get32bitFromRAM(regs.Get24BitRegister(reg2)));
-            };
-
-            // -----------------------
-            // ADD to memory (absolute)
-            // -----------------------
-
-            table[Mnem.ADDSUB_InnnI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-
-                mem.Set8bitToRAM(
-                    target,
-                    regs.Add8BitValues(
-                        mem.Get8bitFromRAM(target),
-                        mem.Fetch()
-                    ));
-            };
-
-            table[Mnem.ADDSUB16_InnnI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-
-                mem.Set16bitToRAM(
-                    target,
-                    regs.Add16BitValues(
-                        mem.Get16bitFromRAM(target),
-                        mem.Fetch16()
-                    ));
-            };
-
-            table[Mnem.ADDSUB24_InnnI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(
-                        mem.Get24bitFromRAM(target),
-                        mem.Fetch24()
-                    ));
-            };
-
-            table[Mnem.ADDSUB32_InnnI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(
-                        mem.Get32bitFromRAM(target),
-                        mem.Fetch32()
-                    ));
-            };
-
-            table[Mnem.ADDSUB_InnnI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = (byte)(mem.Fetch() & 0b00011111);
-
-                mem.Set8bitToRAM(
-                    target,
-                    regs.Add8BitValues(
-                        mem.Get8bitFromRAM(target),
-                        regs.Get8BitRegister(regIndex)
-                    ));
-            };
-
-            table[Mnem.ADDSUB16_InnnI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = (byte)(mem.Fetch() & 0b00011111);
-
-                mem.Set16bitToRAM(
-                    target,
-                    regs.Add16BitValues(
-                        mem.Get16bitFromRAM(target),
-                        regs.Get8BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB24_InnnI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = (byte)(mem.Fetch() & 0b00011111);
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(
-                        mem.Get24bitFromRAM(target),
-                        regs.Get8BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB32_InnnI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = (byte)(mem.Fetch() & 0b00011111);
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(
-                        mem.Get32bitFromRAM(target),
-                        regs.Get8BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB16_InnnI_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = (byte)(mem.Fetch() & 0b00011111);
-
-                mem.Set16bitToRAM(
-                    target,
-                    regs.Add16BitValues(
-                        mem.Get16bitFromRAM(target),
-                        regs.Get16BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB24_InnnI_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = (byte)(mem.Fetch() & 0b00011111);
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(
-                        mem.Get24bitFromRAM(target),
-                        regs.Get16BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB32_InnnI_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = (byte)(mem.Fetch() & 0b00011111);
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(
-                        mem.Get32bitFromRAM(target),
-                        regs.Get16BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB24_InnnI_rrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = mem.Fetch();
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(
-                        mem.Get24bitFromRAM(target),
-                        regs.Get24BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB32_InnnI_rrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = mem.Fetch();
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(
-                        mem.Get32bitFromRAM(target),
-                        regs.Get24BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            table[Mnem.ADDSUB32_InnnI_rrrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                byte regIndex = mem.Fetch();
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(
-                        mem.Get32bitFromRAM(target),
-                        regs.Get32BitRegister((byte)(regIndex & 0b00011111))
-                    ));
-            };
-
-            // -----------------------
-            // ADD to memory (register-indirect)
-            // -----------------------
-
-            table[Mnem.ADDSUB_IrrrI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-
-                mem.Set8bitToRAM(
-                    target,
-                    regs.Add8BitValues(
-                        mem.Get8bitFromRAM(target),
-                        mem.Fetch()
-                    ));
-            };
-
-            table[Mnem.ADDSUB16_IrrrI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-
-                mem.Set16bitToRAM(
-                    target,
-                    regs.Add16BitValues(
-                        mem.Get16bitFromRAM(target),
-                        mem.Fetch16()
-                    ));
-            };
-
-            table[Mnem.ADDSUB24_IrrrI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(
-                        mem.Get24bitFromRAM(target),
-                        mem.Fetch24()
-                    ));
-            };
-
-            table[Mnem.ADDSUB32_IrrrI_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(
-                        mem.Get32bitFromRAM(target),
-                        mem.Fetch32()
-                    ));
-            };
-
-            table[Mnem.ADDSUB_IrrrI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                byte regValue = regs.Get8BitRegister((byte)(mem.Fetch() & 0b00011111));
-                byte memValue = mem.Get8bitFromRAM(target);
-
-                mem.Set8bitToRAM(
-                    target,
-                    regs.Add8BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB16_IrrrI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                byte regValue = regs.Get8BitRegister((byte)(mem.Fetch() & 0b00011111));
-                ushort memValue = mem.Get16bitFromRAM(target);
-
-                mem.Set16bitToRAM(
-                    target,
-                    regs.Add16BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB24_IrrrI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                byte regValue = regs.Get8BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint memValue = mem.Get24bitFromRAM(target);
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB32_IrrrI_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                byte regValue = regs.Get8BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint memValue = mem.Get32bitFromRAM(target);
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB16_IrrrI_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                ushort regValue = regs.Get16BitRegister((byte)(mem.Fetch() & 0b00011111));
-                ushort memValue = mem.Get16bitFromRAM(target);
-
-                mem.Set16bitToRAM(
-                    target,
-                    regs.Add16BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB24_IrrrI_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                ushort regValue = regs.Get16BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint memValue = mem.Get24bitFromRAM(target);
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB32_IrrrI_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                ushort regValue = regs.Get16BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint memValue = mem.Get32bitFromRAM(target);
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB24_IrrrI_rrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint regValue = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint memValue = mem.Get24bitFromRAM(target);
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB32_IrrrI_rrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint regValue = regs.Get24BitRegister((byte)(mem.Fetch() & 0b00011111));
-                uint memValue = mem.Get32bitFromRAM(target);
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(memValue, regValue));
-            };
-
-            table[Mnem.ADDSUB_IrrrI_rrrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = regs.Get24BitRegister(mem.Fetch());
-                uint regValue = regs.Get32BitRegister(mem.Fetch());
-                uint memValue = mem.Get32bitFromRAM(target);
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(memValue, regValue));
-            };
-
-            // -----------------------
-            // ADD memory + memory
-            // -----------------------
-
-            table[Mnem.ADDSUB_InnnI_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                uint secondValue = mem.Fetch24();
-
-                mem.Set8bitToRAM(
-                    target,
-                    regs.Add8BitValues(
-                        mem.Get8bitFromRAM(target),
-                        mem.Get8bitFromRAM(secondValue)
-                    ));
-            };
-
-            table[Mnem.ADDSUB16_InnnI_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                uint secondValue = mem.Fetch24();
-
-                mem.Set16bitToRAM(
-                    target,
-                    regs.Add16BitValues(
-                        mem.Get16bitFromRAM(target),
-                        mem.Get16bitFromRAM(secondValue)
-                    ));
-            };
-
-            table[Mnem.ADDSUB24_InnnI_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                uint secondValue = mem.Fetch24();
-
-                mem.Set24bitToRAM(
-                    target,
-                    regs.Add24BitValues(
-                        mem.Get24bitFromRAM(target),
-                        mem.Get24bitFromRAM(secondValue)
-                    ));
-            };
-
-            table[Mnem.ADDSUB32_InnnI_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-
-                uint target = mem.Fetch24();
-                uint secondValue = mem.Fetch24();
-
-                mem.Set32bitToRAM(
-                    target,
-                    regs.Add32BitValues(
-                        mem.Get32bitFromRAM(target),
-                        mem.Get32bitFromRAM(secondValue)
-                    ));
-            };
-
-            // -----------------------
-            // Floating point ADD
-            // -----------------------
-
-            table[Mnem.ADDSUB_fr_fr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fReg1 = (byte)(mem.Fetch() & 0b00001111);
-                byte fReg2 = (byte)(mem.Fetch() & 0b00001111);
-
-                float fReg1Value = fregs.GetRegister(fReg1);
-                float fReg2Value = fregs.GetRegister(fReg2);
-
-                fregs.SetRegister(
-                    fReg1,
-                    fregs.AddFloatValues(fReg1Value, fReg2Value));
-            };
-
-            table[Mnem.ADDSUB_fr_nnn] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fReg = (byte)(mem.Fetch() & 0b00001111);
-                uint floatBitValue = mem.Fetch32();
-                float floatValue = FloatPointUtils.UintToFloat(floatBitValue);
-                float fRegValue = fregs.GetRegister(fReg);
-
-                fregs.SetRegister(
-                    fReg,
-                    fregs.AddFloatValues(fRegValue, floatValue));
-            };
-
-            table[Mnem.ADDSUB_fr_r] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-
-                float regValue = regs.Get8BitRegister(regIndex);
-                float fRegValue = fregs.GetRegister(fRegIndex);
-
-                fregs.SetRegister(
-                    fRegIndex,
-                    fregs.AddFloatValues(fRegValue, regValue));
-            };
-
-            table[Mnem.ADDSUB_fr_rr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-
-                float regValue = regs.Get16BitRegister(regIndex);
-                float fRegValue = fregs.GetRegister(fRegIndex);
-
-                fregs.SetRegister(
-                    fRegIndex,
-                    fregs.AddFloatValues(fRegValue, regValue));
-            };
-
-            table[Mnem.ADDSUB_fr_rrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-
-                float regValue = regs.Get24BitRegister(regIndex);
-                float fRegValue = fregs.GetRegister(fRegIndex);
-
-                fregs.SetRegister(
-                    fRegIndex,
-                    fregs.AddFloatValues(fRegValue, regValue));
-            };
-
-            table[Mnem.ADDSUB_fr_rrrr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-
-                float regValue = regs.Get32BitRegister(regIndex);
-                float fRegValue = fregs.GetRegister(fRegIndex);
-
-                fregs.SetRegister(
-                    fRegIndex,
-                    fregs.AddFloatValues(fRegValue, regValue));
-            };
-
-            // float -> integer ADD (using sign to choose add vs sub)
-
-            table[Mnem.ADDSUB_r_fr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-                var flags = cpu.CPU.FLAGS;
-
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-
-                float fRegValue = fregs.GetRegister(fRegIndex);
-                bool isNegative = fRegValue < 0;
-                fRegValue = Math.Abs(fRegValue);
-
-                byte fConverted;
-                if (fRegValue > 0xFF)
-                {
-                    fConverted = (byte)Math.Round(fRegValue % 0x100);
-                    flags.SetOverflow(true);
-                }
-                else
-                {
-                    fConverted = (byte)Math.Round(fRegValue);
-                    flags.SetOverflow(false);
-                }
-
-                if (isNegative)
-                {
-                    regs.SubtractFrom8BitRegister(regIndex, fConverted);
-                }
-                else
-                {
-                    regs.AddTo8BitRegister(regIndex, fConverted);
-                }
-            };
-
-            table[Mnem.ADDSUB_rr_fr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-                var flags = cpu.CPU.FLAGS;
-
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-
-                float fRegValue = fregs.GetRegister(fRegIndex);
-                bool isNegative = fRegValue < 0;
-                fRegValue = Math.Abs(fRegValue);
-
-                ushort fConverted;
-                if (fRegValue > 0xFFFF)
-                {
-                    fConverted = (ushort)Math.Round(fRegValue % 0x10000);
-                    flags.SetOverflow(true);
-                }
-                else
-                {
-                    fConverted = (ushort)Math.Round(fRegValue);
-                    flags.SetOverflow(false);
-                }
-
-                if (isNegative)
-                {
-                    regs.SubtractFrom16BitRegister(regIndex, fConverted);
-                }
-                else
-                {
-                    regs.AddTo16BitRegister(regIndex, fConverted);
-                }
-            };
-
-            table[Mnem.ADDSUB_rrr_fr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-                var flags = cpu.CPU.FLAGS;
-
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-
-                float fRegValue = fregs.GetRegister(fRegIndex);
-                bool isNegative = fRegValue < 0;
-                fRegValue = Math.Abs(fRegValue);
-
-                uint fConverted;
-                if (fRegValue > 0xFFFFFF)
-                {
-                    fConverted = (uint)Math.Round(fRegValue % 0x1000000);
-                    flags.SetOverflow(true);
-                }
-                else
-                {
-                    fConverted = (uint)Math.Round(fRegValue);
-                    flags.SetOverflow(false);
-                }
-
-                if (isNegative)
-                {
-                    regs.SubtractFrom24BitRegister(regIndex, fConverted);
-                }
-                else
-                {
-                    regs.AddTo24BitRegister(regIndex, fConverted);
-                }
-            };
-
-            table[Mnem.ADDSUB_rrrr_fr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-                var flags = cpu.CPU.FLAGS;
-
-                byte regIndex = (byte)(mem.Fetch() & 0b_00011111);
-                byte fRegIndex = (byte)(mem.Fetch() & 0b_00001111);
-
-                float fRegValue = fregs.GetRegister(fRegIndex);
-                bool isNegative = fRegValue < 0;
-                fRegValue = Math.Abs(fRegValue);
-
-                uint fConverted;
-                if (fRegValue > 0xFFFFFFFF)
-                {
-                    fConverted = (uint)Math.Round(fRegValue % 0x100000000);
-                    flags.SetOverflow(true);
-                }
-                else
-                {
-                    fConverted = (uint)Math.Round(fRegValue);
-                    flags.SetOverflow(false);
-                }
-
-                if (isNegative)
-                {
-                    regs.SubtractFrom32BitRegister(regIndex, fConverted);
-                }
-                else
-                {
-                    regs.AddTo32BitRegister(regIndex, fConverted);
-                }
-            };
-
-            table[Mnem.ADDSUB_fr_InnnI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fReg = (byte)(mem.Fetch() & 0b00001111);
-                uint adrFloatPointer = mem.Fetch24();
-                float adrFloatValue = mem.GetFloatFromRAM(adrFloatPointer);
-                float fRegValue = fregs.GetRegister(fReg);
-
-                fregs.SetRegister(
-                    fReg,
-                    fregs.AddFloatValues(fRegValue, adrFloatValue));
-            };
-
-            table[Mnem.ADDSUB_fr_IrrrI] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fRegPointer = (byte)(mem.Fetch() & 0b00001111);
-                byte regPointer = (byte)(mem.Fetch() & 0b00011111);
-
-                uint adrFloatPointer = regs.Get24BitRegister(regPointer);
-
-                float adrFloatValue = mem.GetFloatFromRAM(adrFloatPointer);
-                float fRegValue = fregs.GetRegister(fRegPointer);
-
-                fregs.SetRegister(
-                    fRegPointer,
-                    fregs.AddFloatValues(fRegValue, adrFloatValue));
-            };
-
-            table[Mnem.ADDSUB_InnnI_fr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fReg = (byte)(mem.Fetch() & 0b00001111);
-                uint adrFloatPointer = mem.Fetch24();
-                float adrFloatValue = mem.GetFloatFromRAM(adrFloatPointer);
-                float fRegValue = fregs.GetRegister(fReg);
-
-                mem.SetFloatToRam(
-                    adrFloatPointer,
-                    fregs.AddFloatValues(fRegValue, adrFloatValue));
-            };
-
-            table[Mnem.ADDSUB_IrrrI_fr] = cpu =>
-            {
-                var mem = cpu.MEMC;
-                var regs = cpu.CPU.REGS;
-                var fregs = cpu.CPU.FREGS;
-
-                byte fRegPointer = (byte)(mem.Fetch() & 0b00001111);
-                byte regPointer = (byte)(mem.Fetch() & 0b00011111);
-
-                uint adrFloatPointer = regs.Get24BitRegister(regPointer);
-
-                float adrFloatValue = mem.GetFloatFromRAM(adrFloatPointer);
-                float fRegValue = fregs.GetRegister(fRegPointer);
-
-                mem.SetFloatToRam(
-                    adrFloatPointer,
-                    fregs.AddFloatValues(fRegValue, adrFloatValue));
-            };
+            for (int i = 0; i < table.Length; i++)
+                table[i] = _ => { };
+
+            RegisterRegisterDestinations(table);
+            RegisterMemoryGroups(table);
+            RegisterFloatRegisterHandlers(table);
 
             return table;
         }
+
+        private static void RegisterRegisterDestinations(Action<Computer>[] table)
+        {
+            // 8-bit
+            table[Instructions._r_n] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Fetch()));
+            table[Instructions._r_r] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), regs.Get8BitRegister(ReadRegIndex(mem))));
+            table[Instructions._r_InnnI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(mem.Fetch24())));
+            table[Instructions._r_Innn_nnnI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressAbsOffsetImm(mem, regs))));
+            table[Instructions._r_Innn_rI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressAbsOffsetReg8(mem, regs))));
+            table[Instructions._r_Innn_rrI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressAbsOffsetReg16(mem, regs))));
+            table[Instructions._r_Innn_rrrI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressAbsOffsetReg24(mem, regs))));
+            table[Instructions._r_IrrrI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressPtr(mem, regs))));
+            table[Instructions._r_Irrr_nnnI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressPtrOffsetImm(mem, regs))));
+            table[Instructions._r_Irrr_rI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressPtrOffsetReg8(mem, regs))));
+            table[Instructions._r_Irrr_rrI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressPtrOffsetReg16(mem, regs))));
+            table[Instructions._r_Irrr_rrrI] = RegHandler(Width.Byte, (mem, regs) => (ReadRegIndex(mem), mem.Get8bitFromRAM(AddressPtrOffsetReg24(mem, regs))));
+            table[Instructions._r_fr] = cpu => FloatToInteger(cpu, Width.Byte);
+
+            // 16-bit
+            table[Instructions._rr_nn] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Fetch16()));
+            table[Instructions._rr_r] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), regs.Get8BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rr_rr] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), regs.Get16BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rr_InnnI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(mem.Fetch24())));
+            table[Instructions._rr_Innn_nnnI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressAbsOffsetImm(mem, regs))));
+            table[Instructions._rr_Innn_rI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressAbsOffsetReg8(mem, regs))));
+            table[Instructions._rr_Innn_rrI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressAbsOffsetReg16(mem, regs))));
+            table[Instructions._rr_Innn_rrrI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressAbsOffsetReg24(mem, regs))));
+            table[Instructions._rr_IrrrI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressPtr(mem, regs))));
+            table[Instructions._rr_Irrr_nnnI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressPtrOffsetImm(mem, regs))));
+            table[Instructions._rr_Irrr_rI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressPtrOffsetReg8(mem, regs))));
+            table[Instructions._rr_Irrr_rrI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressPtrOffsetReg16(mem, regs))));
+            table[Instructions._rr_Irrr_rrrI] = RegHandler(Width.Word, (mem, regs) => (ReadRegIndex(mem), mem.Get16bitFromRAM(AddressPtrOffsetReg24(mem, regs))));
+            table[Instructions._rr_fr] = cpu => FloatToInteger(cpu, Width.Word);
+
+            // 24-bit
+            table[Instructions._rrr_nnn] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Fetch24()));
+            table[Instructions._rrr_r] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), regs.Get8BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rrr_rr] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), regs.Get16BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rrr_rrr] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), regs.Get24BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rrr_InnnI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(mem.Fetch24())));
+            table[Instructions._rrr_Innn_nnnI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressAbsOffsetImm(mem, regs))));
+            table[Instructions._rrr_Innn_rI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressAbsOffsetReg8(mem, regs))));
+            table[Instructions._rrr_Innn_rrI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressAbsOffsetReg16(mem, regs))));
+            table[Instructions._rrr_Innn_rrrI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressAbsOffsetReg24(mem, regs))));
+            table[Instructions._rrr_IrrrI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressPtr(mem, regs))));
+            table[Instructions._rrr_Irrr_nnnI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressPtrOffsetImm(mem, regs))));
+            table[Instructions._rrr_Irrr_rI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressPtrOffsetReg8(mem, regs))));
+            table[Instructions._rrr_Irrr_rrI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressPtrOffsetReg16(mem, regs))));
+            table[Instructions._rrr_Irrr_rrrI] = RegHandler(Width.TriByte, (mem, regs) => (ReadRegIndex(mem), mem.Get24bitFromRAM(AddressPtrOffsetReg24(mem, regs))));
+            table[Instructions._rrr_fr] = cpu => FloatToInteger(cpu, Width.TriByte);
+
+            // 32-bit
+            table[Instructions._rrrr_nnnn] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Fetch32()));
+            table[Instructions._rrrr_r] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), regs.Get8BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rrrr_rr] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), regs.Get16BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rrrr_rrr] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), regs.Get24BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rrrr_rrrr] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), regs.Get32BitRegister(ReadRegIndex(mem))));
+            table[Instructions._rrrr_InnnI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(mem.Fetch24())));
+            table[Instructions._rrrr_Innn_nnnI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressAbsOffsetImm(mem, regs))));
+            table[Instructions._rrrr_Innn_rI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressAbsOffsetReg8(mem, regs))));
+            table[Instructions._rrrr_Innn_rrI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressAbsOffsetReg16(mem, regs))));
+            table[Instructions._rrrr_Innn_rrrI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressAbsOffsetReg24(mem, regs))));
+            table[Instructions._rrrr_IrrrI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressPtr(mem, regs))));
+            table[Instructions._rrrr_Irrr_nnnI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressPtrOffsetImm(mem, regs))));
+            table[Instructions._rrrr_Irrr_rI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressPtrOffsetReg8(mem, regs))));
+            table[Instructions._rrrr_Irrr_rrI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressPtrOffsetReg16(mem, regs))));
+            table[Instructions._rrrr_Irrr_rrrI] = RegHandler(Width.DWord, (mem, regs) => (ReadRegIndex(mem), mem.Get32bitFromRAM(AddressPtrOffsetReg24(mem, regs))));
+            table[Instructions._rrrr_fr] = cpu => FloatToInteger(cpu, Width.DWord);
+        }
+
+        private static void RegisterMemoryGroups(Action<Computer>[] table)
+        {
+            AddressResolver[] valueResolvers =
+            [
+                AddressAbs,
+                AddressAbsOffsetImm,
+                AddressAbsOffsetReg8,
+                AddressAbsOffsetReg16,
+                AddressAbsOffsetReg24,
+                AddressPtr,
+                AddressPtrOffsetImm,
+                AddressPtrOffsetReg8,
+                AddressPtrOffsetReg16,
+                AddressPtrOffsetReg24
+            ];
+
+            TargetGroup[] groups =
+            [
+                new(Instructions._InnnI_nnnn_n, Instructions._InnnI_nnnn_n_nnn,
+                    Instructions._InnnI_r, Instructions._InnnI_rr, Instructions._InnnI_rrr, Instructions._InnnI_rrrr,
+                    new[]
+                    {
+                        Instructions._InnnI_InnnI_n_rrr, Instructions._InnnI_Innn_nnnI_n_rrr, Instructions._InnnI_Innn_rI_n_rrr,
+                        Instructions._InnnI_Innn_rrI_n_rrr, Instructions._InnnI_Innn_rrrI_n_rrr, Instructions._InnnI_IrrrI_n_rrr,
+                        Instructions._InnnI_Irrr_nnnI_n_rrr, Instructions._InnnI_Irrr_rI_n_rrr, Instructions._InnnI_Irrr_rrI_n_rrr,
+                        Instructions._InnnI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._InnnI_fr,
+                    AddressAbs),
+
+                new(Instructions._Innn_nnnI_nnnn_n, Instructions._Innn_nnnI_nnnn_n_nnn,
+                    Instructions._Innn_nnnI_r, Instructions._Innn_nnnI_rr, Instructions._Innn_nnnI_rrr, Instructions._Innn_nnnI_rrrr,
+                    new[]
+                    {
+                        Instructions._Innn_nnnI_InnnI_n_rrr, Instructions._Innn_nnnI_Innn_nnnI_n_rrr, Instructions._Innn_nnnI_Innn_rI_n_rrr,
+                        Instructions._Innn_nnnI_Innn_rrI_n_rrr, Instructions._Innn_nnnI_Innn_rrrI_n_rrr, Instructions._Innn_nnnI_IrrrI_n_rrr,
+                        Instructions._Innn_nnnI_Irrr_nnnI_n_rrr, Instructions._Innn_nnnI_Irrr_rI_n_rrr, Instructions._Innn_nnnI_Irrr_rrI_n_rrr,
+                        Instructions._Innn_nnnI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Innn_nnnI_fr,
+                    AddressAbsOffsetImm),
+
+                new(Instructions._Innn_rI_nnnn_n, Instructions._Innn_rI_nnnn_n_nnn,
+                    Instructions._Innn_rI_r, Instructions._Innn_rI_rr, Instructions._Innn_rI_rrr, Instructions._Innn_rI_rrrr,
+                    new[]
+                    {
+                        Instructions._Innn_rI_InnnI_n_rrr, Instructions._Innn_rI_Innn_nnnI_n_rrr, Instructions._Innn_rI_Innn_rI_n_rrr,
+                        Instructions._Innn_rI_Innn_rrI_n_rrr, Instructions._Innn_rI_Innn_rrrI_n_rrr, Instructions._Innn_rI_IrrrI_n_rrr,
+                        Instructions._Innn_rI_Irrr_nnnI_n_rrr, Instructions._Innn_rI_Irrr_rI_n_rrr, Instructions._Innn_rI_Irrr_rrI_n_rrr,
+                        Instructions._Innn_rI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Innn_rI_fr,
+                    AddressAbsOffsetReg8),
+
+                new(Instructions._Innn_rrI_nnnn_n, Instructions._Innn_rrI_nnnn_n_nnn,
+                    Instructions._Innn_rrI_r, Instructions._Innn_rrI_rr, Instructions._Innn_rrI_rrr, Instructions._Innn_rrI_rrrr,
+                    new[]
+                    {
+                        Instructions._Innn_rrI_InnnI_n_rrr, Instructions._Innn_rrI_Innn_nnnI_n_rrr, Instructions._Innn_rrI_Innn_rI_n_rrr,
+                        Instructions._Innn_rrI_Innn_rrI_n_rrr, Instructions._Innn_rrI_Innn_rrrI_n_rrr, Instructions._Innn_rrI_IrrrI_n_rrr,
+                        Instructions._Innn_rrI_Irrr_nnnI_n_rrr, Instructions._Innn_rrI_Irrr_rI_n_rrr, Instructions._Innn_rrI_Irrr_rrI_n_rrr,
+                        Instructions._Innn_rrI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Innn_rrI_fr,
+                    AddressAbsOffsetReg16),
+
+                new(Instructions._Innn_rrrI_nnnn_n, Instructions._Innn_rrrI_nnnn_n_nnn,
+                    Instructions._Innn_rrrI_r, Instructions._Innn_rrrI_rr, Instructions._Innn_rrrI_rrr, Instructions._Innn_rrrI_rrrr,
+                    new[]
+                    {
+                        Instructions._Innn_rrrI_InnnI_n_rrr, Instructions._Innn_rrrI_Innn_nnnI_n_rrr, Instructions._Innn_rrrI_Innn_rI_n_rrr,
+                        Instructions._Innn_rrrI_Innn_rrI_n_rrr, Instructions._Innn_rrrI_Innn_rrrI_n_rrr, Instructions._Innn_rrrI_IrrrI_n_rrr,
+                        Instructions._Innn_rrrI_Irrr_nnnI_n_rrr, Instructions._Innn_rrrI_Irrr_rI_n_rrr, Instructions._Innn_rrrI_Irrr_rrI_n_rrr,
+                        Instructions._Innn_rrrI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Innn_rrrI_fr,
+                    AddressAbsOffsetReg24),
+
+                new(Instructions._IrrrI_nnnn_n, Instructions._IrrrI_nnnn_n_nnn,
+                    Instructions._IrrrI_r, Instructions._IrrrI_rr, Instructions._IrrrI_rrr, Instructions._IrrrI_rrrr,
+                    new[]
+                    {
+                        Instructions._IrrrI_InnnI_n_rrr, Instructions._IrrrI_Innn_nnnI_n_rrr, Instructions._IrrrI_Innn_rI_n_rrr,
+                        Instructions._IrrrI_Innn_rrI_n_rrr, Instructions._IrrrI_Innn_rrrI_n_rrr, Instructions._IrrrI_IrrrI_n_rrr,
+                        Instructions._IrrrI_Irrr_nnnI_n_rrr, Instructions._IrrrI_Irrr_rI_n_rrr, Instructions._IrrrI_Irrr_rrI_n_rrr,
+                        Instructions._IrrrI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._IrrrI_fr,
+                    AddressPtr),
+
+                new(Instructions._Irrr_nnnI_nnnn_n, Instructions._Irrr_nnnI_nnnn_n_nnn,
+                    Instructions._Irrr_nnnI_r, Instructions._Irrr_nnnI_rr, Instructions._Irrr_nnnI_rrr, Instructions._Irrr_nnnI_rrrr,
+                    new[]
+                    {
+                        Instructions._Irrr_nnnI_InnnI_n_rrr, Instructions._Irrr_nnnI_Innn_nnnI_n_rrr, Instructions._Irrr_nnnI_Innn_rI_n_rrr,
+                        Instructions._Irrr_nnnI_Innn_rrI_n_rrr, Instructions._Irrr_nnnI_Innn_rrrI_n_rrr, Instructions._Irrr_nnnI_IrrrI_n_rrr,
+                        Instructions._Irrr_nnnI_Irrr_nnnI_n_rrr, Instructions._Irrr_nnnI_Irrr_rI_n_rrr, Instructions._Irrr_nnnI_Irrr_rrI_n_rrr,
+                        Instructions._Irrr_nnnI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Irrr_nnnI_fr,
+                    AddressPtrOffsetImm),
+
+                new(Instructions._Irrr_rI_nnnn_n, Instructions._Irrr_rI_nnnn_n_nnn,
+                    Instructions._Irrr_rI_r, Instructions._Irrr_rI_rr, Instructions._Irrr_rI_rrr, Instructions._Irrr_rI_rrrr,
+                    new[]
+                    {
+                        Instructions._Irrr_rI_InnnI_n_rrr, Instructions._Irrr_rI_Innn_nnnI_n_rrr, Instructions._Irrr_rI_Innn_rI_n_rrr,
+                        Instructions._Irrr_rI_Innn_rrI_n_rrr, Instructions._Irrr_rI_Innn_rrrI_n_rrr, Instructions._Irrr_rI_IrrrI_n_rrr,
+                        Instructions._Irrr_rI_Irrr_nnnI_n_rrr, Instructions._Irrr_rI_Irrr_rI_n_rrr, Instructions._Irrr_rI_Irrr_rrI_n_rrr,
+                        Instructions._Irrr_rI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Irrr_rI_fr,
+                    AddressPtrOffsetReg8),
+
+                new(Instructions._Irrr_rrI_nnnn_n, Instructions._Irrr_rrI_nnnn_n_nnn,
+                    Instructions._Irrr_rrI_r, Instructions._Irrr_rrI_rr, Instructions._Irrr_rrI_rrr, Instructions._Irrr_rrI_rrrr,
+                    new[]
+                    {
+                        Instructions._Irrr_rrI_InnnI_n_rrr, Instructions._Irrr_rrI_Innn_nnnI_n_rrr, Instructions._Irrr_rrI_Innn_rI_n_rrr,
+                        Instructions._Irrr_rrI_Innn_rrI_n_rrr, Instructions._Irrr_rrI_Innn_rrrI_n_rrr, Instructions._Irrr_rrI_IrrrI_n_rrr,
+                        Instructions._Irrr_rrI_Irrr_nnnI_n_rrr, Instructions._Irrr_rrI_Irrr_rI_n_rrr, Instructions._Irrr_rrI_Irrr_rrI_n_rrr,
+                        Instructions._Irrr_rrI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Irrr_rrI_fr,
+                    AddressPtrOffsetReg16),
+
+                new(Instructions._Irrr_rrrI_nnnn_n, Instructions._Irrr_rrrI_nnnn_n_nnn,
+                    Instructions._Irrr_rrrI_r, Instructions._Irrr_rrrI_rr, Instructions._Irrr_rrrI_rrr, Instructions._Irrr_rrrI_rrrr,
+                    new[]
+                    {
+                        Instructions._Irrr_rrrI_InnnI_n_rrr, Instructions._Irrr_rrrI_Innn_nnnI_n_rrr, Instructions._Irrr_rrrI_Innn_rI_n_rrr,
+                        Instructions._Irrr_rrrI_Innn_rrI_n_rrr, Instructions._Irrr_rrrI_Innn_rrrI_n_rrr, Instructions._Irrr_rrrI_IrrrI_n_rrr,
+                        Instructions._Irrr_rrrI_Irrr_nnnI_n_rrr, Instructions._Irrr_rrrI_Irrr_rI_n_rrr, Instructions._Irrr_rrrI_Irrr_rrI_n_rrr,
+                        Instructions._Irrr_rrrI_Irrr_rrrI_n_rrr
+                    },
+                    Instructions._Irrr_rrrI_fr,
+                    AddressPtrOffsetReg24)
+            ];
+
+            foreach (var group in groups)
+            {
+                // Immediate block add
+                table[group.BlockImmediateOpcode] = BlockHandler((mem, regs) =>
+                {
+                    uint address = group.AddressResolver(mem, regs);
+                    uint value = mem.Fetch32();
+                    byte count = mem.Fetch();
+                    return (address, value, count, 1u);
+                });
+
+                table[group.BlockImmediateRepeatOpcode] = BlockHandler((mem, regs) =>
+                {
+                    uint address = group.AddressResolver(mem, regs);
+                    uint value = mem.Fetch32();
+                    byte count = mem.Fetch();
+                    uint repeat = mem.Fetch24();
+                    return (address, value, count, repeat);
+                });
+
+                // Register to memory add
+                table[group.ByteRegOpcode] = MemHandler(Width.Byte, (mem, regs) => (group.AddressResolver(mem, regs), regs.Get8BitRegister(ReadRegIndex(mem))));
+                table[group.WordRegOpcode] = MemHandler(Width.Word, (mem, regs) => (group.AddressResolver(mem, regs), regs.Get16BitRegister(ReadRegIndex(mem))));
+                table[group.TriRegOpcode] = MemHandler(Width.TriByte, (mem, regs) => (group.AddressResolver(mem, regs), regs.Get24BitRegister(ReadRegIndex(mem))));
+                table[group.DWordRegOpcode] = MemHandler(Width.DWord, (mem, regs) => (group.AddressResolver(mem, regs), regs.Get32BitRegister(ReadRegIndex(mem))));
+
+                // Memory sourced block adds with repeat
+                for (int i = 0; i < valueResolvers.Length; i++)
+                {
+                    byte opcode = group.ValueOpcodeMatrix[i];
+                    AddressResolver valueResolver = valueResolvers[i];
+
+                    table[opcode] = BlockHandler((mem, regs) =>
+                    {
+                        uint target = group.AddressResolver(mem, regs);
+                        uint valueAddress = valueResolver(mem, regs);
+                        byte count = mem.Fetch();
+                        uint repeat = regs.Get24BitRegister(ReadRegIndex(mem));
+                        uint value = mem.Get32bitFromRAM(valueAddress);
+                        return (target, value, count, repeat);
+                    });
+                }
+
+                // Float to memory
+                table[group.FloatOpcode] = cpu =>
+                {
+                    var mem = cpu.MEMC;
+                    var regs = cpu.CPU.REGS;
+                    var fregs = cpu.CPU.FREGS;
+                    uint address = group.AddressResolver(mem, regs);
+                    byte fIndex = ReadFloatRegIndex(mem);
+                    float current = mem.GetFloatFromRAM(address);
+                    float add = fregs.GetRegister(fIndex);
+                    mem.SetFloatToRam(address, fregs.AddFloatValues(current, add));
+                };
+            }
+        }
+
+        private static void RegisterFloatRegisterHandlers(Action<Computer>[] table)
+        {
+            // Float register destinations
+            table[Instructions._fr_fr] = cpu =>
+            {
+                var mem = cpu.MEMC;
+                var fregs = cpu.CPU.FREGS;
+                byte dest = ReadFloatRegIndex(mem);
+                byte src = ReadFloatRegIndex(mem);
+                fregs.SetRegister(dest, fregs.AddFloatValues(fregs.GetRegister(dest), fregs.GetRegister(src)));
+            };
+
+            table[Instructions._fr_nnnn] = cpu =>
+            {
+                var mem = cpu.MEMC;
+                var fregs = cpu.CPU.FREGS;
+                byte dest = ReadFloatRegIndex(mem);
+                uint bits = mem.Fetch32();
+                float val = FloatPointUtils.UintToFloat(bits);
+                fregs.SetRegister(dest, fregs.AddFloatValues(fregs.GetRegister(dest), val));
+            };
+
+            table[Instructions._fr_r] = cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var fregs = cpu.CPU.FREGS;
+                byte dest = ReadFloatRegIndex(mem);
+                byte src = ReadRegIndex(mem);
+                fregs.SetRegister(dest, fregs.AddFloatValues(fregs.GetRegister(dest), regs.Get8BitRegister(src)));
+            };
+
+            table[Instructions._fr_rr] = cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var fregs = cpu.CPU.FREGS;
+                byte dest = ReadFloatRegIndex(mem);
+                byte src = ReadRegIndex(mem);
+                fregs.SetRegister(dest, fregs.AddFloatValues(fregs.GetRegister(dest), regs.Get16BitRegister(src)));
+            };
+
+            table[Instructions._fr_rrr] = cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var fregs = cpu.CPU.FREGS;
+                byte dest = ReadFloatRegIndex(mem);
+                byte src = ReadRegIndex(mem);
+                fregs.SetRegister(dest, fregs.AddFloatValues(fregs.GetRegister(dest), regs.Get24BitRegister(src)));
+            };
+
+            table[Instructions._fr_rrrr] = cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var fregs = cpu.CPU.FREGS;
+                byte dest = ReadFloatRegIndex(mem);
+                byte src = ReadRegIndex(mem);
+                fregs.SetRegister(dest, fregs.AddFloatValues(fregs.GetRegister(dest), regs.Get32BitRegister(src)));
+            };
+
+            table[Instructions._fr_InnnI] = FloatRegMemHandler(AddressAbs);
+            table[Instructions._fr_Innn_nnnI] = FloatRegMemHandler(AddressAbsOffsetImm);
+            table[Instructions._fr_Innn_rI] = FloatRegMemHandler(AddressAbsOffsetReg8);
+            table[Instructions._fr_Innn_rrI] = FloatRegMemHandler(AddressAbsOffsetReg16);
+            table[Instructions._fr_Innn_rrrI] = FloatRegMemHandler(AddressAbsOffsetReg24);
+            table[Instructions._fr_IrrrI] = FloatRegMemHandler(AddressPtr);
+            table[Instructions._fr_Irrr_nnnI] = FloatRegMemHandler(AddressPtrOffsetImm);
+            table[Instructions._fr_Irrr_rI] = FloatRegMemHandler(AddressPtrOffsetReg8);
+            table[Instructions._fr_Irrr_rrI] = FloatRegMemHandler(AddressPtrOffsetReg16);
+            table[Instructions._fr_Irrr_rrrI] = FloatRegMemHandler(AddressPtrOffsetReg24);
+        }
+
+        private sealed record TargetGroup(
+            byte BlockImmediateOpcode,
+            byte BlockImmediateRepeatOpcode,
+            byte ByteRegOpcode,
+            byte WordRegOpcode,
+            byte TriRegOpcode,
+            byte DWordRegOpcode,
+            byte[] ValueOpcodeMatrix,
+            byte FloatOpcode,
+            AddressResolver AddressResolver);
+
+        private delegate uint AddressResolver(MemoryController mem, Registers regs);
+
+        private static uint AddressAbs(MemoryController mem, Registers regs) => mem.Fetch24();
+        private static uint AddressAbsOffsetImm(MemoryController mem, Registers regs) => OffsetAddress(mem.Fetch24(), mem.Fetch24Signed());
+        private static uint AddressAbsOffsetReg8(MemoryController mem, Registers regs) => OffsetAddress(mem.Fetch24(), regs.Get8BitRegisterSigned(ReadRegIndex(mem)));
+        private static uint AddressAbsOffsetReg16(MemoryController mem, Registers regs) => OffsetAddress(mem.Fetch24(), regs.Get16BitRegisterSigned(ReadRegIndex(mem)));
+        private static uint AddressAbsOffsetReg24(MemoryController mem, Registers regs) => OffsetAddress(mem.Fetch24(), regs.Get24BitRegisterSigned(ReadRegIndex(mem)));
+
+        private static uint AddressPtr(MemoryController mem, Registers regs) => regs.Get24BitRegister(ReadRegIndex(mem));
+        private static uint AddressPtrOffsetImm(MemoryController mem, Registers regs) => OffsetAddress(regs.Get24BitRegister(ReadRegIndex(mem)), mem.Fetch24Signed());
+        private static uint AddressPtrOffsetReg8(MemoryController mem, Registers regs) => OffsetAddress(regs.Get24BitRegister(ReadRegIndex(mem)), regs.Get8BitRegisterSigned(ReadRegIndex(mem)));
+        private static uint AddressPtrOffsetReg16(MemoryController mem, Registers regs) => OffsetAddress(regs.Get24BitRegister(ReadRegIndex(mem)), regs.Get16BitRegisterSigned(ReadRegIndex(mem)));
+        private static uint AddressPtrOffsetReg24(MemoryController mem, Registers regs) => OffsetAddress(regs.Get24BitRegister(ReadRegIndex(mem)), regs.Get24BitRegisterSigned(ReadRegIndex(mem)));
+
+        private static Action<Computer> RegHandler(Width width, Func<MemoryController, Registers, (byte dest, uint value)> resolver)
+        {
+            return cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var (dest, value) = resolver(mem, regs);
+                AddToRegister(cpu, width, dest, value);
+            };
+        }
+
+        private static Action<Computer> MemHandler(Width width, Func<MemoryController, Registers, (uint address, uint value)> resolver)
+        {
+            return cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var (address, value) = resolver(mem, regs);
+                AddToMemory(cpu, width, address, value);
+            };
+        }
+
+        private static Action<Computer> BlockHandler(Func<MemoryController, Registers, (uint address, uint value, byte count, uint repeat)> resolver)
+        {
+            return cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var (address, value, count, repeat) = resolver(mem, regs);
+                AddBlock(cpu, address, value, count, repeat);
+            };
+        }
+
+        private static Action<Computer> FloatRegMemHandler(AddressResolver resolver)
+        {
+            return cpu =>
+            {
+                var mem = cpu.MEMC;
+                var regs = cpu.CPU.REGS;
+                var fregs = cpu.CPU.FREGS;
+
+                byte dest = ReadFloatRegIndex(mem);
+                uint address = resolver(mem, regs);
+                fregs.SetRegister(dest, fregs.AddFloatValues(fregs.GetRegister(dest), mem.GetFloatFromRAM(address)));
+            };
+        }
+
+        private static void AddToRegister(Computer cpu, Width width, byte dest, uint value)
+        {
+            var regs = cpu.CPU.REGS;
+            switch (width)
+            {
+                case Width.Byte:
+                    regs.AddTo8BitRegister(dest, (byte)value);
+                    break;
+                case Width.Word:
+                    regs.AddTo16BitRegister(dest, (ushort)value);
+                    break;
+                case Width.TriByte:
+                    regs.AddTo24BitRegister(dest, value & 0xFFFFFF);
+                    break;
+                case Width.DWord:
+                    regs.AddTo32BitRegister(dest, value);
+                    break;
+            }
+        }
+
+        private static void AddToMemory(Computer cpu, Width width, uint address, uint value)
+        {
+            var mem = cpu.MEMC;
+            var regs = cpu.CPU.REGS;
+            switch (width)
+            {
+                case Width.Byte:
+                    mem.Set8bitToRAM(address, regs.Add8BitValues(mem.Get8bitFromRAM(address), (byte)value));
+                    break;
+                case Width.Word:
+                    mem.Set16bitToRAM(address, regs.Add16BitValues(mem.Get16bitFromRAM(address), (ushort)value));
+                    break;
+                case Width.TriByte:
+                    mem.Set24bitToRAM(address, regs.Add24BitValues(mem.Get24bitFromRAM(address), value & 0xFFFFFF));
+                    break;
+                case Width.DWord:
+                    mem.Set32bitToRAM(address, regs.Add32BitValues(mem.Get32bitFromRAM(address), value));
+                    break;
+            }
+        }
+
+        private static void AddBlock(Computer cpu, uint address, uint value, byte count, uint repeat)
+        {
+            var mem = cpu.MEMC;
+            var regs = cpu.CPU.REGS;
+
+            if (count == 0 || repeat == 0)
+                return;
+
+            byte toCopy = (byte)Math.Min(count, (byte)4);
+            for (uint r = 0; r < repeat; r++)
+            {
+                uint baseAddr = address + r * count;
+                int start = count - toCopy;
+                for (int i = 0; i < count; i++)
+                {
+                    byte addByte = i < start ? (byte)0 : (byte)(value >> ((toCopy - 1 - (i - start)) * 8));
+                    uint target = baseAddr + (uint)i;
+                    mem.Set8bitToRAM(target, regs.Add8BitValues(mem.Get8bitFromRAM(target), addByte));
+                }
+            }
+        }
+
+        private static uint OffsetAddress(uint baseAddr, int offset) => (uint)(baseAddr + offset);
+
+        private static void FloatToInteger(Computer cpu, Width width)
+        {
+            var mem = cpu.MEMC;
+            var regs = cpu.CPU.REGS;
+            var fregs = cpu.CPU.FREGS;
+            var flags = cpu.CPU.FLAGS;
+
+            byte dest = ReadRegIndex(mem);
+            byte fIdx = ReadFloatRegIndex(mem);
+
+            float fVal = fregs.GetRegister(fIdx);
+            bool negative = fVal < 0;
+            fVal = Math.Abs(fVal);
+
+            uint max =
+                width == Width.Byte ? 0xFFu :
+                width == Width.Word ? 0xFFFFu :
+                width == Width.TriByte ? 0xFFFFFFu : 0xFFFFFFFFu;
+
+            uint converted;
+            if (fVal > max)
+            {
+                converted = (uint)Math.Round(fVal % (max + 1u));
+                flags.SetOverflow(true);
+            }
+            else
+            {
+                converted = (uint)Math.Round(fVal);
+                flags.SetOverflow(false);
+            }
+
+            if (negative)
+            {
+                switch (width)
+                {
+                    case Width.Byte: regs.SubtractFrom8BitRegister(dest, (byte)converted); break;
+                    case Width.Word: regs.SubtractFrom16BitRegister(dest, (ushort)converted); break;
+                    case Width.TriByte: regs.SubtractFrom24BitRegister(dest, converted); break;
+                    case Width.DWord: regs.SubtractFrom32BitRegister(dest, converted); break;
+                }
+            }
+            else
+            {
+                AddToRegister(cpu, width, dest, converted);
+            }
+        }
+
+        private static byte ReadRegIndex(MemoryController mem) => (byte)(mem.Fetch() & 0x1F);
+        private static byte ReadFloatRegIndex(MemoryController mem) => (byte)(mem.Fetch() & 0x0F);
 
         public static void Process(Computer computer)
         {

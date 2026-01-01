@@ -854,10 +854,28 @@ namespace Continuum93.Emulator.Mnemonics
 
         public static byte? TryGetFloatRegisterIndex(string registerName)
         {
-            if (registerName[..1] != "F" || registerName.Length <= 1)
+            if (string.IsNullOrWhiteSpace(registerName))
                 return null;
 
-            string indexStr = registerName[1..];
+            string upper = registerName.ToUpper();
+            string indexStr;
+
+            if (upper.StartsWith("FR", StringComparison.Ordinal))
+            {
+                if (upper.Length <= 2)
+                    return null;
+                indexStr = upper[2..];
+            }
+            else if (upper.StartsWith("F", StringComparison.Ordinal))
+            {
+                if (upper.Length <= 1)
+                    return null;
+                indexStr = upper[1..];
+            }
+            else
+            {
+                return null;
+            }
 
             if (byte.TryParse(indexStr, out byte index) && indexStr.All(char.IsDigit))
             {

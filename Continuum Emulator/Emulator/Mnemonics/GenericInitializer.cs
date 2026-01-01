@@ -19,6 +19,7 @@ namespace Continuum93.Emulator.Mnemonics
             InitializeOpCodeDefinition();
             
             InitInstruction("LD", Mnem.LD);
+            InitInstruction("ADD", Mnem.ADD);
         }
 
         private static void InitInstruction(string oper, byte opCode)
@@ -290,7 +291,7 @@ namespace Continuum93.Emulator.Mnemonics
         {
             //opCodeDefinition.Add("NOP", 0x00);
             opCodeDefinition.Add("LD", 0x01);
-            //opCodeDefinition.Add("ADD", 0x02);
+            opCodeDefinition.Add("ADD", 0x02);
             // more opcodes as needed
         }
 

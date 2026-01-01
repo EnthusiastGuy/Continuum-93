@@ -13,10 +13,10 @@
             //Mnem.AddPrimeOp("LD32", Mnem.LD32, "Load data on 32 bit", ["Loads into the first operand({0}) the value of the second operand ({1})."]);
 
             Mnem.AddPrimeOp("ADD", Mnem.ADD, "Add data", ["Adds the second operand ({1}) to the value of the first operand ({0})."]);
-            Mnem.AddPrimeOp("ADD16", Mnem.ADD16, "Add data on 16-bit", ["Adds the second operand ({1}) to the value of the first operand ({0})."]);
-            Mnem.AddPrimeOp("ADD24", Mnem.ADD24, "Add data on 24 bit", ["Adds the second operand ({1}) to the value of the first operand ({0})."]);
-            Mnem.AddPrimeOp("ADD32", Mnem.ADD32, "Add data on 32 bit",
-                ["Adds the second operand ({1}) to the value of the first operand ({0})."]);
+            //Mnem.AddPrimeOp("ADD16", Mnem.ADD16, "Add data on 16-bit", ["Adds the second operand ({1}) to the value of the first operand ({0})."]);
+            //Mnem.AddPrimeOp("ADD24", Mnem.ADD24, "Add data on 24 bit", ["Adds the second operand ({1}) to the value of the first operand ({0})."]);
+            //Mnem.AddPrimeOp("ADD32", Mnem.ADD32, "Add data on 32 bit",
+            //    ["Adds the second operand ({1}) to the value of the first operand ({0})."]);
 
             Mnem.AddPrimeOp("SUB", Mnem.SUB, "Subtract data",
                 ["Subtracts the second operand ({1}) from the first operand ({0})."]);
