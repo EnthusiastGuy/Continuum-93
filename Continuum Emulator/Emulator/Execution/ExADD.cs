@@ -492,6 +492,7 @@ namespace Continuum93.Emulator.Execution
         {
             var mem = cpu.MEMC;
             var regs = cpu.CPU.REGS;
+            var flags = cpu.CPU.FLAGS;
 
             if (count == 0)
                 count = 1;
@@ -501,16 +502,29 @@ namespace Continuum93.Emulator.Execution
 
             for (uint r = 0; r < repeat; r++)
             {
-                uint baseAddr = address + r * count;
-                for (int i = 0; i < count; i++)
+                uint baseAddr = address; // repeat applies to the same target span
+                byte carry = 0;
+                // propagate carry from higher offsets down to lower offsets (most-significant first)
+                for (int i = count - 1; i >= 0; i--)
                 {
                     byte addByte;
                     addByte = sourceIsAddress
                         ? mem.Get8bitFromRAM(valueOrAddress + (uint)i)
                         : (i >= 4 ? (byte)0 : (byte)(valueOrAddress >> ((3 - i) * 8))); // imm: high-to-low byte order
                     uint target = baseAddr + (uint)i;
-                    mem.Set8bitToRAM(target, regs.Add8BitValues(mem.Get8bitFromRAM(target), addByte));
+
+                    byte dest = mem.Get8bitFromRAM(target);
+                    byte carryIn = carry;
+                    ushort sum = (ushort)(dest + addByte + carryIn);
+                    byte result = (byte)sum;
+                    carry = (byte)(sum >> 8);
+
+                    flags.Update8BitAddFlags(dest, (byte)(addByte + carryIn));
+                    mem.Set8bitToRAM(target, result);
                 }
+
+                // if carry remains after the last byte, reflect it in the carry flag
+                flags.SetCarry(carry > 0);
             }
         }
 
