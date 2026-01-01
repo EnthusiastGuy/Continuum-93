@@ -16,14 +16,16 @@ namespace Continuum93.ServiceModule.UI
         private int _scrollOffset;
         private int _previousScroll;
         private string _titleText = string.Empty;
+        private string _layerInfoSuffix = string.Empty;
 
-        public MemoryMapHoverPopup(int x, int y, uint startAddress, int byteCount, byte[] data)
-            : base(string.Empty, x, y, 310, 405, 0f, false, false)
+        public MemoryMapHoverPopup(int x, int y, uint startAddress, int byteCount, byte[] data, string layerInfoSuffix = "")
+            : base(string.Empty, x, y, 390, 405, 0f, false, false)
         {
             IsOnTop = true;
             Height = 405;
-            Width = 310;
-            UpdateData(startAddress, byteCount, data);
+            Width = 390; // Extended width to fit longer titles with layer info
+            _layerInfoSuffix = layerInfoSuffix;
+            UpdateData(startAddress, byteCount, data, layerInfoSuffix);
         }
 
         public override void Update(GameTime gameTime)
@@ -43,17 +45,18 @@ namespace Continuum93.ServiceModule.UI
             UpdateContent(gameTime);
         }
 
-        public void UpdateData(uint startAddress, int byteCount, byte[] data)
+        public void UpdateData(uint startAddress, int byteCount, byte[] data, string layerInfoSuffix = "")
         {
             _startAddress = startAddress;
             _byteCount = Math.Max(0, byteCount);
             _scrollOffset = Math.Clamp(_scrollOffset, 0, Math.Max(0, _byteCount - 1));
             _data = data ?? Array.Empty<byte>();
+            _layerInfoSuffix = layerInfoSuffix ?? string.Empty;
 
             uint end = _byteCount > 0
                 ? Math.Min(0xFFFFFF, _startAddress + (uint)Math.Max(0, _byteCount - 1))
                 : _startAddress;
-            _titleText = $"0x{_startAddress:X6} -> 0x{end:X6}";
+            _titleText = $"0x{_startAddress:X6} -> 0x{end:X6}{_layerInfoSuffix}";
         }
 
         protected override void DrawChrome(SpriteBatch spriteBatch, Texture2D pixel)

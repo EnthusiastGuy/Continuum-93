@@ -46,6 +46,24 @@ namespace Continuum93.ServiceModule.UI
         private LayoutState _layout;
 
         private readonly Color _shadowColor = new(0, 60, 0);
+        // Palette colors: darker yellow (even layers), lighter yellow (odd layers)
+        private readonly Color _paletteColorDark = new Color(200, 200, 0); // Darker yellow
+        private readonly Color _paletteColorLight = new Color(255, 255, 100); // Lighter yellow
+        // Video colors: blue (even layers), cyan (odd layers)
+        private readonly Color _videoColorBlue = Color.Blue;
+        private readonly Color _videoColorCyan = Color.Cyan;
+
+        // Video region cache
+        private byte _cachedVramPages = 0;
+        private readonly List<VideoRegion> _videoRegions = new();
+
+        private struct VideoRegion
+        {
+            public uint StartAddress;
+            public uint EndAddress; // Inclusive
+            public byte LayerIndex;
+            public bool IsPalette; // true for palette, false for video data
+        }
 
         private struct BrickVisual
         {
@@ -55,6 +73,10 @@ namespace Continuum93.ServiceModule.UI
             public byte Average;
             public float ReadIntensity;
             public float WriteIntensity;
+            public bool HasPaletteData;
+            public bool HasVideoData;
+            public List<byte> PaletteLayers; // Layer indices that have palette data in this brick
+            public List<byte> VideoLayers; // Layer indices that have video data in this brick
         }
 
         private struct LayoutState
@@ -107,6 +129,9 @@ namespace Continuum93.ServiceModule.UI
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             var mouse = Mouse.GetState();
             Point mousePos = new(mouse.X, mouse.Y);
+
+            // Update video regions cache if VRAM_PAGES changed
+            UpdateVideoRegionsCache();
 
             CalculateLayout(ContentRect);
             HandleZoom(mouse, mousePos);
@@ -218,9 +243,30 @@ namespace Continuum93.ServiceModule.UI
 
                 spriteBatch.Draw(pixel, brick.Rect, finalColor);
 
-                // Shadow on right and bottom edges
-                spriteBatch.Draw(pixel, new Rectangle(brick.Rect.Right - 1, brick.Rect.Y, 1, brick.Rect.Height), _shadowColor);
-                spriteBatch.Draw(pixel, new Rectangle(brick.Rect.X, brick.Rect.Bottom - 1, brick.Rect.Width, 1), _shadowColor);
+                // Determine border color based on video regions with alternating colors
+                Color borderColor = _shadowColor; // Default green shadow
+                if (brick.HasVideoData && brick.HasPaletteData)
+                {
+                    // If both, prioritize video - use lowest layer index to determine color
+                    byte lowestLayer = GetLowestLayer(brick.VideoLayers, brick.PaletteLayers);
+                    borderColor = (lowestLayer % 2 == 0) ? _videoColorBlue : _videoColorCyan;
+                }
+                else if (brick.HasVideoData)
+                {
+                    // Use lowest video layer index to determine color
+                    byte lowestLayer = GetLowestLayer(brick.VideoLayers, new List<byte>());
+                    borderColor = (lowestLayer % 2 == 0) ? _videoColorBlue : _videoColorCyan;
+                }
+                else if (brick.HasPaletteData)
+                {
+                    // Use lowest palette layer index to determine color
+                    byte lowestLayer = GetLowestLayer(new List<byte>(), brick.PaletteLayers);
+                    borderColor = (lowestLayer % 2 == 0) ? _paletteColorDark : _paletteColorLight;
+                }
+
+                // Draw border on right and bottom edges
+                spriteBatch.Draw(pixel, new Rectangle(brick.Rect.Right - 1, brick.Rect.Y, 1, brick.Rect.Height), borderColor);
+                spriteBatch.Draw(pixel, new Rectangle(brick.Rect.X, brick.Rect.Bottom - 1, brick.Rect.Width, 1), borderColor);
 
                 if (isHovered)
                 {
@@ -453,6 +499,60 @@ namespace Continuum93.ServiceModule.UI
             }
         }
 
+        private void UpdateVideoRegionsCache()
+        {
+            var computer = Machine.COMPUTER;
+            if (computer?.GRAPHICS == null)
+            {
+                _videoRegions.Clear();
+                _cachedVramPages = 0;
+                return;
+            }
+
+            byte vramPages = computer.GRAPHICS.VRAM_PAGES;
+            if (vramPages == _cachedVramPages && _videoRegions.Count > 0)
+                return; // Cache is up to date
+
+            _cachedVramPages = vramPages;
+            _videoRegions.Clear();
+
+            if (vramPages == 0)
+                return;
+
+            const uint PALETTE_SIZE = 768;
+            uint vSize = Constants.V_SIZE; // 480 * 270 = 129,600
+            uint ramSize = 0x1000000; // 16 MB
+
+            // Calculate VRAM_OFFSET (same as Graphics.cs)
+            uint vramOffset = ramSize - vSize * vramPages;
+
+            // For each layer (numbered backwards from 0 to vramPages-1)
+            for (byte layerIndex = 0; layerIndex < vramPages; layerIndex++)
+            {
+                // Calculate addresses (same as Graphics.cs methods)
+                uint videoAddress = (uint)(ramSize - vSize * (layerIndex + 1));
+                uint paletteAddress = (uint)(vramOffset - PALETTE_SIZE * (layerIndex + 1));
+
+                // Add palette region
+                _videoRegions.Add(new VideoRegion
+                {
+                    StartAddress = paletteAddress,
+                    EndAddress = paletteAddress + PALETTE_SIZE - 1,
+                    LayerIndex = layerIndex,
+                    IsPalette = true
+                });
+
+                // Add video data region
+                _videoRegions.Add(new VideoRegion
+                {
+                    StartAddress = videoAddress,
+                    EndAddress = videoAddress + vSize - 1,
+                    LayerIndex = layerIndex,
+                    IsPalette = false
+                });
+            }
+        }
+
         private void RefreshVisibleBricks()
         {
             _visibleBricks.Clear();
@@ -479,9 +579,36 @@ namespace Continuum93.ServiceModule.UI
                         continue;
 
                     int count = (int)Math.Min(_layout.BrickCapacity, totalBytes - startAddress);
+                    uint endAddress = startAddress + (uint)count - 1;
                     byte average = ComputeAverage(ram, startAddress, count);
                     float readIntensity = GetMaxIntensity(_pageReadIntensity, startAddress, count);
                     float writeIntensity = GetMaxIntensity(_pageWriteIntensity, startAddress, count);
+
+                    // Check for video regions
+                    bool hasPaletteData = false;
+                    bool hasVideoData = false;
+                    var paletteLayers = new List<byte>();
+                    var videoLayers = new List<byte>();
+
+                    foreach (var region in _videoRegions)
+                    {
+                        // Check if brick overlaps with region
+                        if (startAddress <= region.EndAddress && endAddress >= region.StartAddress)
+                        {
+                            if (region.IsPalette)
+                            {
+                                hasPaletteData = true;
+                                if (!paletteLayers.Contains(region.LayerIndex))
+                                    paletteLayers.Add(region.LayerIndex);
+                            }
+                            else
+                            {
+                                hasVideoData = true;
+                                if (!videoLayers.Contains(region.LayerIndex))
+                                    videoLayers.Add(region.LayerIndex);
+                            }
+                        }
+                    }
 
                     Rectangle rect = new(
                         _layout.AreaRect.X + col * _layout.BrickStride,
@@ -496,7 +623,11 @@ namespace Continuum93.ServiceModule.UI
                         ByteCount = count,
                         Average = average,
                         ReadIntensity = readIntensity,
-                        WriteIntensity = writeIntensity
+                        WriteIntensity = writeIntensity,
+                        HasPaletteData = hasPaletteData,
+                        HasVideoData = hasVideoData,
+                        PaletteLayers = paletteLayers,
+                        VideoLayers = videoLayers
                     });
                 }
             }
@@ -624,7 +755,7 @@ namespace Continuum93.ServiceModule.UI
             int popupY = brick.Rect.Y;
 
             var device = Renderer.GetGraphicsDevice();
-            int popupWidth = 280;
+            int popupWidth = 360; // Extended width to fit longer titles with layer info
             int popupHeight = 260;
 
             if (popupX + popupWidth > device.Viewport.Width)
@@ -632,17 +763,72 @@ namespace Continuum93.ServiceModule.UI
             if (popupY + popupHeight > device.Viewport.Height)
                 popupY = device.Viewport.Height - popupHeight - offset;
 
+            // Build title with layer information
+            string layerInfo = BuildLayerInfo(brick);
+            string titleSuffix = string.IsNullOrEmpty(layerInfo) ? string.Empty : $" {layerInfo}";
+
             if (_hoverPopup == null)
             {
-                _hoverPopup = new MemoryMapHoverPopup(popupX, popupY, brick.StartAddress, brick.ByteCount, data);
+                _hoverPopup = new MemoryMapHoverPopup(popupX, popupY, brick.StartAddress, brick.ByteCount, data, titleSuffix);
             }
             else
             {
                 _hoverPopup.X = popupX;
                 _hoverPopup.Y = popupY;
-                _hoverPopup.UpdateData(brick.StartAddress, brick.ByteCount, data);
+                _hoverPopup.UpdateData(brick.StartAddress, brick.ByteCount, data, titleSuffix);
                 _hoverPopup.Visible = true;
             }
+        }
+
+        private byte GetLowestLayer(List<byte> videoLayers, List<byte> paletteLayers)
+        {
+            byte lowest = byte.MaxValue;
+            foreach (var layer in videoLayers)
+            {
+                if (layer < lowest)
+                    lowest = layer;
+            }
+            foreach (var layer in paletteLayers)
+            {
+                if (layer < lowest)
+                    lowest = layer;
+            }
+            return lowest == byte.MaxValue ? (byte)0 : lowest;
+        }
+
+        private string BuildLayerInfo(BrickVisual brick)
+        {
+            if (!brick.HasPaletteData && !brick.HasVideoData)
+                return string.Empty;
+
+            // If multiple layers intersect (either multiple palettes, multiple videos, or both), show generic message
+            bool hasMultipleLayers = (brick.PaletteLayers.Count + brick.VideoLayers.Count) > 1;
+
+            if (hasMultipleLayers)
+            {
+                return "(video data)";
+            }
+
+            // Single layer case - check if we have both palette and video from the same layer
+            if (brick.HasPaletteData && brick.HasVideoData && 
+                brick.PaletteLayers.Count == 1 && brick.VideoLayers.Count == 1 &&
+                brick.PaletteLayers[0] == brick.VideoLayers[0])
+            {
+                // Same layer has both palette and video - show as video data
+                return "(video data)";
+            }
+
+            // Single region case
+            if (brick.HasPaletteData && brick.PaletteLayers.Count > 0)
+            {
+                return $"(palette [{brick.PaletteLayers[0]}])";
+            }
+            else if (brick.HasVideoData && brick.VideoLayers.Count > 0)
+            {
+                return $"(video [{brick.VideoLayers[0]}])";
+            }
+
+            return string.Empty;
         }
 
         private void HideHoverPopup()
