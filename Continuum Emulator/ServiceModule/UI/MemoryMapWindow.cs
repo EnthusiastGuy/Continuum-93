@@ -137,12 +137,61 @@ namespace Continuum93.ServiceModule.UI
             if (base.HandleInput(mouse, prevMouse))
                 return true;
 
-            // Consume input when over this window so it doesn't bubble to others
             Point pos = new(mouse.X, mouse.Y);
-            if (Bounds.Contains(pos))
-                return true;
+            
+            // Only handle input if we're the topmost window at this position
+            // This prevents covered windows from being brought to front on hover
+            if (!IsTopmostAtPosition(pos))
+                return false;
 
+            // Handle scroll wheel input (zoom)
+            int scrollDelta = mouse.ScrollWheelValue - prevMouse.ScrollWheelValue;
+            if (scrollDelta != 0 && ContentRect.Contains(pos))
+            {
+                // Scroll handling will be done in UpdateContent, but we return true
+                // to indicate we're consuming this input
+                return true;
+            }
+
+            // Handle clicks on clear button or scrollbar (only if layout is initialized)
+            bool leftJustPressed = mouse.LeftButton == ButtonState.Pressed && 
+                                   prevMouse.LeftButton == ButtonState.Released;
+            if (leftJustPressed)
+            {
+                // Check if layout is initialized (AreaRect will be non-zero if initialized)
+                if (_layout.AreaRect.Width > 0)
+                {
+                    if (_layout.ClearButtonRect.Contains(pos) || 
+                        (_layout.ShowVScroll && _layout.VScrollRect.Contains(pos)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // Don't return true just for hovering - that would bring window to front
             return false;
+        }
+
+        private bool IsTopmostAtPosition(Point pos)
+        {
+            if (Manager == null || !Bounds.Contains(pos))
+                return false;
+
+            // Check if any window after us in the list (which are visually above us) contains the mouse
+            int ourIndex = Manager.Windows.IndexOf(this);
+            if (ourIndex < 0)
+                return false;
+
+            // Windows are ordered from bottom to top, so windows after us are above us
+            for (int i = ourIndex + 1; i < Manager.Windows.Count; i++)
+            {
+                var other = Manager.Windows[i];
+                if (other.Visible && other.Bounds.Contains(pos))
+                    return false; // Another window is above us at this position
+            }
+
+            return true; // We're the topmost window at this position
         }
 
         protected override void DrawContent(SpriteBatch spriteBatch, Rectangle contentRect)

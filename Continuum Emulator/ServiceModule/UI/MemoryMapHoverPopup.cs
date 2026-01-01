@@ -8,7 +8,7 @@ namespace Continuum93.ServiceModule.UI
 {
     public class MemoryMapHoverPopup : Window
     {
-        private const int ItemsPerPage = 10;
+        private const int ItemsPerPage = 20;
 
         private uint _startAddress;
         private int _byteCount;
@@ -18,11 +18,11 @@ namespace Continuum93.ServiceModule.UI
         private string _titleText = string.Empty;
 
         public MemoryMapHoverPopup(int x, int y, uint startAddress, int byteCount, byte[] data)
-            : base(string.Empty, x, y, 360, 280, 0f, false, false)
+            : base(string.Empty, x, y, 310, 405, 0f, false, false)
         {
             IsOnTop = true;
-            Height = 280;
-            Width = 360;
+            Height = 405;
+            Width = 310;
             UpdateData(startAddress, byteCount, data);
         }
 

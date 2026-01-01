@@ -147,6 +147,8 @@ namespace Continuum93.ServiceModule.UI
         {
             // First, let base class handle window dragging/resizing
             bool baseHandled = base.HandleInput(mouse, prevMouse);
+            if (baseHandled)
+                return true;
 
             var contentRect = ContentRect;
             Point mousePos = new Point(mouse.X, mouse.Y);
@@ -159,12 +161,22 @@ namespace Continuum93.ServiceModule.UI
                 // Update last mouse position to prevent jump when mouse re-enters area
                 // This matches the original behavior where lastMousePosition is always updated
                 _lastMousePosition = new Vector3(mouse.X, mouse.Y, mouse.ScrollWheelValue);
-                return baseHandled;
+                return false;
+            }
+
+            // Only handle input if we're the topmost window at this position
+            // This prevents covered windows from being brought to front on hover
+            if (!IsTopmostAtPosition(mousePos))
+            {
+                // Still update last mouse position to prevent jump when window becomes topmost
+                _lastMousePosition = new Vector3(mouse.X, mouse.Y, mouse.ScrollWheelValue);
+                return false;
             }
 
             // Handle 3D view input (matching ContinuumTools UpdateInput exactly)
             // Use the passed mouse state instead of Mouse.GetState() for consistency
             var scrollWheelValue = mouse.ScrollWheelValue;
+            bool hasScrollInput = scrollWheelValue != _lastMousePosition.Z;
 
             // Zoom with scroll wheel (matching original)
             if (scrollWheelValue > _lastMousePosition.Z)
@@ -181,6 +193,7 @@ namespace Continuum93.ServiceModule.UI
 
             // Rotate with left mouse button (matching ContinuumTools exactly)
             bool leftJustPressed = mouse.LeftButton == ButtonState.Pressed && prevMouse.LeftButton == ButtonState.Released;
+            bool hasMouseInput = mouse.LeftButton == ButtonState.Pressed || mouse.MiddleButton == ButtonState.Pressed;
             
             if (mouse.LeftButton == ButtonState.Pressed)
             {
@@ -220,9 +233,30 @@ namespace Continuum93.ServiceModule.UI
             // This ensures smooth delta calculation on next frame
             _lastMousePosition = currentMousePosition;
 
-            // Return true if we handled input (mouse is in content area)
-            // This allows the window to receive focus and continue receiving input
-            return true;
+            // Return true only if we're actually handling input (scroll, mouse buttons)
+            // This allows the window to receive focus when user interacts with it
+            return hasScrollInput || hasMouseInput;
+        }
+
+        private bool IsTopmostAtPosition(Point pos)
+        {
+            if (Manager == null || !Bounds.Contains(pos))
+                return false;
+
+            // Check if any window after us in the list (which are visually above us) contains the mouse
+            int ourIndex = Manager.Windows.IndexOf(this);
+            if (ourIndex < 0)
+                return false;
+
+            // Windows are ordered from bottom to top, so windows after us are above us
+            for (int i = ourIndex + 1; i < Manager.Windows.Count; i++)
+            {
+                var other = Manager.Windows[i];
+                if (other.Visible && other.Bounds.Contains(pos))
+                    return false; // Another window is above us at this position
+            }
+
+            return true; // We're the topmost window at this position
         }
 
         protected override void OnResized()
