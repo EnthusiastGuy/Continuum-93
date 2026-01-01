@@ -12,10 +12,11 @@ namespace CompilerTests
             using Computer computer = new();
 
             cp.Build(@"
-                LD A, (ABC - XYZ)
                 LD ABC, .FirstValue
-                LD DEF, .SecondValue 
-                ADD (.FirstValue),(.SecondValue)
+                LD DEF, .SecondValue
+                LD GHI, 1
+                ADD (.FirstValue),(.SecondValue), 1, GHI
+                BREAK
 
             .FirstValue
                 #DB 100, 0x00, 0x00, 0x00
@@ -27,6 +28,8 @@ namespace CompilerTests
             
 
             byte[] compiled = cp.GetCompiledCode();
+
+            Console.WriteLine(BitConverter.ToString(compiled));
 
             computer.LoadMem(compiled);
             computer.Run();

@@ -252,7 +252,7 @@ namespace Continuum93.Emulator.Execution
                     uint address = group.AddressResolver(mem, regs);
                     uint value = mem.Fetch32();
                     byte count = mem.Fetch();
-                    return (address, value, count, 1u);
+                    return (address, value, count, 1u, false);
                 });
 
                 table[group.BlockImmediateRepeatOpcode] = BlockHandler((mem, regs) =>
@@ -261,7 +261,7 @@ namespace Continuum93.Emulator.Execution
                     uint value = mem.Fetch32();
                     byte count = mem.Fetch();
                     uint repeat = mem.Fetch24();
-                    return (address, value, count, repeat);
+                    return (address, value, count, repeat, false);
                 });
 
                 // Register to memory add
@@ -282,8 +282,7 @@ namespace Continuum93.Emulator.Execution
                         uint valueAddress = valueResolver(mem, regs);
                         byte count = mem.Fetch();
                         uint repeat = regs.Get24BitRegister(ReadRegIndex(mem));
-                        uint value = mem.Get32bitFromRAM(valueAddress);
-                        return (target, value, count, repeat);
+                        return (target, valueAddress, count, repeat, true);
                     });
                 }
 
@@ -423,14 +422,14 @@ namespace Continuum93.Emulator.Execution
             };
         }
 
-        private static Action<Computer> BlockHandler(Func<MemoryController, Registers, (uint address, uint value, byte count, uint repeat)> resolver)
+        private static Action<Computer> BlockHandler(Func<MemoryController, Registers, (uint address, uint valueOrAddress, byte count, uint repeat, bool sourceIsAddress)> resolver)
         {
             return cpu =>
             {
                 var mem = cpu.MEMC;
                 var regs = cpu.CPU.REGS;
-                var (address, value, count, repeat) = resolver(mem, regs);
-                AddBlock(cpu, address, value, count, repeat);
+                var (address, valueOrAddress, count, repeat, sourceIsAddress) = resolver(mem, regs);
+                AddBlock(cpu, address, valueOrAddress, count, repeat, sourceIsAddress);
             };
         }
 
@@ -489,22 +488,26 @@ namespace Continuum93.Emulator.Execution
             }
         }
 
-        private static void AddBlock(Computer cpu, uint address, uint value, byte count, uint repeat)
+        private static void AddBlock(Computer cpu, uint address, uint valueOrAddress, byte count, uint repeat, bool sourceIsAddress)
         {
             var mem = cpu.MEMC;
             var regs = cpu.CPU.REGS;
 
-            if (count == 0 || repeat == 0)
-                return;
+            if (count == 0)
+                count = 1;
 
-            byte toCopy = (byte)Math.Min(count, (byte)4);
+            if (repeat == 0)
+                repeat = 1;
+
             for (uint r = 0; r < repeat; r++)
             {
                 uint baseAddr = address + r * count;
-                int start = count - toCopy;
                 for (int i = 0; i < count; i++)
                 {
-                    byte addByte = i < start ? (byte)0 : (byte)(value >> ((toCopy - 1 - (i - start)) * 8));
+                    byte addByte;
+                    addByte = sourceIsAddress
+                        ? mem.Get8bitFromRAM(valueOrAddress + (uint)i)
+                        : (i >= 4 ? (byte)0 : (byte)(valueOrAddress >> ((3 - i) * 8))); // imm: high-to-low byte order
                     uint target = baseAddr + (uint)i;
                     mem.Set8bitToRAM(target, regs.Add8BitValues(mem.Get8bitFromRAM(target), addByte));
                 }
@@ -512,6 +515,14 @@ namespace Continuum93.Emulator.Execution
         }
 
         private static uint OffsetAddress(uint baseAddr, int offset) => (uint)(baseAddr + offset);
+
+        private static uint ReadValueLittleEndian(MemoryController mem, uint address)
+        {
+            return (uint)(mem.Get8bitFromRAM(address)
+                | (mem.Get8bitFromRAM(address + 1) << 8)
+                | (mem.Get8bitFromRAM(address + 2) << 16)
+                | (mem.Get8bitFromRAM(address + 3) << 24));
+        }
 
         private static void FloatToInteger(Computer cpu, Width width)
         {
