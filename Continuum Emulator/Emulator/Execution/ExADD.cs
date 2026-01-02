@@ -510,7 +510,7 @@ namespace Continuum93.Emulator.Execution
                     byte addByte;
                     addByte = sourceIsAddress
                         ? mem.Get8bitFromRAM(valueOrAddress + (uint)i)
-                        : (i >= 4 ? (byte)0 : (byte)(valueOrAddress >> ((3 - i) * 8))); // imm: high-to-low byte order
+                        : (i >= 4 ? (byte)0 : (byte)(valueOrAddress >> (8 * (count - 1 - i)))); // immediates map least-significant byte to highest offset
                     uint target = baseAddr + (uint)i;
 
                     byte dest = mem.Get8bitFromRAM(target);

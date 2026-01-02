@@ -42,14 +42,14 @@ namespace Continuum93.Emulator.AutoDocs.MetaInfo
             ));
 
             MetaData.Add(ASMMeta.Create(
-                new List<string>() { "LD", "LD16", "LD24", "LD32" },
+                new List<string>() { "LD" },
                 "Loads data from the source operand2 into the destination operand1. The source is a register, memory location or value and the destination is a register or memory location. The contents of the source are read and then placed into the destination, leaving the source unchanged.",
                 "Data Transfer: LD is primarily used to transfer data from memory, registers or immediate values to registers. Initialization of Registers: It's used for initializing registers with specific values at the beginning of a program or a subroutine. Memory Manipulation: LD is crucial in programs that need to read and process data stored in memory. Preparation for Arithmetic/Logical Operations: Before performing arithmetic or logical operations, operands are often loaded into registers using LD.",
                 "LD[bits] operand1, operand2"
             ));
 
             MetaData.Add(ASMMeta.Create(
-                new List<string>() { "ADD", "ADD16", "ADD24", "ADD32" },
+                new List<string>() { "ADD" },
                 "Adds the value of the source operand2 to the destination operand1 and stores the result in the destination. The source operand2 remains unchanged. Modifies the carry flag if the result carries over and the zero flag if the result is zero.",
                 "Arithmetic Calculations: ADD is used for general arithmetic calculations, which form the basis of numerous algorithms and operations. Incrementing Values: It can be used to increment values, for example, increasing a counter or iterating through array indices. Memory Address Calculations: In pointer arithmetic, ADD is used for calculating new memory addresses, such as moving to the next element in an array. Aggregation: In algorithms that require summing up data, like calculating averages or total values. Combining Results: It's used to combine results from different computations or to accumulate values in a loop.",
                 "ADD[bits] operand1, operand2"

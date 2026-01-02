@@ -141,8 +141,8 @@ namespace Continuum93.Emulator.Interpreter
         [
             "CALL", "JP", "MEMC", "MEMF",
             "DJNZ", "DJNZ16", "DJNZ24", "DJNZ32",
-            "CP", "LD", "LD16", "LD24", "LD32",
-            "ADD", "ADD16", "ADD24", "ADD32",
+            "CP", "LD",
+            "ADD",
             "SUB", "SUB16", "SUB24", "SUB32",
             "DIV", "MUL",
             "FIND",

@@ -81,7 +81,7 @@
     LD W, Y                     ; converting the X and Y into a linear index. Since Y moves on isometric vertical,
     MUL UVW, 10                 ; we multiply it with 10 to land on the correct row, then
     ADD UVW, X                  ; we add X to the result so we can land on the correct tile.
-    ADD24 UVW, .TerrainLayout   ; Now we have an index that needs to be added to the .TerrainLayout address offset
+    ADD UVW, .TerrainLayout     ; Now we have an index that needs to be added to the .TerrainLayout address offset
     LD W, (UVW)                 ; and getting the byte from that address lands us with the correct tile to place at this X, Y.
 
     CALLR .DrawSpriteIndex      ; We draw the sprite with the index stored in W

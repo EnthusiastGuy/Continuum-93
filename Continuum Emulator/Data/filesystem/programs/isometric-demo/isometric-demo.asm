@@ -22,7 +22,7 @@
                                     ; never changes, it suffices to do it once here.
 
     CALLR .InitializeClock          ; Initialize the clock time
-    LD (.zOffset), 0                ; This will be used to manage an oscilator used to sustain the main animation
+    LD (.zOffset), 0, 1                ; This will be used to manage an oscilator used to sustain the main animation
 
 
 .Repeat                             ; Main loop
@@ -30,7 +30,8 @@
     JR NZ, .Repeat                  ; We loop back until the allowed timeframe is reached
 
     CALLR .InputUpdate              ; Update the keyboard input buffers to be able to determine changes
-    ADD (.zOffset), 7               ; Controls the speed of the animation. Higher values -> faster  (default 7)
+    LD XYZ, 1
+    ADD (.zOffset), 7, 1            ; Controls the speed of the animation. Higher values -> faster  (default 7)
 
 	LD A, 27				        ; Escape key
 	CALLR .InputKeyPressed          ; Check if the keycode in A has just been pressed

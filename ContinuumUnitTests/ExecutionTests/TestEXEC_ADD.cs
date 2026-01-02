@@ -275,5 +275,26 @@ namespace ExecutionTests
 
             Assert.Equal(3.5f, computer.CPU.FREGS.GetRegister(0));
         }
+
+
+        [Fact]
+        public void ADD_InnnI_nnn_n()
+        {
+            Assembler cp = new();
+            using var computer = new Computer();
+
+            computer.CPU.REGS.XYZ = 2; // repeat twice
+            computer.LoadMemAt(0xA000, [1, 1, 1, 1, 1, 1]);
+
+            cp.Build("ADD (0xA000),7,1\nBREAK");
+            Console.WriteLine("ADD_InnnI_nnn_n bytes: " + string.Join(",", cp.GetCompiledCode()));
+            Console.WriteLine($"GeneralForm: {cp.GetCompiledLine(0)?.GeneralForm}");
+
+            computer.LoadMem(cp.GetCompiledCode());
+            computer.Run();
+
+            byte[] actual = computer.MEMC.RAM.GetMemoryAt(0xA000, 6);
+            Assert.Equal([8, 1, 1, 1, 1, 1], actual);
+        }
     }
 }

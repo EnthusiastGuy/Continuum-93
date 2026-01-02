@@ -425,8 +425,8 @@
     LD BCD, 0x85000 ; Tilemap address
     LD EF, 121      ; Tilemap width
     LD O, 2         ; Target video page
-    ADD16 PQ, (.spriteX)    ; Adjust the relative offset of the current frame to the provided X
-    ADD16 RS, (.spriteY)    ; ... and Y
+    ADD PQ, (.spriteX)    ; Adjust the relative offset of the current frame to the provided X
+    ADD RS, (.spriteY)    ; ... and Y
     LD T, 0         ; No tile effects
     INT 0x01, A     ; Execute interrupt 0x01 (Video) with function 0x0E (Draw tile map sprite)
     POP A, Z
@@ -441,8 +441,8 @@
     LD A, 0x06      ; Interrupt selector, function "Draw filled rectangle"
     LD B, 2         ; Target video page
     LD I, 0         ; IJ the height of the rectangle. Since we're working with small values, we can reset the I here and just play around with the provided J
-    ADD16 CD, (.spriteX)    ; Again, adjust the relative offset of the current frame to the provided X
-    ADD16 EF, (.spriteY)    ; ... and Y
+    ADD CD, (.spriteX)    ; Again, adjust the relative offset of the current frame to the provided X
+    ADD EF, (.spriteY)    ; ... and Y
     INT 0x01, A     ; Execute interrupt 0x01 (Video) with function 0x06 (Draw filled rectangle)
     POP A, Z
     RET
