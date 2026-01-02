@@ -25,6 +25,7 @@ namespace Continuum93.Emulator
 
         private bool RUNNING = true;
         private bool PAUSED = false;
+        private bool _pendingStepClear;
 
         public Computer(bool initWithAudio = false)
         {
@@ -136,6 +137,12 @@ namespace Continuum93.Emulator
                 {
                     if (!IsPaused)
                     {
+                        if (DebugState.StepByStep && _pendingStepClear)
+                        {
+                            MEMC?.ActivityTracker.ClearForNextStep();
+                            _pendingStepClear = false;
+                        }
+
                         ExecuteNextInstruction();
                         //CPUBenchmark.IncrementInstructions();
                         
@@ -198,6 +205,7 @@ namespace Continuum93.Emulator
                     Thread.Sleep(1); // yield to allow UI / shutdown to proceed
                 }
                 DebugState.MoveNext = false;
+                _pendingStepClear = true;
             }
         }
 

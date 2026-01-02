@@ -23,6 +23,10 @@ namespace Continuum93.ServiceModule.UI
 
         private readonly List<BrickVisual> _visibleBricks = new();
         private readonly byte[] _activityScratch = new byte[MemoryActivityTracker.PageCount];
+        private readonly ulong[] _byteReadMask = new ulong[MemoryActivityTracker.ByteMaskLength];
+        private readonly ulong[] _byteWriteMask = new ulong[MemoryActivityTracker.ByteMaskLength];
+        private readonly ulong[] _byteReadScratch = new ulong[MemoryActivityTracker.ByteMaskLength];
+        private readonly ulong[] _byteWriteScratch = new ulong[MemoryActivityTracker.ByteMaskLength];
         private readonly float[] _pageReadIntensity = new float[MemoryActivityTracker.PageCount];
         private readonly float[] _pageWriteIntensity = new float[MemoryActivityTracker.PageCount];
 
@@ -39,6 +43,7 @@ namespace Continuum93.ServiceModule.UI
         private float _scrollY;
         private float _pollAccumulator;
         private float _activityFadeSeconds = DefaultActivityFadeSeconds;
+        private uint _lastStepTag;
 
         private bool _draggingV;
         private int _dragOffsetV;
@@ -476,7 +481,23 @@ namespace Continuum93.ServiceModule.UI
             var tracker = Machine.COMPUTER?.MEMC.ActivityTracker;
             if (tracker != null)
             {
-                tracker.ConsumeActivity(_activityScratch);
+                // Pull the latest activity into scratch then accumulate so highlights persist
+                tracker.ConsumeActivity(_activityScratch, _byteReadScratch, _byteWriteScratch);
+
+                for (int i = 0; i < _byteReadMask.Length; i++)
+                {
+                    _byteReadMask[i] |= _byteReadScratch[i];
+                    _byteWriteMask[i] |= _byteWriteScratch[i];
+                }
+
+                if (tracker.StepTag != _lastStepTag)
+                {
+                    Array.Clear(_pageReadIntensity, 0, _pageReadIntensity.Length);
+                    Array.Clear(_pageWriteIntensity, 0, _pageWriteIntensity.Length);
+                    Array.Clear(_byteReadMask, 0, _byteReadMask.Length);
+                    Array.Clear(_byteWriteMask, 0, _byteWriteMask.Length);
+                    _lastStepTag = tracker.StepTag;
+                }
 
                 for (int i = 0; i < _activityScratch.Length; i++)
                 {
@@ -581,8 +602,8 @@ namespace Continuum93.ServiceModule.UI
                     int count = (int)Math.Min(_layout.BrickCapacity, totalBytes - startAddress);
                     uint endAddress = startAddress + (uint)count - 1;
                     byte average = ComputeAverage(ram, startAddress, count);
-                    float readIntensity = GetMaxIntensity(_pageReadIntensity, startAddress, count);
-                    float writeIntensity = GetMaxIntensity(_pageWriteIntensity, startAddress, count);
+                    float readIntensity = GetIntensityForRange(_pageReadIntensity, _byteReadMask, startAddress, count);
+                    float writeIntensity = GetIntensityForRange(_pageWriteIntensity, _byteWriteMask, startAddress, count);
 
                     // Check for video regions
                     bool hasPaletteData = false;
@@ -649,7 +670,7 @@ namespace Continuum93.ServiceModule.UI
             return (byte)(sum / length);
         }
 
-        private static float GetMaxIntensity(float[] intensities, uint start, int count)
+        private static float GetIntensityForRange(float[] pageIntensities, ulong[] byteMask, uint start, int count)
         {
             if (count <= 0)
                 return 0f;
@@ -658,13 +679,57 @@ namespace Continuum93.ServiceModule.UI
             int endPage = (int)((start + (uint)Math.Max(0, count - 1)) >> MemoryActivityTracker.PageShift);
 
             float max = 0f;
-            for (int page = startPage; page <= endPage && page < intensities.Length; page++)
+            for (int page = startPage; page <= endPage && page < pageIntensities.Length; page++)
             {
                 if (page < 0)
                     continue;
-                max = Math.Max(max, intensities[page]);
+
+                if (pageIntensities[page] <= 0f)
+                    continue;
+
+                uint pageStart = (uint)(page << MemoryActivityTracker.PageShift);
+                uint pageEnd = pageStart + MemoryActivityTracker.PageSize - 1;
+
+                uint rangeStart = Math.Max(pageStart, start);
+                uint rangeEnd = Math.Min(pageEnd, start + (uint)Math.Max(0, count - 1));
+                int localOffset = (int)(rangeStart - pageStart);
+                int localCount = (int)(rangeEnd - rangeStart + 1);
+
+                if (HasByteActivity(byteMask, page, localOffset, localCount))
+                {
+                    max = Math.Max(max, pageIntensities[page]);
+                }
             }
+
             return max;
+        }
+
+        private static bool HasByteActivity(ulong[] mask, int pageIndex, int offset, int length)
+        {
+            if (length <= 0 || pageIndex < 0)
+                return false;
+
+            int end = offset + length;
+            int wordBase = pageIndex * MemoryActivityTracker.PageBitMaskWordCount;
+            int cursor = offset;
+
+            while (cursor < end)
+            {
+                int wordIndex = cursor >> 6;
+                int bitIndex = cursor & 63;
+                int span = Math.Min(64 - bitIndex, end - cursor);
+
+                ulong bits = span == 64
+                    ? ulong.MaxValue
+                    : (((1UL << span) - 1UL) << bitIndex);
+
+                if ((mask[wordBase + wordIndex] & bits) != 0)
+                    return true;
+
+                cursor += span;
+            }
+
+            return false;
         }
 
         private void UpdateHover(Point mousePos, float dt)
@@ -854,6 +919,10 @@ namespace Continuum93.ServiceModule.UI
         {
             Array.Clear(_pageReadIntensity, 0, _pageReadIntensity.Length);
             Array.Clear(_pageWriteIntensity, 0, _pageWriteIntensity.Length);
+            Array.Clear(_byteReadMask, 0, _byteReadMask.Length);
+            Array.Clear(_byteWriteMask, 0, _byteWriteMask.Length);
+            Array.Clear(_byteReadScratch, 0, _byteReadScratch.Length);
+            Array.Clear(_byteWriteScratch, 0, _byteWriteScratch.Length);
             Machine.COMPUTER?.MEMC.ActivityTracker.Clear();
         }
 
