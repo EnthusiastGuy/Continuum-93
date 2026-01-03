@@ -20,12 +20,12 @@
 
             Mnem.AddPrimeOp("SUB", Mnem.SUB, "Subtract data",
                 ["Subtracts the second operand ({1}) from the first operand ({0})."]);
-            Mnem.AddPrimeOp("SUB16", Mnem.SUB16, "Subtract data on 16-bit",
-                ["Subtracts the second operand ({1}) from the first operand ({0})."]); ;
-            Mnem.AddPrimeOp("SUB24", Mnem.SUB24, "Subtract data on 24 bit",
-                ["Subtracts the second operand ({1}) from the first operand ({0})."]);
-            Mnem.AddPrimeOp("SUB32", Mnem.SUB32, "Subtract data on 32 bit",
-                ["Subtracts the second operand ({1}) from the first operand ({0})."]);
+            //Mnem.AddPrimeOp("SUB16", Mnem.SUB16, "Subtract data on 16-bit",
+            //    ["Subtracts the second operand ({1}) from the first operand ({0})."]); ;
+            //Mnem.AddPrimeOp("SUB24", Mnem.SUB24, "Subtract data on 24 bit",
+            //    ["Subtracts the second operand ({1}) from the first operand ({0})."]);
+            //Mnem.AddPrimeOp("SUB32", Mnem.SUB32, "Subtract data on 32 bit",
+            //    ["Subtracts the second operand ({1}) from the first operand ({0})."]);
 
             Mnem.AddPrimeOp("DIV", Mnem.DIV, "Divide data",
                 [

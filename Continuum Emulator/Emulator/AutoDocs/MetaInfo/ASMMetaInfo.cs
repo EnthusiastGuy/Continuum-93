@@ -56,7 +56,7 @@ namespace Continuum93.Emulator.AutoDocs.MetaInfo
             ));
 
             MetaData.Add(ASMMeta.Create(
-                new List<string>() { "SUB", "SUB16", "SUB24", "SUB32" },
+                new List<string>() { "SUB" },
                 "Subtracts the value of the source operand2 from the destination operand1 and stores the result in the destination. The source operand2 remains unchanged. Modifies the carry flag if the result borrows and the zero flag if the result is zero.",
                 "Arithmetic Calculations: SUB is used for general arithmetic calculations involving subtraction for numerous algorithms and operations. Decrementing Values: It can be used to decrement values, such as decreasing a counter or moving backwards through array indices. Memory Address Calculations: In pointer arithmetic, SUB is used for calculating new memory addresses, like moving to a previous element in an array. Difference Calculation: It's used to calculate the difference between two values, like in comparison operations or in algorithms requiring delta values. Data Processing: SUB is integral in data processing tasks that require the subtraction operation, such as in digital signal processing or in computing offsets.",
                 "SUB[bits] operand1, operand2"

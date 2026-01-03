@@ -1,4 +1,4 @@
-﻿using Continuum93.Emulator.CPU;
+using Continuum93.Emulator.CPU;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +20,8 @@ namespace Continuum93.Emulator.Mnemonics
             
             InitInstruction("LD", Mnem.LD);
             InitInstruction("ADD", Mnem.ADD);
+            // SUB now reuses the shared addressing matrix (same as ADD/LD)
+            InitInstruction("SUB", Mnem.SUB);
         }
 
         private static void InitInstruction(string oper, byte opCode)
@@ -292,6 +294,7 @@ namespace Continuum93.Emulator.Mnemonics
             //opCodeDefinition.Add("NOP", 0x00);
             opCodeDefinition.Add("LD", 0x01);
             opCodeDefinition.Add("ADD", 0x02);
+            opCodeDefinition.Add("SUB", 0x03);
             // more opcodes as needed
         }
 

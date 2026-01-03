@@ -1,4 +1,4 @@
-﻿using Continuum93.Emulator;
+using Continuum93.Emulator;
 using Continuum93.Emulator.CPU;
 using Continuum93.Emulator.RAM;
 using Continuum93.Tools;
@@ -502,14 +502,15 @@ namespace Continuum93.Emulator.Execution
 
             for (uint r = 0; r < repeat; r++)
             {
-                uint baseAddr = address; // repeat applies to the same target span
+                uint baseAddr = address;           // repeat applies to same target span
+                uint sourceBase = valueOrAddress;  // and the same source span
                 byte carry = 0;
                 // propagate carry from higher offsets down to lower offsets (most-significant first)
                 for (int i = count - 1; i >= 0; i--)
                 {
                     byte addByte;
                     addByte = sourceIsAddress
-                        ? mem.Get8bitFromRAM(valueOrAddress + (uint)i)
+                        ? mem.Get8bitFromRAM(sourceBase + (uint)i)
                         : (i >= 4 ? (byte)0 : (byte)(valueOrAddress >> (8 * (count - 1 - i)))); // immediates map least-significant byte to highest offset
                     uint target = baseAddr + (uint)i;
 

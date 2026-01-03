@@ -1,4 +1,4 @@
-﻿using Continuum93.CodeAnalysis;
+using Continuum93.CodeAnalysis;
 using Continuum93.Emulator.Interpreter;
 using Continuum93.Emulator;
 
@@ -160,7 +160,7 @@ namespace DebuggerTests
                 "00000A|01 F3 00 01|LD F0, F1",
                 "00000E|01 E6 02 00|LD F2, AB",
                 "000012|02 F3 00 02|ADD F0, F2",
-                "000016|03 47 01 00|SUB F1, AB",
+                "000016|03 E6 01 00|SUB F1, AB",
                 "00001A|04 70 20|DIV F2, F0",
                 "00001D|05 84 01 00|MUL F1, ABCD",
                 "000021|11 10 10|EX F1, F0",

@@ -1,13 +1,13 @@
 78 instructions found (vacant opcodes: 178)
-120 total variations
+114 total variations
 
  Opcode       Instruction
  Dec   Hex    (+ variations)                  
 ----------------------------------------------
    0   0x00   NOP                             
    1   0x01   LD                              
-   2   0x02   ADD, ADD16, ADD24, ADD32        
-   3   0x03   SUB, SUB16, SUB24, SUB32        
+   2   0x02   ADD                             
+   3   0x03   SUB                             
    4   0x04   DIV                             
    5   0x05   MUL                             
    6   0x06   SL                              

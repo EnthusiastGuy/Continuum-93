@@ -1,4 +1,4 @@
-﻿using Continuum93.Emulator.Mnemonics;
+using Continuum93.Emulator.Mnemonics;
 using Continuum93.Tools;
 using System;
 using System.Collections.Generic;
@@ -143,7 +143,7 @@ namespace Continuum93.Emulator.Interpreter
             "DJNZ", "DJNZ16", "DJNZ24", "DJNZ32",
             "CP", "LD",
             "ADD",
-            "SUB", "SUB16", "SUB24", "SUB32",
+            "SUB",
             "DIV", "MUL",
             "FIND",
             "ISQR", "POW", "SQR",
@@ -252,7 +252,7 @@ namespace Continuum93.Emulator.Interpreter
             foreach (string arg in args)
                 IdentifyArgument(arg.Trim());
 
-            if (Op == "LD" || Op == "ADD") // temporary
+            if (Op == "LD" || Op == "ADD" || Op == "SUB") // temporary
             {
                 if (Arguments.Count == 2)
                 {
