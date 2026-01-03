@@ -14,6 +14,14 @@ namespace Continuum93.ServiceModule.UI
         private int _previousRegScrollValue = 0;
         private int _previousCallScrollValue = 0;
         private const int MaxVisibleValues = 40;
+        
+        // Stack capacities in bytes
+        private const uint RegStackCapacityBytes = 4 * 1024 * 1024;  // 4MB
+        private const uint CallStackCapacityEntries = 1024 * 1024;   // 1MB entries
+        
+        // Track maximum occupancy values
+        private double _maxRegStackOccupancy = 0.0;
+        private double _maxCallStackOccupancy = 0.0;
 
         public StacksWindow(
             string title,
@@ -29,6 +37,33 @@ namespace Continuum93.ServiceModule.UI
         protected override void UpdateContent(GameTime gameTime)
         {
             Stacks.Update();
+            
+            // Calculate occupancy percentages based on actual stack pointer values
+            if (Machine.COMPUTER != null)
+            {
+                var cpu = Machine.COMPUTER.CPU;
+                uint spr = cpu.REGS.SPR;  // Register stack pointer in bytes
+                uint spc = cpu.REGS.SPC;  // Call stack pointer in entries
+                
+                // Calculate register stack occupancy (SPR is in bytes)
+                double regStackOccupancy = (spr / (double)RegStackCapacityBytes) * 100.0;
+                
+                // Calculate call stack occupancy (SPC is in entries)
+                double callStackOccupancy = (spc / (double)CallStackCapacityEntries) * 100.0;
+                
+                // Update maximum values
+                if (regStackOccupancy > _maxRegStackOccupancy)
+                    _maxRegStackOccupancy = regStackOccupancy;
+                if (callStackOccupancy > _maxCallStackOccupancy)
+                    _maxCallStackOccupancy = callStackOccupancy;
+                
+                // Update title with occupancy percentages
+                Title = $"STACKS: {regStackOccupancy:F3}% (Max: {_maxRegStackOccupancy:F3}%) {callStackOccupancy:F3}% (Max: {_maxCallStackOccupancy:F3}%)";
+            }
+            else
+            {
+                Title = "STACKS: 0.000% (Max: 0.000%) 0.000% (Max: 0.000%)";
+            }
 
             // Handle mouse wheel scrolling
             var mouse = Mouse.GetState();
@@ -127,6 +162,10 @@ namespace Continuum93.ServiceModule.UI
 
             int startY = contentRect.Y + Padding;
 
+            // Draw register stack - show only last 40 values with scrolling
+            var regStack = Stacks.RegisterStack;
+            int regStackCount = regStack.Count;
+
             // Register stack label
             ServiceGraphics.DrawText(
                 theme.PrimaryFont,
@@ -139,10 +178,6 @@ namespace Continuum93.ServiceModule.UI
                 fontFlags,
                 0xFF
             );
-
-            // Draw register stack - show only last 40 values with scrolling
-            var regStack = Stacks.RegisterStack;
-            int regStackCount = regStack.Count;
             
             // Calculate start index: show last MaxVisibleValues, scroll offset allows viewing older values
             int maxRegScroll = Math.Max(0, regStackCount - MaxVisibleValues);
@@ -185,6 +220,10 @@ namespace Continuum93.ServiceModule.UI
                 );
             }
 
+            // Draw call stack - show only last 40 values with scrolling
+            var callStack = Stacks.CallStack;
+            int callStackCount = callStack.Count;
+
             // Call stack label - position after register stack with spacing
             int callStackLabelY = regStackY + (maxRegRow + 1) * lineHeight + lineHeight;
             ServiceGraphics.DrawText(
@@ -198,10 +237,6 @@ namespace Continuum93.ServiceModule.UI
                 fontFlags,
                 0xFF
             );
-
-            // Draw call stack - show only last 40 values with scrolling
-            var callStack = Stacks.CallStack;
-            int callStackCount = callStack.Count;
             
             // Calculate start index: show last MaxVisibleValues, scroll offset allows viewing older values
             int maxCallScroll = Math.Max(0, callStackCount - MaxVisibleValues);
