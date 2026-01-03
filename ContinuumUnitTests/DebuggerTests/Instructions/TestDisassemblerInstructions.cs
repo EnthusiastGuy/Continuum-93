@@ -1,10 +1,12 @@
-﻿using Continuum93.CodeAnalysis;
+using Continuum93.CodeAnalysis;
 using Continuum93.Emulator;
-using Continuum93.Emulator.Interpreter;
 using Continuum93.Emulator;
 using Continuum93.Emulator.AutoDocs;
+using Continuum93.Emulator.Interpreter;
+using Continuum93.Emulator.Mnemonics;
 using ContinuumUnitTests._Tools;
 using System.Text;
+using Xunit;
 
 namespace DebuggerTests.Instructions
 {
@@ -205,6 +207,105 @@ namespace DebuggerTests.Instructions
             string report = sb.ToString();
 
             ReportsManager.SaveReport("RawInstructionsFormat", report);
+        }
+
+        [Fact]
+        public void TestGeneralInstructionsSorted()
+        {
+            string autoInstructions = DebugInstructionSamples.GenerateRawInstructions();
+            string[] instructionLines = autoInstructions
+                .Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries);
+
+            // 1) Split each line into (Instruction, Format) tuples and get primary and secondary op codes
+            var rows = instructionLines
+                .Select(line =>
+                {
+                    var parts = line.Split(';');
+                    string mnemonic = parts[0].Trim();
+                    string format = parts.Length > 1 ? parts[1].Trim() : "";
+
+                    // Get primary and secondary op codes from the mnemonic
+                    byte primaryOpCode = 255;
+                    byte? secondaryOpCode = null;
+                    
+                    if (Mnem.OPS.TryGetValue(mnemonic, out Oper op))
+                    {
+                        if (op.IsPrimary)
+                        {
+                            // Primary instruction: use its op code as primary, no secondary
+                            primaryOpCode = op.OpCode;
+                            secondaryOpCode = 255; // No secondary op code for primary instructions
+                        }
+                        else
+                        {
+                            // Non-primary instruction: use ParentCode as primary, OpCodes[0] as secondary
+                            primaryOpCode = op.ParentCode ?? 255;
+                            secondaryOpCode = op.OpCodes != null && op.OpCodes.Length > 0 
+                                ? op.OpCodes[0] 
+                                : (byte?)255;
+                        }
+                    }
+                    else
+                    {
+                        // If mnemonic not found, use 255 for both
+                        primaryOpCode = 255;
+                        secondaryOpCode = 255;
+                    }
+
+                    return (
+                        Instr: mnemonic,
+                        Format: format,
+                        PrimaryOpCode: primaryOpCode,
+                        SecondaryOpCode: secondaryOpCode ?? 255
+                    );
+                })
+                .OrderBy(r => r.PrimaryOpCode)      // First sort by primary op code (ADD, LD, etc.)
+                .ThenBy(r => r.SecondaryOpCode)     // Then by secondary op code (_r_n, _r_r, etc.)
+                .ThenBy(r => r.Instr)               // Finally by instruction name for same op codes
+                .ToList();
+
+            Assert.NotEmpty(rows);
+
+            // 2) Compute max‐widths (including header)
+            const string hdrNr = "Nr.";
+            const string hdrInstr = "Instruction";
+            const string hdrFormat = "Format";
+            const string hdrSubOp = "SubOp";
+
+            int wNr = 5;  // fixed to 5 chars, space‑padded
+            int wInstr = Math.Max(hdrInstr.Length, rows.Max(r => r.Instr.Length));
+            int wFormat = Math.Max(hdrFormat.Length, rows.Max(r => r.Format.Length));
+            int wSubOp = Math.Max(hdrSubOp.Length, Math.Max(3, rows.Max(r => r.SecondaryOpCode == 255 ? 3 : r.SecondaryOpCode.ToString().Length))); // "N/A" is 3 chars
+
+            // 3) Build our format string (pad each col, left‑justified)
+            string fmt = $"{{0,-{wNr}}}   {{1,-{wInstr}}}   {{2,-{wFormat}}}   {{3,-{wSubOp}}}";
+
+            var sb = new StringBuilder();
+            // —— compute and emit unused‐bits statistic ——
+            int totalBits = rows.Sum(r => r.Format.Count(c => c != ' '));
+            int unusedBits = rows.Sum(r => r.Format.Count(c => c == 'u'));
+            double unusedPct = totalBits > 0
+                ? (double)unusedBits / totalBits * 100
+                : 0;
+            sb.AppendLine($"Unused bits: {unusedPct:F2}%");
+            sb.AppendLine();
+            // Header
+            sb.AppendLine(string.Format(fmt, hdrNr, hdrInstr, hdrFormat, hdrSubOp));
+            // Separator
+            sb.AppendLine(new string('-', wNr + 3 + wInstr + 3 + wFormat + 3 + wSubOp));
+            // Rows
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var r = rows[i];
+                string nr = (i + 1).ToString().PadLeft(5);
+                string subOpStr = r.SecondaryOpCode == 255 ? "N/A" : r.SecondaryOpCode.ToString();
+                sb.AppendLine(string.Format(fmt, nr, r.Instr, r.Format, subOpStr));
+            }
+
+            // 4) Output
+            string report = sb.ToString();
+
+            ReportsManager.SaveReport("RawInstructionsSorted", report);
         }
 
         [Fact]
