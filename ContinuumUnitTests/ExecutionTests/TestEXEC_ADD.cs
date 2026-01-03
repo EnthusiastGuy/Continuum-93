@@ -150,12 +150,12 @@ namespace ExecutionTests
             Console.WriteLine("ADD_InnnI_nnnn_n_nnn bytes: " + string.Join(",", bytes));
             Console.WriteLine($"GeneralForm: {cp.GetCompiledLine(0)?.GeneralForm}");
             computer.LoadMem(cp.GetCompiledCode());
-            computer.LoadMemAt(0x6000, new byte[] { 1, 1, 1, 1 });
+            computer.LoadMemAt(0x6000, [1, 1, 1, 1]);
 
             computer.Run();
 
             byte[] actual = computer.MEMC.RAM.GetMemoryAt(0x6000, 4);
-            Assert.Equal(new byte[] { 2, 2, 2, 2 }, actual);
+            Assert.Equal([5, 1, 1, 1], actual);
         }
 
         [Fact]
@@ -222,8 +222,8 @@ namespace ExecutionTests
             using var computer = new Computer();
 
             computer.CPU.REGS.XYZ = 2; // repeat twice
-            computer.LoadMemAt(0xA000, new byte[] { 1, 1, 1, 1, 1, 1 });
-            computer.LoadMemAt(0xA100, new byte[] { 0, 0, 0, 5, 0, 0, 0, 6 });
+            computer.LoadMemAt(0xA000, [1, 1, 1, 1, 1, 1]);
+            computer.LoadMemAt(0xA100, [1, 2, 3, 4, 5, 6]);
 
             cp.Build("ADD (0xA000),(0xA100+1),3,XYZ\nBREAK");
             Console.WriteLine("ADD_InnnI_Innn_rrI_n_rrr bytes: " + string.Join(",", cp.GetCompiledCode()));
@@ -233,7 +233,7 @@ namespace ExecutionTests
             computer.Run();
 
             byte[] actual = computer.MEMC.RAM.GetMemoryAt(0xA000, 6);
-            Assert.Equal(new byte[] { 1, 6, 1, 1, 6, 1 }, actual);
+            Assert.Equal([5, 7, 9, 1, 1, 1], actual);
         }
 
         [Fact]
