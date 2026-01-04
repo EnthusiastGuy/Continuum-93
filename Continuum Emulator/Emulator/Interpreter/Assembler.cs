@@ -252,7 +252,11 @@ namespace Continuum93.Emulator.Interpreter
             foreach (string arg in args)
                 IdentifyArgument(arg.Trim());
 
-            if (Op == "LD" || Op == "ADD" || Op == "SUB") // temporary
+            // Instructions that use the shared Instructions sub-op addressing matrix.
+            // These require some light normalization of numeric argument “general forms”
+            // (e.g. nnn -> n/nn/nnn/nnnn depending on destination width) so the lookup
+            // matches the GenericInitializer-registered variants.
+            if (Op == "LD" || Op == "ADD" || Op == "SUB" || Op == "DIV") // temporary
             {
                 if (Arguments.Count == 2)
                 {

@@ -22,6 +22,8 @@ namespace Continuum93.Emulator.Mnemonics
             InitInstruction("ADD", Mnem.ADD);
             // SUB now reuses the shared addressing matrix (same as ADD/LD)
             InitInstruction("SUB", Mnem.SUB);
+            // DIV now reuses the shared addressing matrix (same as ADD/LD)
+            InitInstruction("DIV", Mnem.DIV);
         }
 
         private static void InitInstruction(string oper, byte opCode)
@@ -295,6 +297,7 @@ namespace Continuum93.Emulator.Mnemonics
             opCodeDefinition.Add("LD", 0x01);
             opCodeDefinition.Add("ADD", 0x02);
             opCodeDefinition.Add("SUB", 0x03);
+            opCodeDefinition.Add("DIV", 0x04);
             // more opcodes as needed
         }
 
