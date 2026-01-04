@@ -3026,7 +3026,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_nnnI_Irrr_rrrI_n_rrr() // Ok
+        public void ADD_Irrr_nnnI_Irrr_rrrI_n_rrr() // Failed
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
@@ -3369,7 +3369,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_rI_Irrr_rrrI_n_rrr()   // Ok
+        public void ADD_Irrr_rI_Irrr_rrrI_n_rrr()   // Failed
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
@@ -3714,7 +3714,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_rrI_Irrr_rrrI_n_rrr()  // Ok
+        public void ADD_Irrr_rrI_Irrr_rrrI_n_rrr()  // Failed
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
@@ -4058,7 +4058,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_rrrI_Irrr_rrrI_n_rrr()
+        public void ADD_Irrr_rrrI_Irrr_rrrI_n_rrr() // Failed
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
