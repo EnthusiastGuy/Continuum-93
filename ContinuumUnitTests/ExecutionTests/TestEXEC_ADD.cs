@@ -3026,18 +3026,18 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_nnnI_Irrr_rrrI_n_rrr() // Failed
+        public void ADD_Irrr_nnnI_Irrr_rrrI_n_rrr() // Ok
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
             RunTest(
-                "ADD (QRS+4),(MNO+KLM),3,GHI",
+                "ADD (QRS+4),(MNO+ABC),3,GHI",
                 c =>
                 {
                     c.CPU.REGS.QRS = 0x5000;
                     c.LoadMemAt(0x5004, initial);
                     c.CPU.REGS.MNO = 0x7100;
-                    c.CPU.REGS.KLM = 9;
+                    c.CPU.REGS.ABC = 9;
                     c.LoadMemAt(0x7109, value);
                     c.CPU.REGS.GHI = 2;
                 },
@@ -3369,19 +3369,19 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_rI_Irrr_rrrI_n_rrr()   // Failed
+        public void ADD_Irrr_rI_Irrr_rrrI_n_rrr()   // Ok
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
             RunTest(
-                "ADD (QRS+X),(MNO+KLM),3,GHI",
+                "ADD (QRS+X),(MNO+ABC),3,GHI",
                 c =>
                 {
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.X = 5;
                     c.LoadMemAt(0x5005, initial);
                     c.CPU.REGS.MNO = 0x7100;
-                    c.CPU.REGS.KLM = 9;
+                    c.CPU.REGS.ABC = 9;
                     c.LoadMemAt(0x7109, value);
                     c.CPU.REGS.GHI = 2;
                 },
@@ -3714,19 +3714,19 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_rrI_Irrr_rrrI_n_rrr()  // Failed
+        public void ADD_Irrr_rrI_Irrr_rrrI_n_rrr()  // Ok
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
             RunTest(
-                "ADD (QRS+WX),(MNO+KLM),3,GHI",
+                "ADD (QRS+WX),(MNO+ABC),3,GHI",
                 c =>
                 {
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.WX = 7;
                     c.LoadMemAt(0x5007, initial);
                     c.CPU.REGS.MNO = 0x7100;
-                    c.CPU.REGS.KLM = 9;
+                    c.CPU.REGS.ABC = 9;
                     c.LoadMemAt(0x7109, value);
                     c.CPU.REGS.GHI = 2;
                 },
@@ -4058,19 +4058,19 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void ADD_Irrr_rrrI_Irrr_rrrI_n_rrr() // Failed
+        public void ADD_Irrr_rrrI_Irrr_rrrI_n_rrr() // Ok
         {
             byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
             byte[] value = [1, 2, 3, 4];
             RunTest(
-                "ADD (QRS+TUV),(MNO+KLM),3,GHI",
+                "ADD (QRS+TUV),(MNO+ABC),3,GHI",
                 c =>
                 {
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.TUV = 9;
                     c.LoadMemAt(0x5009, initial);
                     c.CPU.REGS.MNO = 0x7100;
-                    c.CPU.REGS.KLM = 9;
+                    c.CPU.REGS.ABC = 9;
                     c.LoadMemAt(0x7109, value);
                     c.CPU.REGS.GHI = 2;
                 },
