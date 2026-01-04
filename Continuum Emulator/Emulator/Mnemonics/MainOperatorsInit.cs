@@ -1,4 +1,4 @@
-﻿namespace Continuum93.Emulator.Mnemonics
+namespace Continuum93.Emulator.Mnemonics
 {
     public static class MainOperatorsInit
     {
@@ -30,7 +30,12 @@
             Mnem.AddPrimeOp("DIV", Mnem.DIV, "Divide data",
                 [
                     "Divides first operand ({0}) by the second operand ({1}). Result is stored back in the first operand.",
-                    "Divides first operand ({0}) by the second operand ({1}). Result is stored in the first register while the remainder is stored in the third operand ({2})." ]);
+                    "Legacy remainder variants have been removed; use MOD to compute the remainder." ]);
+
+            Mnem.AddPrimeOp("MOD", Mnem.MOD, "Modulo (remainder)",
+                [
+                    "Divides first operand ({0}) by the second operand ({1}) and stores the remainder back in the first operand."
+                ]);
             Mnem.AddPrimeOp("MUL", Mnem.MUL, "Multiply data",
                 ["Multiplies first operand ({0}) by the value of the second operand ({1}). Result is stored back in the first operand."]);
 

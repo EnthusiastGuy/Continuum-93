@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -74,6 +74,9 @@ namespace Continuum93.Emulator.Mnemonics
         public const byte CALLR = 22;
         public const byte JP = 23;
         public const byte JR = 24;
+
+        // MOD (remainder) - mirrors DIV addressing matrix
+        public const byte MOD = 25;
 
         public const byte POP = 26, POP16 = POP, POP24 = POP, POP32 = POP;
         public const byte PUSH = 28, PUSH16 = PUSH, PUSH24 = PUSH, PUSH32 = PUSH;

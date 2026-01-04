@@ -8,7 +8,10 @@
 		ADD EFG, H		            ; Start from the end of the number string backwards
 
 .utils_convert_32bit_to_string_next_digit
-		DIV ABCD, 10, XY	            ; X will contain the least significant digit
+        LD IJKL, ABCD
+        MOD IJKL, 10	            ; XY = ABCD % 10 and X will contain the least significant number
+        LD XY, KL
+		DIV ABCD, 10	            
 		ADD Y, 48
 		DEC EFG
 		LD (EFG), Y

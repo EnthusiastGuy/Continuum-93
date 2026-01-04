@@ -100,7 +100,11 @@
     PUSH A, Z               ; Preserving the registers since we have an enclosing loop that uses some of them
     LD I, 0
     LD J, W                 ; IJ will have the value of W (that itself can be anything from 0 to 15)
-    DIV IJ, 4, GH           ; since the tileset is organized over a 4 x 4 pattern, we get IJ (the Y on the tilesheet) as the result of division by 4
+    
+    LD GH, IJ
+    MOD GH, 4               ; we get GH (the X on the tilesheet) as the remainder of division by 4
+    
+    DIV IJ, 4               ; since the tileset is organized over a 4 x 4 pattern, we get IJ (the Y on the tilesheet) as the result of division by 4
                             ; and the remainder of that into GH (which will be the X)
 
     MUL GH, 32              ; Since each tile is 32 pixels wide, we multiply the X obtained above by this number

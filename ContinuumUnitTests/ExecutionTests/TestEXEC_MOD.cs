@@ -1,0 +1,4471 @@
+﻿using Continuum93.Emulator;
+using Continuum93.Emulator.Interpreter;
+
+namespace ExecutionTests
+{
+    public class TestEXEC_MOD
+    {
+        #region Helper Methods
+
+        private static void RunTest(string asm, Action<Computer> arrange, Action<Computer> assert)
+        {
+            Assembler cp = new();
+            using Computer computer = new();
+
+            arrange(computer);
+
+            cp.Build(TUtils.GetFormattedAsm(asm, "BREAK"));
+            if (cp.Errors > 0)
+                throw new InvalidOperationException($"Assembly failed: {cp.Log}");
+
+            computer.LoadMem(cp.GetCompiledCode());
+            computer.Run();
+
+            assert(computer);
+            TUtils.IncrementCountedTests("exec");
+        }
+
+        #endregion
+
+        #region MOD r,* tests
+
+        [Fact]
+        public void MOD_r_n() // Ok
+        {
+            RunTest(
+                "MOD A,4",
+                c => c.CPU.REGS.A = 101,
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_r() // Ok
+        {
+            RunTest(
+                "MOD A,B",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_InnnI() // Ok
+        {
+            RunTest(
+                "MOD A,(0x4000)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.MEMC.Set8bitToRAM(0x4000, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Innn_nnnI() // Ok
+        {
+            RunTest(
+                "MOD A,(0x4000+4)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.MEMC.Set8bitToRAM(0x4004, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Innn_rI() // Ok
+        {
+            RunTest(
+                "MOD A,(0x4000+X)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set8bitToRAM(0x4003, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Innn_rrI() // Ok
+        {
+            RunTest(
+                "MOD A,(0x4000+WX)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set8bitToRAM(0x4005, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Innn_rrrI() // Ok
+        {
+            RunTest(
+                "MOD A,(0x4000+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set8bitToRAM(0x4007, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_IrrrI() // Ok
+        {
+            RunTest(
+                "MOD A,(QRS)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set8bitToRAM(0x5000, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Irrr_nnnI() // Ok
+        {
+            RunTest(
+                "MOD A,(QRS+4)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set8bitToRAM(0x5004, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Irrr_rI() // Ok
+        {
+            RunTest(
+                "MOD A,(QRS+X)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set8bitToRAM(0x5003, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Irrr_rrI() // Ok
+        {
+            RunTest(
+                "MOD A,(QRS+WX)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set8bitToRAM(0x5005, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_Irrr_rrrI() // Ok
+        {
+            RunTest(
+                "MOD A,(QRS+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set8bitToRAM(0x5007, 4);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        [Fact]
+        public void MOD_r_fr() // Ok
+        {
+            RunTest(
+                "MOD A,F0",
+                c =>
+                {
+                    c.CPU.REGS.A = 101;
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal((byte)1, c.CPU.REGS.A));
+        }
+
+        #endregion
+
+        #region MOD rr,* tests
+
+        [Fact]
+        public void MOD_rr_nn() // Ok
+        {
+            RunTest(
+                "MOD AB,0x0004",
+                c => c.CPU.REGS.AB = 1001,
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_r() // Ok
+        {
+            RunTest(
+                "MOD AB,E",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.E = 4;
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_rr() // Ok
+        {
+            RunTest(
+                "MOD AB,CD",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_InnnI() // Ok
+        {
+            RunTest(
+                "MOD AB,(0x4000)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.MEMC.Set16bitToRAM(0x4000, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Innn_nnnI() // Ok
+        {
+            RunTest(
+                "MOD AB,(0x4000+4)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.MEMC.Set16bitToRAM(0x4004, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Innn_rI() // Ok
+        {
+            RunTest(
+                "MOD AB,(0x4000+X)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set16bitToRAM(0x4003, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Innn_rrI() // Ok
+        {
+            RunTest(
+                "MOD AB,(0x4000+WX)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set16bitToRAM(0x4005, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Innn_rrrI() // Ok
+        {
+            RunTest(
+                "MOD AB,(0x4000+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set16bitToRAM(0x4007, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_IrrrI() // Ok
+        {
+            RunTest(
+                "MOD AB,(QRS)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set16bitToRAM(0x5000, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Irrr_nnnI() // Ok
+        {
+            RunTest(
+                "MOD AB,(QRS+4)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set16bitToRAM(0x5004, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Irrr_rI() // Ok
+        {
+            RunTest(
+                "MOD AB,(QRS+X)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set16bitToRAM(0x5003, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Irrr_rrI() // Ok
+        {
+            RunTest(
+                "MOD AB,(QRS+WX)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set16bitToRAM(0x5005, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_Irrr_rrrI() // Ok
+        {
+            RunTest(
+                "MOD AB,(QRS+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set16bitToRAM(0x5007, 4);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        [Fact]
+        public void MOD_rr_fr() // Ok
+        {
+            RunTest(
+                "MOD AB,F1",
+                c =>
+                {
+                    c.CPU.REGS.AB = 1001;
+                    c.CPU.FREGS.SetRegister(1, 4.0f);
+                },
+                c => Assert.Equal((ushort)1, c.CPU.REGS.AB));
+        }
+
+        #endregion
+
+        #region MOD rrr,* tests
+
+        [Fact]
+        public void MOD_rrr_nnn() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,0x000004",
+                c => c.CPU.REGS.ABC = dividend,
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_r() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,D",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.D = 4;
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_rr() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,DE",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.DE = 4;
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_rrr() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,DEF",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_InnnI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(0x4000)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.MEMC.Set24bitToRAM(0x4000, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Innn_nnnI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(0x4000+4)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.MEMC.Set24bitToRAM(0x4004, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Innn_rI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(0x4000+X)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set24bitToRAM(0x4003, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Innn_rrI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(0x4000+WX)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set24bitToRAM(0x4005, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Innn_rrrI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(0x4000+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set24bitToRAM(0x4007, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_IrrrI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(QRS)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set24bitToRAM(0x5000, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Irrr_nnnI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(QRS+4)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set24bitToRAM(0x5004, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Irrr_rI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(QRS+X)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set24bitToRAM(0x5003, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Irrr_rrI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(QRS+WX)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set24bitToRAM(0x5005, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_Irrr_rrrI() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,(QRS+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set24bitToRAM(0x5007, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        [Fact]
+        public void MOD_rrr_fr() // Ok
+        {
+            const uint dividend = 100001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABC,F2",
+                c =>
+                {
+                    c.CPU.REGS.ABC = dividend;
+                    c.CPU.FREGS.SetRegister(2, 4.0f);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABC));
+        }
+
+        #endregion
+
+        #region MOD rrrr,* tests
+
+        [Fact]
+        public void MOD_rrrr_nnnn() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,0x00000004",
+                c => c.CPU.REGS.ABCD = dividend,
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_r() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,E",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.E = 4;
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_rr() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,EF",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.EF = 4;
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_rrr() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,EFG",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.EFG = 4;
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_rrrr() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,EFGH",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_InnnI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(0x4000)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.MEMC.Set32bitToRAM(0x4000, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Innn_nnnI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(0x4000+4)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.MEMC.Set32bitToRAM(0x4004, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Innn_rI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(0x4000+X)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set32bitToRAM(0x4003, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Innn_rrI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(0x4000+WX)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set32bitToRAM(0x4005, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Innn_rrrI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(0x4000+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set32bitToRAM(0x4007, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_IrrrI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(QRS)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set32bitToRAM(0x5000, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Irrr_nnnI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(QRS+4)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.Set32bitToRAM(0x5004, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Irrr_rI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(QRS+X)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.Set32bitToRAM(0x5003, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Irrr_rrI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(QRS+WX)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.Set32bitToRAM(0x5005, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_Irrr_rrrI() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,(QRS+VWX)",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.Set32bitToRAM(0x5007, 4);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        [Fact]
+        public void MOD_rrrr_fr() // Ok
+        {
+            const uint dividend = 1_000_001;
+            const uint expected = 1;
+
+            RunTest(
+                "MOD ABCD,F3",
+                c =>
+                {
+                    c.CPU.REGS.ABCD = dividend;
+                    c.CPU.FREGS.SetRegister(3, 4.0f);
+                },
+                c => Assert.Equal(expected, c.CPU.REGS.ABCD));
+        }
+
+        #endregion
+
+        #region MOD memory destination variants (unwound: 10 targets Ã— 17 cases)
+
+        // Important: index registers overlap (X, WX, VWX), so for combined addressing-mode tests
+        // compute effective addresses after ALL setup is complete, mirroring the old loop-based tests.
+
+        // --------------------
+        // Target: (0x4000)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_InnnI_block_immediate_2bytes_once() // Ok
+        {
+            const uint addr = 0x4000;
+
+            RunTest(
+                "MOD (0x4000),0x00000002,2",
+                c => c.LoadMemAt(addr, [0x00, 0x41]),
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_block_immediate_2bytes_twice() // Ok
+        {
+            const uint addr = 0x4000;
+
+            RunTest(
+                "MOD (0x4000),0x00000002,2,2",
+                c => c.LoadMemAt(addr, [0x00, 0x41]),
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_r() // Ok
+        {
+            const uint addr = 0x4000;
+
+            RunTest(
+                "MOD (0x4000),B",
+                c =>
+                {
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_rr() // Ok
+        {
+            const uint addr = 0x4000;
+
+            RunTest(
+                "MOD (0x4000),CD",
+                c =>
+                {
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_rrr() // Ok
+        {
+            const uint addr = 0x4000;
+
+            RunTest(
+                "MOD (0x4000),DEF",
+                c =>
+                {
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_rrrr() // Ok
+        {
+            const uint addr = 0x4000;
+
+            RunTest(
+                "MOD (0x4000),EFGH",
+                c =>
+                {
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    // target setup: none
+                    // value setup: none
+                    addr = 0x4000;
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    addr = 0x4000;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    // target setup: none
+                    c.CPU.REGS.X = 3; // value setup
+                    addr = 0x4000;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5; // value setup
+                    addr = 0x4000;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7; // value setup
+                    addr = 0x4000;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = 0x4000;
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = 0x4000;
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.X = 3;        // value setup (part 2)
+                    addr = 0x4000;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.WX = 5;       // value setup (part 2)
+                    addr = 0x4000;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.VWX = 7;      // value setup (part 2)
+                    addr = 0x4000;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_InnnI_fr() // Ok
+        {
+            const uint addr = 0x4000;
+
+            RunTest(
+                "MOD (0x4000),F0",
+                c =>
+                {
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (0x4000+4)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_block_immediate_2bytes_once() // Ok
+        {
+            const uint addr = 0x4004;
+
+            RunTest(
+                "MOD (0x4000+4),0x00000002,2",
+                c => c.LoadMemAt(addr, [0x00, 0x41]),
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_block_immediate_2bytes_twice() // Ok
+        {
+            const uint addr = 0x4004;
+
+            RunTest(
+                "MOD (0x4000+4),0x00000002,2,2",
+                c => c.LoadMemAt(addr, [0x00, 0x41]),
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_r() // Ok
+        {
+            const uint addr = 0x4004;
+
+            RunTest(
+                "MOD (0x4000+4),B",
+                c =>
+                {
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_rr() // Ok
+        {
+            const uint addr = 0x4004;
+
+            RunTest(
+                "MOD (0x4000+4),CD",
+                c =>
+                {
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_rrr() // Ok
+        {
+            const uint addr = 0x4004;
+
+            RunTest(
+                "MOD (0x4000+4),DEF",
+                c =>
+                {
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_rrrr() // Ok
+        {
+            const uint addr = 0x4004;
+
+            RunTest(
+                "MOD (0x4000+4),EFGH",
+                c =>
+                {
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    addr = 0x4004;
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    addr = 0x4004;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    // target setup: none
+                    c.CPU.REGS.X = 3; // value setup
+                    addr = 0x4004;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5; // value setup
+                    addr = 0x4004;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7; // value setup
+                    addr = 0x4004;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = 0x4004;
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = 0x4004;
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.X = 3;
+                    addr = 0x4004;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.WX = 5;
+                    addr = 0x4004;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+4),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = 0x4004;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_nnnI_fr() // Ok
+        {
+            const uint addr = 0x4004;
+
+            RunTest(
+                "MOD (0x4000+4),F0",
+                c =>
+                {
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (0x4000+X)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Innn_rI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.X = 3;
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.X = 3;
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),B",
+                c =>
+                {
+                    c.CPU.REGS.X = 3;
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),CD",
+                c =>
+                {
+                    c.CPU.REGS.X = 3;
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),DEF",
+                c =>
+                {
+                    c.CPU.REGS.X = 3;
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.X = 3;
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3; // target setup
+                    // value setup: none
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3; // target setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3; // target setup
+                    c.CPU.REGS.X = 3; // value setup (same register)
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3;  // target setup
+                    c.CPU.REGS.WX = 5; // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3;   // target setup
+                    c.CPU.REGS.VWX = 7; // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3;       // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3;        // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3;        // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.X = 3;        // value setup (part 2)
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3;        // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.WX = 5;       // value setup (part 2)
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.X = 3;        // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.VWX = 7;      // value setup (part 2)
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+X),F0",
+                c =>
+                {
+                    c.CPU.REGS.X = 3;
+                    addr = (uint)(0x4000 + c.CPU.REGS.X);
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (0x4000+WX)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.WX = 5;
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.WX = 5;
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),B",
+                c =>
+                {
+                    c.CPU.REGS.WX = 5;
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),CD",
+                c =>
+                {
+                    c.CPU.REGS.WX = 5;
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),DEF",
+                c =>
+                {
+                    c.CPU.REGS.WX = 5;
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.WX = 5;
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5; // target setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5; // target setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5; // target setup
+                    c.CPU.REGS.X = 3;  // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5; // target setup
+                    c.CPU.REGS.WX = 5; // value setup (same register)
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5;   // target setup
+                    c.CPU.REGS.VWX = 7;  // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5;        // target setup
+                    c.CPU.REGS.TUV = 0x8000;  // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5;        // target setup
+                    c.CPU.REGS.TUV = 0x8000;  // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5;        // target setup
+                    c.CPU.REGS.TUV = 0x8000;  // value setup (part 1)
+                    c.CPU.REGS.X = 3;         // value setup (part 2)
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5;        // target setup
+                    c.CPU.REGS.TUV = 0x8000;  // value setup (part 1)
+                    c.CPU.REGS.WX = 5;        // value setup (part 2; same register)
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.WX = 5;        // target setup
+                    c.CPU.REGS.TUV = 0x8000;  // value setup (part 1)
+                    c.CPU.REGS.VWX = 7;       // value setup (part 2)
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+WX),F0",
+                c =>
+                {
+                    c.CPU.REGS.WX = 5;
+                    addr = (uint)(0x4000 + c.CPU.REGS.WX);
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (0x4000+VWX)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.VWX = 7;
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.VWX = 7;
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),B",
+                c =>
+                {
+                    c.CPU.REGS.VWX = 7;
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),CD",
+                c =>
+                {
+                    c.CPU.REGS.VWX = 7;
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),DEF",
+                c =>
+                {
+                    c.CPU.REGS.VWX = 7;
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.VWX = 7;
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7; // target setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7; // target setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7; // target setup
+                    c.CPU.REGS.X = 3;   // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7; // target setup
+                    c.CPU.REGS.WX = 5;  // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7; // target setup
+                    c.CPU.REGS.VWX = 7; // value setup (same register)
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7;      // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7;      // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7;      // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.X = 3;        // value setup (part 2)
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7;      // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.WX = 5;       // value setup (part 2)
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.VWX = 7;      // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.VWX = 7;      // value setup (part 2; same register)
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Innn_rrrI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (0x4000+VWX),F0",
+                c =>
+                {
+                    c.CPU.REGS.VWX = 7;
+                    addr = (uint)(0x4000 + c.CPU.REGS.VWX);
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (QRS)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_IrrrI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS;
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS;
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS;
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS;
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    // value setup: none
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.X = 3;        // value setup
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.WX = 5;       // value setup
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.VWX = 7;      // value setup
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.X = 3;        // value setup (part 2)
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.WX = 5;       // value setup (part 2)
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.VWX = 7;      // value setup (part 2)
+                    addr = c.CPU.REGS.QRS;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_IrrrI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS),F0",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS;
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // NOTE: Remaining memory-destination targets are similarly unwound below.
+        // (QRS+4), (QRS+X), (QRS+WX), (QRS+VWX)
+
+        // --------------------
+        // Target: (QRS+4)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+4),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+4),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+4),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+4),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+4),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+4),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 0x8000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 0x8000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+4),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + 4;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_nnnI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+4),F0",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    addr = c.CPU.REGS.QRS + 4;
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (QRS+X)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+X),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+X),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+X),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+X),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+X),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+X),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000; // target setup
+                    c.CPU.REGS.X = 3;        // target setup cont.
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3; // target setup (also affects value)
+                    c.CPU.REGS.X = 3; // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;  // target setup
+                    c.CPU.REGS.WX = 5; // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;   // target setup
+                    c.CPU.REGS.VWX = 7; // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;        // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    c.CPU.REGS.TUV = 0x8000;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;        // target setup (also affects value)
+                    c.CPU.REGS.TUV = 0x8000; // value setup
+                    c.CPU.REGS.X = 3;        // value setup cont.
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;        // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.WX = 5;       // value setup (part 2)
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+X),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;        // target setup
+                    c.CPU.REGS.TUV = 0x8000; // value setup (part 1)
+                    c.CPU.REGS.VWX = 7;      // value setup (part 2)
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+X),F0",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (QRS+WX)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5; // target setup
+                    c.CPU.REGS.X = 3;  // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5; // target setup (also affects value)
+                    c.CPU.REGS.WX = 5; // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;  // target setup
+                    c.CPU.REGS.VWX = 7; // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    c.CPU.REGS.TUV = 0x8000;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    c.CPU.REGS.TUV = 0x8000;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;        // target setup (and also value)
+                    c.CPU.REGS.TUV = 0x8000;  // value setup part 1
+                    c.CPU.REGS.WX = 5;        // value setup part 2
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;        // target setup
+                    c.CPU.REGS.TUV = 0x8000;  // value setup part 1
+                    c.CPU.REGS.VWX = 7;       // value setup part 2
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+WX),F0",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        // --------------------
+        // Target: (QRS+VWX)
+        // --------------------
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_block_immediate_2bytes_once() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),0x00000002,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_block_immediate_2bytes_twice() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),0x00000002,2,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_r() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    c.MEMC.Set8bitToRAM(addr, 101);
+                    c.CPU.REGS.B = 4;
+                },
+                c => Assert.Equal((byte)1, c.MEMC.Get8bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_rr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    c.MEMC.Set16bitToRAM(addr, 1001);
+                    c.CPU.REGS.CD = 4;
+                },
+                c => Assert.Equal((ushort)1, c.MEMC.Get16bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_rrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    c.MEMC.Set24bitToRAM(addr, 100001);
+                    c.CPU.REGS.DEF = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get24bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_rrrr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    c.MEMC.Set32bitToRAM(addr, 1_000_001);
+                    c.CPU.REGS.EFGH = 4;
+                },
+                c => Assert.Equal((uint)1, c.MEMC.Get32bitFromRAM(addr)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_InnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(0x7000),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = 0x7000;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Innn_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(0x7000+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Innn_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(0x7000+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Innn_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(0x7000+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Innn_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(0x7000+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7; // target setup (also affects value)
+                    c.CPU.REGS.VWX = 7; // value setup
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_IrrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(TUV),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.CPU.REGS.TUV = 0x8000;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = c.CPU.REGS.TUV;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Irrr_nnnI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(TUV+4),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.CPU.REGS.TUV = 0x8000;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = c.CPU.REGS.TUV + 4;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Irrr_rI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(TUV+X),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.X = 3;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Irrr_rrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(TUV+WX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    c.CPU.REGS.TUV = 0x8000;
+                    c.CPU.REGS.WX = 5;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_value_Irrr_rrrI_block() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),(TUV+VWX),2,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 2;
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;       // target setup (also affects value)
+                    c.CPU.REGS.TUV = 0x8000;  // value setup part 1
+                    c.CPU.REGS.VWX = 7;       // value setup part 2
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
+                    c.LoadMemAt(addr, [0x00, 0x41]);
+                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                },
+                c => Assert.Equal([0x00, 0x01], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void MOD_mem_Irrr_rrrI_fr() // Ok
+        {
+            uint addr = 0;
+
+            RunTest(
+                "MOD (QRS+VWX),F0",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.VWX = 7;
+                    addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
+                    c.MEMC.SetFloatToRam(addr, 101.0f);
+                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.MEMC.GetFloatFromRAM(addr)));
+        }
+
+        #endregion
+
+        #region MOD fr,* tests (16 sub-ops)
+
+        [Fact]
+        public void MOD_fr_nnnn() // Ok
+        {
+            RunTest(
+                "MOD F0,4.0",
+                c => c.CPU.FREGS.SetRegister(0, 101.0f),
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_r() // Ok
+        {
+            RunTest(
+                "MOD F0,A",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.A = 4;
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_rr() // Ok
+        {
+            RunTest(
+                "MOD F0,AB",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.AB = 4;
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_rrr() // Ok
+        {
+            RunTest(
+                "MOD F0,ABC",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.ABC = 4;
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_rrrr() // Ok
+        {
+            RunTest(
+                "MOD F0,ABCD",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.ABCD = 4;
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_InnnI() // Ok
+        {
+            RunTest(
+                "MOD F0,(0x9000)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.MEMC.SetFloatToRam(0x9000, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Innn_nnnI() // Ok
+        {
+            RunTest(
+                "MOD F0,(0x9000+4)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.MEMC.SetFloatToRam(0x9004, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Innn_rI() // Ok
+        {
+            RunTest(
+                "MOD F0,(0x9000+X)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.SetFloatToRam(0x9003, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Innn_rrI() // Ok
+        {
+            RunTest(
+                "MOD F0,(0x9000+WX)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.SetFloatToRam(0x9005, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Innn_rrrI() // Ok
+        {
+            RunTest(
+                "MOD F0,(0x9000+VWX)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.SetFloatToRam(0x9007, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_IrrrI() // Ok
+        {
+            RunTest(
+                "MOD F0,(QRS)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.QRS = 0xA000;
+                    c.MEMC.SetFloatToRam(0xA000, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Irrr_nnnI() // Ok
+        {
+            RunTest(
+                "MOD F0,(QRS+4)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.QRS = 0xA000;
+                    c.MEMC.SetFloatToRam(0xA004, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Irrr_rI() // Ok
+        {
+            RunTest(
+                "MOD F0,(QRS+X)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.QRS = 0xA000;
+                    c.CPU.REGS.X = 3;
+                    c.MEMC.SetFloatToRam(0xA003, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Irrr_rrI() // Ok
+        {
+            RunTest(
+                "MOD F0,(QRS+WX)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.QRS = 0xA000;
+                    c.CPU.REGS.WX = 5;
+                    c.MEMC.SetFloatToRam(0xA005, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_Irrr_rrrI() // Ok
+        {
+            RunTest(
+                "MOD F0,(QRS+VWX)",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.REGS.QRS = 0xA000;
+                    c.CPU.REGS.VWX = 7;
+                    c.MEMC.SetFloatToRam(0xA007, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        [Fact]
+        public void MOD_fr_fr() // Ok
+        {
+            RunTest(
+                "MOD F0,F1",
+                c =>
+                {
+                    c.CPU.FREGS.SetRegister(0, 101.0f);
+                    c.CPU.FREGS.SetRegister(1, 4.0f);
+                },
+                c => Assert.Equal(1.0f, c.CPU.FREGS.GetRegister(0)));
+        }
+
+        #endregion
+    }
+}
+
+
+
+

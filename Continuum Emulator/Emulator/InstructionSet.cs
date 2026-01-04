@@ -1,4 +1,4 @@
-﻿/*
+/*
  * InstructionSet Class
  * ----------------------
  * 
@@ -40,6 +40,7 @@ namespace Continuum93.Emulator
             IJT[Mnem.ADD] = ExADD.Process;
             IJT[Mnem.SUB] = ExSUB.Process;
             IJT[Mnem.DIV] = ExDIV.Process;
+            IJT[Mnem.MOD] = ExMOD.Process;
             IJT[Mnem.MUL] = ExMUL.Process;
             IJT[Mnem.SL] = ExSL.Process;
             IJT[Mnem.SR] = ExSR.Process;

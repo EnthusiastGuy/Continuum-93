@@ -144,7 +144,7 @@ namespace Continuum93.Emulator.Interpreter
             "CP", "LD",
             "ADD",
             "SUB",
-            "DIV", "MUL",
+            "DIV", "MOD", "MUL",
             "FIND",
             "ISQR", "POW", "SQR",
             "REGS", "FREGS",
@@ -256,7 +256,7 @@ namespace Continuum93.Emulator.Interpreter
             // These require some light normalization of numeric argument “general forms”
             // (e.g. nnn -> n/nn/nnn/nnnn depending on destination width) so the lookup
             // matches the GenericInitializer-registered variants.
-            if (Op == "LD" || Op == "ADD" || Op == "SUB" || Op == "DIV") // temporary
+            if (Op == "LD" || Op == "ADD" || Op == "SUB" || Op == "DIV" || Op == "MOD") // temporary
             {
                 if (Arguments.Count == 2)
                 {

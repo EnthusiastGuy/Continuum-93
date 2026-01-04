@@ -7,7 +7,9 @@
 		ADD BCD, E		; Start from the end of the number string backwards
 
 .convert_byte_string_next_digit
-		DIV A, 10, F	; F will contain the least significant number
+		LD F, A
+		MOD F, 10	; F = A % 10 and it will contain the least significant number
+		DIV A, 10
 		ADD F, 48
 		DEC BCD
 		LD (BCD), F
