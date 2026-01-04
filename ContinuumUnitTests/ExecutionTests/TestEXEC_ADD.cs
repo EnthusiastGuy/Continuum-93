@@ -2735,77 +2735,1366 @@ namespace ExecutionTests
         }
 
 
-        // TODO: ADD _Irrr_nnnI_nnnn_n160;
-        // TODO: ADD _Irrr_nnnI_nnnn_n_nnn
-        // TODO: ADD _Irrr_nnnI_r
-        // TODO: ADD _Irrr_nnnI_rr
-        // TODO: ADD _Irrr_nnnI_rrr
-        // TODO: ADD _Irrr_nnnI_rrrr
-        // TODO: ADD _Irrr_nnnI_InnnI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Innn_nnnI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Innn_rI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Innn_rrI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Innn_rrrI_n_rrr
-        // TODO: ADD _Irrr_nnnI_IrrrI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Irrr_nnnI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Irrr_rI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Irrr_rrI_n_rrr
-        // TODO: ADD _Irrr_nnnI_Irrr_rrrI_n_rrr
-        // TODO: ADD _Irrr_nnnI_fr
+        [Fact]
+        public void ADD_Irrr_nnnI_nnnn_n()  // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+4),0x00010203,3",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x02, 0x04, 0x06, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
 
-        // TODO: ADD _Irrr_rI_nnnn_n
-        // TODO: ADD _Irrr_rI_nnnn_n_nnn
-        // TODO: ADD _Irrr_rI_r
-        // TODO: ADD _Irrr_rI_rr
-        // TODO: ADD _Irrr_rI_rrr
-        // TODO: ADD _Irrr_rI_rrrr
-        // TODO: ADD _Irrr_rI_InnnI_n_rrr
-        // TODO: ADD _Irrr_rI_Innn_nnnI_n_rrr
-        // TODO: ADD _Irrr_rI_Innn_rI_n_rrr
-        // TODO: ADD _Irrr_rI_Innn_rrI_n_rrr
-        // TODO: ADD _Irrr_rI_Innn_rrrI_n_rrr
-        // TODO: ADD _Irrr_rI_IrrrI_n_rrr
-        // TODO: ADD _Irrr_rI_Irrr_nnnI_n_rrr
-        // TODO: ADD _Irrr_rI_Irrr_rI_n_rrr
-        // TODO: ADD _Irrr_rI_Irrr_rrI_n_rrr
-        // TODO: ADD _Irrr_rI_Irrr_rrrI_n_rrr
-        // TODO: ADD _Irrr_rI_fr
+        [Fact]
+        public void ADD_Irrr_nnnI_nnnn_n_nnn()  // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+4),0x00010203,3,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x03, 0x06, 0x09, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
 
-        // TODO: ADD _Irrr_rrI_nnnn_n
-        // TODO: ADD _Irrr_rrI_nnnn_n_nnn
-        // TODO: ADD _Irrr_rrI_r
-        // TODO: ADD _Irrr_rrI_rr
-        // TODO: ADD _Irrr_rrI_rrr
-        // TODO: ADD _Irrr_rrI_rrrr
-        // TODO: ADD _Irrr_rrI_InnnI_n_rrr
-        // TODO: ADD _Irrr_rrI_Innn_nnnI_n_rrr
-        // TODO: ADD _Irrr_rrI_Innn_rI_n_rrr
-        // TODO: ADD _Irrr_rrI_Innn_rrI_n_rrr
-        // TODO: ADD _Irrr_rrI_Innn_rrrI_n_rrr
-        // TODO: ADD _Irrr_rrI_IrrrI_n_rrr
-        // TODO: ADD _Irrr_rrI_Irrr_nnnI_n_rrr
-        // TODO: ADD _Irrr_rrI_Irrr_rI_n_rrr
-        // TODO: ADD _Irrr_rrI_Irrr_rrI_n_rrr
-        // TODO: ADD _Irrr_rrI_Irrr_rrrI_n_rrr
-        // TODO: ADD _Irrr_rrI_fr
+        [Fact]
+        public void ADD_Irrr_nnnI_r()   // Ok
+        {
+            RunTest(
+                "ADD (QRS+4),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, [0x01, 0x02]);
+                    c.CPU.REGS.B = 5;
+                },
+                c => Assert.Equal([0x06, 0x02], c.MEMC.RAM.GetMemoryAt(0x5004, 2)));
+        }
 
-        // TODO: ADD _Irrr_rrrI_nnnn_n
-        // TODO: ADD _Irrr_rrrI_nnnn_n_nnn
-        // TODO: ADD _Irrr_rrrI_r
-        // TODO: ADD _Irrr_rrrI_rr
-        // TODO: ADD _Irrr_rrrI_rrr
-        // TODO: ADD _Irrr_rrrI_rrrr
-        // TODO: ADD _Irrr_rrrI_InnnI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Innn_nnnI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Innn_rI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Innn_rrI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Innn_rrrI_n_rrr
-        // TODO: ADD _Irrr_rrrI_IrrrI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Irrr_nnnI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Irrr_rI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Irrr_rrI_n_rrr
-        // TODO: ADD _Irrr_rrrI_Irrr_rrrI_n_rrr
-        // TODO: ADD _Irrr_rrrI_fr
+        [Fact]
+        public void ADD_Irrr_nnnI_rr()  // Ok
+        {
+            RunTest(
+                "ADD (QRS+4),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, [0x01, 0x01]);
+                    c.CPU.REGS.CD = 0x0102;
+                },
+                c => Assert.Equal([0x02, 0x03], c.MEMC.RAM.GetMemoryAt(0x5004, 2)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_rrr() // Ok
+        {
+            RunTest(
+                "ADD (QRS+4),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, [0x01, 0x02, 0x03]);
+                    c.CPU.REGS.DEF = 0x010203;
+                },
+                c => Assert.Equal([0x02, 0x04, 0x06], c.MEMC.RAM.GetMemoryAt(0x5004, 3)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_rrrr()    // Ok
+        {
+            RunTest(
+                "ADD (QRS+4),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, [0x01, 0x01, 0x01, 0x01]);
+                    c.CPU.REGS.EFGH = 0x01020304;
+                },
+                c => Assert.Equal([0x02, 0x03, 0x04, 0x05], c.MEMC.RAM.GetMemoryAt(0x5004, 4)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_InnnI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(0x7000),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.LoadMemAt(0x7000, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Innn_nnnI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(0x7000+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.LoadMemAt(0x7004, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Innn_rI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(0x7000+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7002, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Innn_rrI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(0x7000+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7006, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Innn_rrrI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(0x7000+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7009, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_IrrrI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(MNO),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7100, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Irrr_nnnI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(MNO+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7104, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Irrr_rI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(MNO+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7102, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Irrr_rrI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(MNO+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7106, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_Irrr_rrrI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+4),(MNO+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.LoadMemAt(0x5004, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7109, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5004, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_nnnI_fr()  // Ok
+        {
+            RunTest(
+                "ADD (QRS+4),F4",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.MEMC.SetFloatToRam(0x5004, 1.25f);
+                    c.CPU.FREGS.SetRegister(4, 2.5f);
+                },
+                c => Assert.Equal(3.75f, c.MEMC.GetFloatFromRAM(0x5004)));
+        }
+
+
+        [Fact]
+        public void ADD_Irrr_rI_nnnn_n()    // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+X),0x00010203,3",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x02, 0x04, 0x06, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_nnnn_n_nnn()    // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+X),0x00010203,3,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x03, 0x06, 0x09, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_r() // Ok
+        {
+            RunTest(
+                "ADD (QRS+X),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, [0x01, 0x02]);
+                    c.CPU.REGS.B = 5;
+                },
+                c => Assert.Equal([0x06, 0x02], c.MEMC.RAM.GetMemoryAt(0x5005, 2)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_rr()    // Ok
+        {
+            RunTest(
+                "ADD (QRS+X),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, [0x01, 0x01]);
+                    c.CPU.REGS.CD = 0x0102;
+                },
+                c => Assert.Equal([0x02, 0x03], c.MEMC.RAM.GetMemoryAt(0x5005, 2)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_rrr()   // Ok
+        {
+            RunTest(
+                "ADD (QRS+X),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, [0x01, 0x02, 0x03]);
+                    c.CPU.REGS.DEF = 0x010203;
+                },
+                c => Assert.Equal([0x02, 0x04, 0x06], c.MEMC.RAM.GetMemoryAt(0x5005, 3)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_rrrr()  // Ok
+        {
+            RunTest(
+                "ADD (QRS+X),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, [0x01, 0x01, 0x01, 0x01]);
+                    c.CPU.REGS.EFGH = 0x01020304;
+                },
+                c => Assert.Equal([0x02, 0x03, 0x04, 0x05], c.MEMC.RAM.GetMemoryAt(0x5005, 4)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_InnnI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(0x7000),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.LoadMemAt(0x7000, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Innn_nnnI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(0x7000+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.LoadMemAt(0x7004, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Innn_rI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(0x7000+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7002, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Innn_rrI_n_rrr()    // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(0x7000+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7006, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Innn_rrrI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(0x7000+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7009, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_IrrrI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(MNO),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7100, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Irrr_nnnI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(MNO+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7104, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Irrr_rI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(MNO+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7102, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Irrr_rrI_n_rrr()    // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(MNO+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7106, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_Irrr_rrrI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+X),(MNO+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.LoadMemAt(0x5005, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7109, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5005, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rI_fr()    // Ok
+        {
+            RunTest(
+                "ADD (QRS+X),F4",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.X = 5;
+                    c.MEMC.SetFloatToRam(0x5005, 1.25f);
+                    c.CPU.FREGS.SetRegister(4, 2.5f);
+                },
+                c => Assert.Equal(3.75f, c.MEMC.GetFloatFromRAM(0x5005)));
+        }
+
+
+        [Fact]
+        public void ADD_Irrr_rrI_nnnn_n()   // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+WX),0x00010203,3",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x02, 0x04, 0x06, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_nnnn_n_nnn()   // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+WX),0x00010203,3,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x03, 0x06, 0x09, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_r()    // Ok
+        {
+            RunTest(
+                "ADD (QRS+WX),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, [0x01, 0x02]);
+                    c.CPU.REGS.B = 5;
+                },
+                c => Assert.Equal([0x06, 0x02], c.MEMC.RAM.GetMemoryAt(0x5007, 2)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_rr()   // Ok
+        {
+            RunTest(
+                "ADD (QRS+WX),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, [0x01, 0x01]);
+                    c.CPU.REGS.CD = 0x0102;
+                },
+                c => Assert.Equal([0x02, 0x03], c.MEMC.RAM.GetMemoryAt(0x5007, 2)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_rrr()  // Ok
+        {
+            RunTest(
+                "ADD (QRS+WX),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, [0x01, 0x02, 0x03]);
+                    c.CPU.REGS.DEF = 0x010203;
+                },
+                c => Assert.Equal([0x02, 0x04, 0x06], c.MEMC.RAM.GetMemoryAt(0x5007, 3)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_rrrr() // Ok
+        {
+            RunTest(
+                "ADD (QRS+WX),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, [0x01, 0x01, 0x01, 0x01]);
+                    c.CPU.REGS.EFGH = 0x01020304;
+                },
+                c => Assert.Equal([0x02, 0x03, 0x04, 0x05], c.MEMC.RAM.GetMemoryAt(0x5007, 4)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_InnnI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(0x7000),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.LoadMemAt(0x7000, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Innn_nnnI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(0x7000+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.LoadMemAt(0x7004, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Innn_rI_n_rrr()    // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(0x7000+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7002, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Innn_rrI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(0x7000+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7006, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Innn_rrrI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(0x7000+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7009, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_IrrrI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(MNO),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7100, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Irrr_nnnI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(MNO+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7104, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Irrr_rI_n_rrr()    // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(MNO+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7102, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Irrr_rrI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(MNO+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7106, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_Irrr_rrrI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+WX),(MNO+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.LoadMemAt(0x5007, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7109, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5007, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrI_fr()   // Ok
+        {
+            RunTest(
+                "ADD (QRS+WX),F4",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.WX = 7;
+                    c.MEMC.SetFloatToRam(0x5007, 1.25f);
+                    c.CPU.FREGS.SetRegister(4, 2.5f);
+                },
+                c => Assert.Equal(3.75f, c.MEMC.GetFloatFromRAM(0x5007)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_nnnn_n()  // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+TUV),0x00010203,3",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x02, 0x04, 0x06, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_nnnn_n_nnn()  // Ok
+        {
+            byte[] initial = [0x01, 0x02, 0x03, 0x04];
+            RunTest(
+                "ADD (QRS+TUV),0x00010203,3,2",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                },
+                c =>
+                {
+                    byte[] expected = [0x03, 0x06, 0x09, 0x04];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_r()   // Ok
+        {
+            RunTest(
+                "ADD (QRS+TUV),B",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, [0x01, 0x02]);
+                    c.CPU.REGS.B = 5;
+                },
+                c => Assert.Equal([0x06, 0x02], c.MEMC.RAM.GetMemoryAt(0x5009, 2)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_rr()  // Ok
+        {
+            RunTest(
+                "ADD (QRS+TUV),CD",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, [0x01, 0x01]);
+                    c.CPU.REGS.CD = 0x0102;
+                },
+                c => Assert.Equal([0x02, 0x03], c.MEMC.RAM.GetMemoryAt(0x5009, 2)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_rrr() // Ok
+        {
+            RunTest(
+                "ADD (QRS+TUV),DEF",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, [0x01, 0x02, 0x03]);
+                    c.CPU.REGS.DEF = 0x010203;
+                },
+                c => Assert.Equal([0x02, 0x04, 0x06], c.MEMC.RAM.GetMemoryAt(0x5009, 3)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_rrrr()    // Ok
+        {
+            RunTest(
+                "ADD (QRS+TUV),EFGH",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, [0x01, 0x01, 0x01, 0x01]);
+                    c.CPU.REGS.EFGH = 0x01020304;
+                },
+                c => Assert.Equal([0x02, 0x03, 0x04, 0x05], c.MEMC.RAM.GetMemoryAt(0x5009, 4)));
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_InnnI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(0x7000),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.LoadMemAt(0x7000, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Innn_nnnI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(0x7000+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.LoadMemAt(0x7004, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Innn_rI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(0x7000+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7002, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Innn_rrI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(0x7000+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7006, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Innn_rrrI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(0x7000+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7009, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_IrrrI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(MNO),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7100, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Irrr_nnnI_n_rrr() // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(MNO+4),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.LoadMemAt(0x7104, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Irrr_rI_n_rrr()   // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(MNO+K),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.K = 2;
+                    c.LoadMemAt(0x7102, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Irrr_rrI_n_rrr()  // Ok
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(MNO+KL),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KL = 6;
+                    c.LoadMemAt(0x7106, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_Irrr_rrrI_n_rrr()
+        {
+            byte[] initial = [0x0A, 0x14, 0x1E, 0x28];
+            byte[] value = [1, 2, 3, 4];
+            RunTest(
+                "ADD (QRS+TUV),(MNO+KLM),3,GHI",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.LoadMemAt(0x5009, initial);
+                    c.CPU.REGS.MNO = 0x7100;
+                    c.CPU.REGS.KLM = 9;
+                    c.LoadMemAt(0x7109, value);
+                    c.CPU.REGS.GHI = 2;
+                },
+                c =>
+                {
+                    byte[] expected = [0x0C, 0x18, 0x24, 0x28];
+                    Assert.Equal(expected, c.MEMC.RAM.GetMemoryAt(0x5009, 4));
+                });
+        }
+
+        [Fact]
+        public void ADD_Irrr_rrrI_fr()  // Ok
+        {
+            RunTest(
+                "ADD (QRS+TUV),F4",
+                c =>
+                {
+                    c.CPU.REGS.QRS = 0x5000;
+                    c.CPU.REGS.TUV = 9;
+                    c.MEMC.SetFloatToRam(0x5009, 1.25f);
+                    c.CPU.FREGS.SetRegister(4, 2.5f);
+                },
+                c => Assert.Equal(3.75f, c.MEMC.GetFloatFromRAM(0x5009)));
+        }
 
         #endregion
 
