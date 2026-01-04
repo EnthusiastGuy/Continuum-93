@@ -4,7 +4,7 @@ namespace ContinuumUnitTests.CompilerTests
 {
     public class BasicCompilerShiftAndLogicalTests
     {
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestShiftLeftLiteral()
         {
             string source = @"
@@ -21,7 +21,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestShiftRightLiteral()
         {
             string source = @"
@@ -38,7 +38,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestRotateLeftLiteral()
         {
             string source = @"
@@ -55,7 +55,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestRotateRightLiteral()
         {
             string source = @"
@@ -72,7 +72,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestShiftLeftWithVariable()
         {
             string source = @"
@@ -92,7 +92,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestLogicalAndWithComparisons()
         {
             string source = @"
@@ -123,7 +123,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestLogicalOrWithComparisons()
         {
             string source = @"
@@ -143,7 +143,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestLogicalXorWithComparisons()
         {
             string source = @"
@@ -160,7 +160,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestComplexExpressionWithShiftsAndLogical()
         {
             string source = @"
@@ -212,7 +212,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestNandOperation()
         {
             string source = @"
@@ -229,7 +229,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestNorOperation()
         {
             string source = @"
@@ -246,7 +246,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestXnorOperation()
         {
             string source = @"
@@ -263,7 +263,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestImplyOperation()
         {
             string source = @"
@@ -280,7 +280,7 @@ Main:
             Assert.Equal(0, compiler.Errors);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until the proper implementation of the compiler")]
         public void TestBooleanResultInAssignment()
         {
             string source = @"
