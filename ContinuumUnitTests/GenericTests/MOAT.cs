@@ -26,7 +26,7 @@ namespace GenericTests
             int mainIndex = 1;
             int testCounter = 0;
             int testsFailed = 0;
-            bool testsPassed = true;
+            
             sb.AppendLine(header);
             sb.AppendLine(new string('=', 160));
             sb.AppendLine();
@@ -54,7 +54,6 @@ namespace GenericTests
                         if (!sExpected.SequenceEqual(sActual))
                         {
                             status = "NOK";
-                            testsPassed = false;
                             testsFailed++;
                         }
                     }
@@ -62,7 +61,6 @@ namespace GenericTests
                     {
                         status = "ERROR";
                         sActual = [];
-                        testsPassed = false;
                     }
 
                     string hexExpected = BitConverter.ToString(sExpected).Replace("-", ", ");
@@ -99,7 +97,6 @@ namespace GenericTests
                         if (!expected.SequenceEqual(actual))
                         {
                             status = "NOK";
-                            testsPassed = false;
                             testsFailed++;
                         }
                     }
@@ -107,7 +104,6 @@ namespace GenericTests
                     {
                         status = "ERROR";
                         actual = [];
-                        testsPassed = false;
                     }
 
                     string hexExpected = BitConverter.ToString(expected).Replace("-", ", ");

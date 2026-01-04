@@ -1,5 +1,5 @@
-78 instructions found (vacant opcodes: 178)
-114 total variations
+79 instructions found (vacant opcodes: 177)
+115 total variations
 
  Opcode       Instruction
  Dec   Hex    (+ variations)                  
@@ -29,7 +29,7 @@
   22   0x16   CALLR                           
   23   0x17   JP                              
   24   0x18   JR                              
-> 1 vacant opcode
+  25   0x19   MOD                             
   26   0x1A   POP, POP16, POP24, POP32        
 > 1 vacant opcode
   28   0x1C   PUSH, PUSH16, PUSH24, PUSH32    
