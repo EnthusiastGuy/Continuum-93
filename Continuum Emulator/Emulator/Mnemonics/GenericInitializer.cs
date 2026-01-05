@@ -24,6 +24,8 @@ namespace Continuum93.Emulator.Mnemonics
             InitInstruction("SUB", Mnem.SUB);
             // DIV now reuses the shared addressing matrix (same as ADD/LD)
             InitInstruction("DIV", Mnem.DIV);
+            // MUL now reuses the shared addressing matrix (same as ADD/LD/DIV)
+            InitInstruction("MUL", Mnem.MUL);
             // MOD mirrors DIV addressing matrix (remainder semantics in execution unit)
             InitInstruction("MOD", Mnem.MOD);
         }
@@ -300,6 +302,7 @@ namespace Continuum93.Emulator.Mnemonics
             opCodeDefinition.Add("ADD", 0x02);
             opCodeDefinition.Add("SUB", 0x03);
             opCodeDefinition.Add("DIV", 0x04);
+            opCodeDefinition.Add("MUL", 0x05);
             opCodeDefinition.Add("MOD", 0x19); // 25
             // more opcodes as needed
         }
