@@ -18,7 +18,8 @@ namespace ExecutionTests
             if (cp.Errors > 0)
                 throw new InvalidOperationException($"Assembly failed: {cp.Log}");
 
-            computer.LoadMem(cp.GetCompiledCode());
+            byte[] toRun = cp.GetCompiledCode();
+            computer.LoadMem(toRun);
             computer.Run();
 
             assert(computer);
@@ -202,7 +203,7 @@ namespace ExecutionTests
                     c.CPU.REGS.A = 10;
                     c.CPU.FREGS.SetRegister(0, 2.5f);
                 },
-                c => Assert.Equal((byte)50, c.CPU.REGS.A));
+                c => Assert.Equal((byte)25, c.CPU.REGS.A));
         }
 
         #endregion
@@ -395,7 +396,7 @@ namespace ExecutionTests
                     c.CPU.REGS.AB = 100;
                     c.CPU.FREGS.SetRegister(1, 2.5f);
                 },
-                c => Assert.Equal((ushort)1000, c.CPU.REGS.AB));
+                c => Assert.Equal((ushort)250, c.CPU.REGS.AB));
         }
 
         #endregion
@@ -637,7 +638,7 @@ namespace ExecutionTests
         public void MUL_rrr_fr() // Ok
         {
             const uint multiplicand = 10000;
-            const uint expected = 100000;
+            const uint expected = 25000;
 
             RunTest(
                 "MUL ABC,F2",
@@ -904,7 +905,7 @@ namespace ExecutionTests
         public void MUL_rrrr_fr() // Ok
         {
             const uint multiplicand = 100_000;
-            const uint expected = 1_000_000;
+            const uint expected = 250_000;
 
             RunTest(
                 "MUL ABCD,F3",
@@ -2545,7 +2546,7 @@ namespace ExecutionTests
                     addr = c.CPU.REGS.QRS;
                     c.LoadMemAt(addr, [0x00, 0x0A]);
                 },
-                c => Assert.Equal([ 0x00, 0x20 ], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+                c => Assert.Equal([ 0x00, 0x14], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
 
         [Fact]
@@ -3214,7 +3215,7 @@ namespace ExecutionTests
                     addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x0A]);
                 },
-                c => Assert.Equal([ 0x00, 0x20 ], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+                c => Assert.Equal([ 0x00, 0x14 ], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
 
         [Fact]
@@ -3563,7 +3564,7 @@ namespace ExecutionTests
                     addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x0A]);
                 },
-                c => Assert.Equal([ 0x00, 0x20 ], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+                c => Assert.Equal([ 0x00, 0x14 ], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
 
         [Fact]
@@ -3912,7 +3913,7 @@ namespace ExecutionTests
                     addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x0A]);
                 },
-                c => Assert.Equal([ 0x00, 0x20 ], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+                c => Assert.Equal([ 0x00, 0x14 ], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
 
         [Fact]
@@ -4251,7 +4252,7 @@ namespace ExecutionTests
         public void MUL_fr_nnnn() // Ok
         {
             RunTest(
-                "MUL F0,4",
+                "MUL F0,4.0",
                 c => c.CPU.FREGS.SetRegister(0, 10.0f),
                 c => Assert.Equal(40.0f, c.CPU.FREGS.GetRegister(0)));
         }
