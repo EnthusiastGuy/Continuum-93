@@ -775,6 +775,8 @@ namespace Continuum93.Emulator.Mnemonics
             OperatorsInitSUB.Initialize();
             OperatorsInitDIV.Initialize();
             OperatorsInitMUL.Initialize();
+
+
             OperatorsInitSDIV.Initialize();
             OperatorsInitSMUL.Initialize();
             OperatorsInitRETIF.Initialize();

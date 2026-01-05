@@ -5,17 +5,19 @@
         public static void Initialize()
         {
             // SHIFT, ROLL
-            Mnem.AddSubOp("SL r,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_r_n);
-            Mnem.AddSubOp("SL r,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_r_r);
+            // SL now uses the shared Instructions addressing matrix via GenericInitializer.
+            // Legacy SL-specific sub-ops have been retired in favor of the 244-variant system.
+            //Mnem.AddSubOp("SL r,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_r_n);
+            //Mnem.AddSubOp("SL r,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_r_r);
 
-            Mnem.AddSubOp("SL rr,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rr_n);
-            Mnem.AddSubOp("SL rr,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rr_r);
+            //Mnem.AddSubOp("SL rr,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rr_n);
+            //Mnem.AddSubOp("SL rr,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rr_r);
 
-            Mnem.AddSubOp("SL rrr,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrr_n);
-            Mnem.AddSubOp("SL rrr,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrr_r);
+            //Mnem.AddSubOp("SL rrr,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrr_n);
+            //Mnem.AddSubOp("SL rrr,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrr_r);
 
-            Mnem.AddSubOp("SL rrrr,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrrr_n);
-            Mnem.AddSubOp("SL rrrr,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrrr_r);
+            //Mnem.AddSubOp("SL rrrr,nnn", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrrr_n);
+            //Mnem.AddSubOp("SL rrrr,r", Mnem.SL, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_rrrr_r);
 
             Mnem.AddSubOp("SR r,nnn", Mnem.SR, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_r_n);
             Mnem.AddSubOp("SR r,r", Mnem.SR, "ooooooAA AAABBBBB", Mnem.SHRLSTRE_r_r);

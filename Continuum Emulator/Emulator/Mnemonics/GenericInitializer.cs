@@ -28,6 +28,8 @@ namespace Continuum93.Emulator.Mnemonics
             InitInstruction("MUL", Mnem.MUL);
             // MOD mirrors DIV addressing matrix (remainder semantics in execution unit)
             InitInstruction("MOD", Mnem.MOD);
+
+            InitInstruction("SL", Mnem.SL);
         }
 
         private static void InitInstruction(string oper, byte opCode)
@@ -298,12 +300,15 @@ namespace Continuum93.Emulator.Mnemonics
         private static void InitializeOpCodeDefinition()
         {
             //opCodeDefinition.Add("NOP", 0x00);
-            opCodeDefinition.Add("LD", 0x01);
-            opCodeDefinition.Add("ADD", 0x02);
-            opCodeDefinition.Add("SUB", 0x03);
-            opCodeDefinition.Add("DIV", 0x04);
-            opCodeDefinition.Add("MUL", 0x05);
-            opCodeDefinition.Add("MOD", 0x19); // 25
+            opCodeDefinition.Add("LD", Mnem.LD);
+            opCodeDefinition.Add("ADD", Mnem.ADD);
+            opCodeDefinition.Add("SUB", Mnem.SUB);
+            opCodeDefinition.Add("DIV", Mnem.DIV);
+            opCodeDefinition.Add("MUL", Mnem.MUL);
+
+            opCodeDefinition.Add("SL", Mnem.SL);
+
+            opCodeDefinition.Add("MOD", Mnem.MOD);
             // more opcodes as needed
         }
 
