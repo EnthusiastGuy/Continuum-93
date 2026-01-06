@@ -698,33 +698,39 @@ namespace Continuum93.Emulator.Execution
             if (count == 0) count = 1;
             if (repeat == 0) repeat = 1;
 
-            // interpret target span as big-endian unsigned integer of length "count"
-            for (uint r = 0; r < repeat; r++)
+            uint bitWidth = (uint)count * 8u;
+
+            uint shiftCountBits;
+
+            if (!sourceIsAddress)
             {
-                uint shiftCountU;
-
-                if (!sourceIsAddress)
-                {
-                    // immediate 32-bit shift count
-                    shiftCountU = valueOrAddress;
-                }
-                else
-                {
-                    // memory-sourced shift count from a block at valueOrAddress with same length "count"
-                    shiftCountU = ReadBigEndian(mem, valueOrAddress, count);
-                }
-
-                int bitWidth = count * 8;
-                uint shift = (uint)(shiftCountU % (uint)bitWidth);
-
-                // If shift is 0, no change.
-                if (shift == 0)
-                    continue;
-
-                // Implement bit shift on the byte array directly (big-endian) to avoid needing >32-bit types.
-                ShiftLeftBigEndianInPlace(mem, address, count, (int)shift);
+                // immediate 32-bit bit-count (as-is)
+                shiftCountBits = valueOrAddress;
             }
+            else
+            {
+                // REQUIRED SEMANTICS: shift count is a SINGLE BYTE at valueOrAddress
+                shiftCountBits = mem.Get8bitFromRAM(valueOrAddress);
+            }
+
+            // REQUIRED SEMANTICS: apply it "repeat" times -> total bits shifted = shiftCountBits * repeat
+            uint totalShiftBits = shiftCountBits * repeat;
+
+            if (totalShiftBits == 0)
+                return;
+
+            if (totalShiftBits >= bitWidth)
+            {
+                // zero-fill entire block
+                for (int i = 0; i < count; i++)
+                    mem.Set8bitToRAM(address + (uint)i, 0);
+                return;
+            }
+
+            ShiftLeftBigEndianInPlace(mem, address, count, (int)totalShiftBits);
         }
+
+
 
         private static uint ReadBigEndian(MemoryController mem, uint baseAddr, byte count)
         {
@@ -781,12 +787,6 @@ namespace Continuum93.Emulator.Execution
         // -------------------------
         private static void ShiftRegisterLeft(Computer cpu, Width width, byte regIndex, byte rawCount)
         {
-            int bits = width == Width.Byte ? 8 :
-                       width == Width.Word ? 16 :
-                       width == Width.TriByte ? 24 : 32;
-
-            //byte count = (byte)(rawCount % bits);
-
             var regs = cpu.CPU.REGS;
             switch (width)
             {

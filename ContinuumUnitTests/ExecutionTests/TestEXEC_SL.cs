@@ -955,7 +955,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -974,7 +974,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -993,7 +993,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.X = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1012,7 +1012,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.WX = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1031,7 +1031,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1050,7 +1050,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1069,7 +1069,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1088,7 +1088,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.X = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1107,7 +1107,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.WX = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1126,7 +1126,7 @@ namespace ExecutionTests
                     addr = 0x4000;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1263,7 +1263,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1282,9 +1282,28 @@ namespace ExecutionTests
                     addr = 0x4004;
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
+        }
+
+        [Fact]
+        public void SL_mem_Innn_nnnI_value_Innn_nnnI_block_larger() // Ok
+        {
+            uint addr = 0;
+            uint valueAddr = 0;
+
+            RunTest(
+                "SL (0x4000+4),(0x7000+4),16,GHI",
+                c =>
+                {
+                    c.CPU.REGS.GHI = 1;
+                    addr = 0x4004;
+                    valueAddr = 0x7004;
+                    c.LoadMemAt(addr, [0x01, 0x40, 0x02, 0x39, 0x03, 0x38, 0x04, 0x37, 0x05, 0x36, 0x06, 0x35, 0x07, 0x34, 0x08, 0x33, 0x09, 0x32]);
+                    c.LoadMemAt(valueAddr, [0x04]);
+                },
+                c => Assert.Equal([0x14, 0x00, 0x23, 0x90, 0x33, 0x80, 0x43, 0x70, 0x53, 0x60, 0x63, 0x50, 0x73, 0x40, 0x83, 0x30, 0x09, 0x32], c.MEMC.RAM.GetMemoryAt(addr, 18)));
         }
 
         [Fact]
@@ -1301,7 +1320,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.X = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1320,7 +1339,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.WX = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1339,7 +1358,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1358,7 +1377,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1377,7 +1396,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1396,7 +1415,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.X = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1415,7 +1434,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.WX = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1434,7 +1453,7 @@ namespace ExecutionTests
                     addr = 0x4004;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1571,7 +1590,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1590,7 +1609,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1609,7 +1628,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.X = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1628,7 +1647,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.YZ = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.YZ);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1647,7 +1666,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.ABC = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.ABC);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1666,7 +1685,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1685,7 +1704,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1704,7 +1723,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.X = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1723,7 +1742,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.YZ = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.YZ;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1742,7 +1761,7 @@ namespace ExecutionTests
                     c.CPU.REGS.X = 3; addr = (uint)(0x4000 + c.CPU.REGS.X);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.ABC = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.ABC;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1879,7 +1898,7 @@ namespace ExecutionTests
                     c.CPU.REGS.WX = 5; addr = (uint)(0x4000 + c.CPU.REGS.WX);
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1898,7 +1917,7 @@ namespace ExecutionTests
                     c.CPU.REGS.WX = 5; addr = (uint)(0x4000 + c.CPU.REGS.WX);
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1917,7 +1936,7 @@ namespace ExecutionTests
                     c.CPU.REGS.YZ = 5; addr = (uint)(0x4000 + c.CPU.REGS.YZ);
                     c.CPU.REGS.X = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1936,7 +1955,7 @@ namespace ExecutionTests
                     c.CPU.REGS.WX = 5; addr = (uint)(0x4000 + c.CPU.REGS.WX);
                     c.CPU.REGS.WX = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1955,7 +1974,7 @@ namespace ExecutionTests
                     c.CPU.REGS.WX = 5; addr = (uint)(0x4000 + c.CPU.REGS.WX);
                     c.CPU.REGS.ABC = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.ABC);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1974,7 +1993,7 @@ namespace ExecutionTests
                     c.CPU.REGS.WX = 5; addr = (uint)(0x4000 + c.CPU.REGS.WX);
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -1993,7 +2012,7 @@ namespace ExecutionTests
                     c.CPU.REGS.WX = 5; addr = (uint)(0x4000 + c.CPU.REGS.WX);
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2012,7 +2031,7 @@ namespace ExecutionTests
                     c.CPU.REGS.YZ = 5; addr = (uint)(0x4000 + c.CPU.REGS.YZ);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.X = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2031,7 +2050,7 @@ namespace ExecutionTests
                     c.CPU.REGS.WX = 5; addr = (uint)(0x4000 + c.CPU.REGS.WX);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.WX = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2050,7 +2069,7 @@ namespace ExecutionTests
                     c.CPU.REGS.AB = 5; addr = (uint)(0x4000 + c.CPU.REGS.AB);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2187,7 +2206,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2206,7 +2225,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2225,7 +2244,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.A = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.A);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2244,7 +2263,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.AB = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.AB);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2263,7 +2282,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2282,7 +2301,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2301,7 +2320,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2320,7 +2339,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.A = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.A;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2339,7 +2358,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.AB = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.AB;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2358,7 +2377,7 @@ namespace ExecutionTests
                     c.CPU.REGS.VWX = 7; addr = (uint)(0x4000 + c.CPU.REGS.VWX);
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2495,7 +2514,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2514,7 +2533,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2533,7 +2552,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.X = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2552,7 +2571,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.WX = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2571,7 +2590,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2590,7 +2609,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2609,7 +2628,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2628,7 +2647,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.X = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2647,7 +2666,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.WX = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2666,7 +2685,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2803,7 +2822,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2822,7 +2841,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2841,7 +2860,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.X = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2860,7 +2879,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.WX = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2879,7 +2898,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2898,7 +2917,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2917,7 +2936,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2936,7 +2955,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.X = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2955,7 +2974,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.WX = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -2974,7 +2993,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; addr = c.CPU.REGS.QRS + 4;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3111,7 +3130,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.X = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3130,7 +3149,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.X = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3149,7 +3168,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.X = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
                     c.CPU.REGS.X = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.X);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3168,7 +3187,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.A = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.A;
                     c.CPU.REGS.WX = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3187,7 +3206,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.A = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.A;
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3206,7 +3225,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.X = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3225,7 +3244,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.X = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3244,7 +3263,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.X = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.X;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.X = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.X;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3263,7 +3282,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.A = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.A;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.WX = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3282,7 +3301,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.A = 3; addr = c.CPU.REGS.QRS + c.CPU.REGS.A;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3419,7 +3438,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3438,7 +3457,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3457,7 +3476,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     c.CPU.REGS.Y = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.Y);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3476,7 +3495,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     c.CPU.REGS.WX = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.WX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3495,7 +3514,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.AB = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.AB;
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3514,7 +3533,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3533,7 +3552,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3552,7 +3571,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.Y = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.Y;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3571,7 +3590,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.WX = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.WX;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.WX = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.WX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3590,7 +3609,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.AB = 5; addr = c.CPU.REGS.QRS + c.CPU.REGS.AB;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3727,7 +3746,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     valueAddr = 0x7000;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3746,7 +3765,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     valueAddr = 0x7004;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3765,7 +3784,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.Y = 3; valueAddr = (uint)(0x7000 + c.CPU.REGS.Y);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3784,7 +3803,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.YZ = 5; valueAddr = (uint)(0x7000 + c.CPU.REGS.YZ);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3803,7 +3822,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.VWX = 7; valueAddr = (uint)(0x7000 + c.CPU.REGS.VWX);
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3822,7 +3841,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3841,7 +3860,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.TUV = 0x8000; valueAddr = c.CPU.REGS.TUV + 4;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3860,7 +3879,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.Y = 3; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.Y;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3879,7 +3898,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.YZ = 5; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.YZ;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }
@@ -3898,7 +3917,7 @@ namespace ExecutionTests
                     c.CPU.REGS.QRS = 0x5000; c.CPU.REGS.VWX = 7; addr = c.CPU.REGS.QRS + c.CPU.REGS.VWX;
                     c.CPU.REGS.TUV = 0x8000; c.CPU.REGS.VWX = 7; valueAddr = c.CPU.REGS.TUV + c.CPU.REGS.VWX;
                     c.LoadMemAt(addr, [0x00, 0x40]);
-                    c.LoadMemAt(valueAddr, [0x00, 0x02]);
+                    c.LoadMemAt(valueAddr, [0x02]);
                 },
                 c => Assert.Equal([0x04, 0x00], c.MEMC.RAM.GetMemoryAt(addr, 2)));
         }

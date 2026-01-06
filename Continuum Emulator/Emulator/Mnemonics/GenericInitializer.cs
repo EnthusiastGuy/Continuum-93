@@ -314,11 +314,6 @@ namespace Continuum93.Emulator.Mnemonics
 
         private static void PushInstruction(string subInstruction, byte subOp)
         {
-            //if (subInstruction == "(nnn),nnnn,n")
-            //{
-            //    int x = 0;
-            //}
-
             string instructionBits = GetInstructionBitFormat(currentInstructionString, subInstruction.Split(','));
 
             tempReport += $"{currentInstructionString} {subInstruction}; {instructionBits}\n";
