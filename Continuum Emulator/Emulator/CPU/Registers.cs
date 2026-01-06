@@ -332,59 +332,84 @@ namespace Continuum93.Emulator.CPU
         //RL
         public void Roll8BitRegisterLeft(byte index, byte value)
         {
+            value = (byte)(value % 8);
+            if (value == 0) return;
             byte rVal = Get8BitRegister(index);
-            Set8BitRegister(index, (byte)(rVal << value | rVal >> 8 - value));
-            _computer.CPU.FLAGS.SetCarry(rVal >> 8 - value > 0);
+            Set8BitRegister(index, (byte)((rVal << value) | (rVal >> (8 - value))));
+            // Carry is the last bit rotated out of the MSB
+            _computer.CPU.FLAGS.SetCarry((rVal >> (8 - value)) > 0);
         }
 
         public void Roll16BitRegisterLeft(byte index, byte value)
         {
+            value = (byte)(value % 16);
+            if (value == 0) return;
             ushort rVal = Get16BitRegister(index);
-            Set16BitRegister(index, (ushort)(rVal << value | rVal >> 16 - value));
-            _computer.CPU.FLAGS.SetCarry(rVal >> 16 - value > 0);
+            Set16BitRegister(index, (ushort)((rVal << value) | (rVal >> (16 - value))));
+            _computer.CPU.FLAGS.SetCarry((rVal >> (16 - value)) > 0);
         }
 
         public void Roll24BitRegisterLeft(byte index, byte value)
         {
-            uint rVal = Get24BitRegister(index);
-            Set24BitRegister(index, rVal << value | rVal >> 24 - value);
-            _computer.CPU.FLAGS.SetCarry(rVal >> 24 - value > 0);
+            value = (byte)(value % 24);
+            if (value == 0) return;
+            uint rVal = Get24BitRegister(index) & 0xFFFFFF;
+            uint result = ((rVal << value) | (rVal >> (24 - value))) & 0xFFFFFF;
+            Set24BitRegister(index, result);
+            _computer.CPU.FLAGS.SetCarry((rVal >> (24 - value)) > 0);
         }
 
         public void Roll32BitRegisterLeft(byte index, byte value)
         {
+            value = (byte)(value % 32);
+            if (value == 0) return;
             uint rVal = Get32BitRegister(index);
-            Set32BitRegister(index, rVal << value | rVal >> 32 - value);
-            _computer.CPU.FLAGS.SetCarry(rVal >> 32 - value > 0);
+            Set32BitRegister(index, (rVal << value) | (rVal >> (32 - value)));
+            _computer.CPU.FLAGS.SetCarry((rVal >> (32 - value)) > 0);
         }
 
         //RR
         public void Roll8BitRegisterRight(byte index, byte value)
         {
+            value = (byte)(value % 8);
+            if (value == 0) return;
             byte rVal = Get8BitRegister(index);
-            Set8BitRegister(index, (byte)(rVal >> value | rVal << 8 - value));
-            _computer.CPU.FLAGS.SetCarry((byte)(rVal << 8 - value) > 0);
+            Set8BitRegister(index, (byte)((rVal >> value) | (rVal << (8 - value))));
+            // Mask the bits that are being moved from the LSB to the MSB
+            int mask = (1 << value) - 1;
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         public void Roll16BitRegisterRight(byte index, byte value)
         {
+            value = (byte)(value % 16);
+            if (value == 0) return;
             ushort rVal = Get16BitRegister(index);
-            Set16BitRegister(index, (ushort)(rVal >> value | rVal << 16 - value));
-            _computer.CPU.FLAGS.SetCarry((ushort)(rVal << 16 - value) > 0);
+            Set16BitRegister(index, (ushort)((rVal >> value) | (rVal << (16 - value))));
+            int mask = (1 << value) - 1;
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         public void Roll24BitRegisterRight(byte index, byte value)
         {
-            uint rVal = Get24BitRegister(index);
-            Set24BitRegister(index, rVal >> value | rVal << 24 - value);
-            _computer.CPU.FLAGS.SetCarry((0xFFFFFF & rVal << 24 - value) > 0);
+            value = (byte)(value % 24);
+            if (value == 0) return;
+            uint rVal = Get24BitRegister(index) & 0xFFFFFF;
+            uint result = ((rVal >> value) | (rVal << (24 - value))) & 0xFFFFFF;
+            Set24BitRegister(index, result);
+            uint mask = (1u << value) - 1;
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         public void Roll32BitRegisterRight(byte index, byte value)
         {
+            value = (byte)(value % 32);
+            if (value == 0) return;
             uint rVal = Get32BitRegister(index);
-            Set32BitRegister(index, rVal >> value | rVal << 32 - value);
-            _computer.CPU.FLAGS.SetCarry(rVal << 32 - value > 0);
+            Set32BitRegister(index, (rVal >> value) | (rVal << (32 - value)));
+            // Use uint cast for mask to avoid 31-bit limit of signed int
+            uint mask = (1u << value) - 1;
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         // SET
