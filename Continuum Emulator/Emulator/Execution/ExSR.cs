@@ -1,4 +1,5 @@
 ﻿using Continuum93.Emulator;
+using Continuum93.Emulator.Audio.XSound.ExecutionUtilities;
 using Continuum93.Emulator.CPU;
 using Continuum93.Emulator.RAM;
 using Continuum93.Tools;
@@ -720,11 +721,20 @@ namespace Continuum93.Emulator.Execution
 
             if (totalShiftBits >= bitWidth)
             {
-                // zero-fill entire block
+                // carry if anything was non-zero
+                bool any = false;
+                for (int i = 0; i < count; i++)
+                    if (mem.Get8bitFromRAM(address + (uint)i) != 0) { any = true; break; }
+
+                cpu.CPU.FLAGS.SetCarry(any);
+
                 for (int i = 0; i < count; i++)
                     mem.Set8bitToRAM(address + (uint)i, 0);
                 return;
             }
+
+            // carry if discarded bits were non-zero
+            cpu.CPU.FLAGS.SetCarry(AnyDiscardedBitsRight(mem, address, count, (int)totalShiftBits));
 
             ShiftRightBigEndianInPlace(mem, address, count, (int)totalShiftBits);
         }
@@ -801,6 +811,32 @@ namespace Continuum93.Emulator.Execution
 
         private static byte ReadRegIndex(MemoryController mem) => (byte)(mem.Fetch() & 0x1F);
         private static byte ReadFloatRegIndex(MemoryController mem) => (byte)(mem.Fetch() & 0x0F);
+
+        private static bool AnyDiscardedBitsRight(MemoryController mem, uint baseAddr, byte countBytes, int shiftBits)
+        {
+            int byteShift = shiftBits / 8;
+            int bitShift = shiftBits % 8;
+
+            // Entire discarded bytes at the LSB end (the end of the big-endian array)
+            for (int i = 0; i < byteShift; i++)
+            {
+                if (mem.Get8bitFromRAM(baseAddr + (uint)(countBytes - 1 - i)) != 0)
+                    return true;
+            }
+
+            if (bitShift == 0)
+                return false;
+
+            // Next byte contributes discarded low 'bitShift' bits
+            int idx = countBytes - 1 - byteShift;
+            if (idx < 0)
+                return false;
+
+            byte b = mem.Get8bitFromRAM(baseAddr + (uint)idx);
+            byte mask = (byte)((1u << bitShift) - 1u);
+            return (b & mask) != 0;
+        }
+
 
         public static void Process(Computer computer)
         {

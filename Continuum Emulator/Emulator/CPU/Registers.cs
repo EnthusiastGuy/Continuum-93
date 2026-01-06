@@ -254,59 +254,79 @@ namespace Continuum93.Emulator.CPU
         //SL
         public void Shift8BitRegisterLeft(byte index, byte value)
         {
+            if (value == 0) return;
             byte rVal = Get8BitRegister(index);
             Set8BitRegister(index, (byte)(rVal << value));
-            _computer.CPU.FLAGS.SetCarry(rVal >> 8 - value > 0);
+            // If value >= 8, any non-zero value sets carry. Otherwise, check overflow.
+            bool carry = (value >= 8) ? (rVal != 0) : (rVal >> (8 - value)) > 0;
+            _computer.CPU.FLAGS.SetCarry(carry);
         }
 
         public void Shift16BitRegisterLeft(byte index, byte value)
         {
+            if (value == 0) return;
             ushort rVal = Get16BitRegister(index);
             Set16BitRegister(index, (ushort)(rVal << value));
-            _computer.CPU.FLAGS.SetCarry(rVal >> 16 - value > 0);
+            bool carry = (value >= 16) ? (rVal != 0) : (rVal >> (16 - value)) > 0;
+            _computer.CPU.FLAGS.SetCarry(carry);
         }
 
         public void Shift24BitRegisterLeft(byte index, byte value)
         {
-            uint rVal = Get24BitRegister(index);
-            Set24BitRegister(index, rVal << value);
-            _computer.CPU.FLAGS.SetCarry(rVal >> 24 - value > 0);
+            if (value == 0) return;
+            uint rVal = Get24BitRegister(index) & 0xFFFFFF; // Ensure 24-bit clean
+            Set24BitRegister(index, (rVal << value) & 0xFFFFFF);
+            bool carry = (value >= 24) ? (rVal != 0) : (rVal >> (24 - value)) > 0;
+            _computer.CPU.FLAGS.SetCarry(carry);
         }
 
         public void Shift32BitRegisterLeft(byte index, byte value)
         {
+            if (value == 0) return;
             uint rVal = Get32BitRegister(index);
             Set32BitRegister(index, rVal << value);
-            _computer.CPU.FLAGS.SetCarry(rVal >> 32 - value > 0);
+            bool carry = (value >= 32) ? (rVal != 0) : (rVal >> (32 - value)) > 0;
+            _computer.CPU.FLAGS.SetCarry(carry);
         }
 
         //SR
         public void Shift8BitRegisterRight(byte index, byte value)
         {
+            if (value == 0) return;
             byte rVal = Get8BitRegister(index);
             Set8BitRegister(index, (byte)(rVal >> value));
-            _computer.CPU.FLAGS.SetCarry((byte)(rVal << 8 - value) > 0);
+            // Mask to see if any bits in the "shifted out" range were 1
+            byte mask = (byte)((1 << Math.Min((int)value, 8)) - 1);
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         public void Shift16BitRegisterRight(byte index, byte value)
         {
+            if (value == 0) return;
             ushort rVal = Get16BitRegister(index);
             Set16BitRegister(index, (ushort)(rVal >> value));
-            _computer.CPU.FLAGS.SetCarry((ushort)(rVal << 16 - value) > 0);
+            int mask = (1 << Math.Min((int)value, 16)) - 1;
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         public void Shift24BitRegisterRight(byte index, byte value)
         {
-            uint rVal = Get24BitRegister(index);
-            Set24BitRegister(index, rVal >> value);
-            _computer.CPU.FLAGS.SetCarry((0xFFFFFF & rVal << 24 - value) > 0);
+            if (value == 0) return;
+            uint rVal = Get24BitRegister(index) & 0xFFFFFF;
+            Set24BitRegister(index, (rVal >> value) & 0xFFFFFF);
+            // Mask the lowest 'value' bits
+            uint mask = (1u << (int)Math.Min((int)value, 24)) - 1;
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         public void Shift32BitRegisterRight(byte index, byte value)
         {
+            if (value == 0) return;
             uint rVal = Get32BitRegister(index);
             Set32BitRegister(index, rVal >> value);
-            _computer.CPU.FLAGS.SetCarry(rVal << 32 - value > 0);
+            // Use a long for the mask to avoid overflow if value is 32
+            uint mask = (value >= 32) ? 0xFFFFFFFF : (1u << (int)value) - 1;
+            _computer.CPU.FLAGS.SetCarry((rVal & mask) != 0);
         }
 
         //RL

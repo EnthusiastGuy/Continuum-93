@@ -719,30 +719,35 @@ namespace Continuum93.Emulator.Execution
             if (totalShiftBits == 0)
                 return;
 
+            // CASE 1: Shift count meets or exceeds the total width of the block
             if (totalShiftBits >= bitWidth)
             {
-                // zero-fill entire block
+                // Check if any bit in the entire block was set before clearing
+                bool any = false;
+                for (int i = 0; i < count; i++)
+                {
+                    if (mem.Get8bitFromRAM(address + (uint)i) != 0)
+                    {
+                        any = true;
+                        break;
+                    }
+                }
+
+                // Set carry based on whether the "discarded" block was non-zero
+                cpu.CPU.FLAGS.SetCarry(any);
+
+                // Zero-fill entire block
                 for (int i = 0; i < count; i++)
                     mem.Set8bitToRAM(address + (uint)i, 0);
+
                 return;
             }
 
+            // CASE 2: Partial shift
+            // Carry if any bits shifted out of the left (MSB) side are non-zero
+            cpu.CPU.FLAGS.SetCarry(AnyDiscardedBitsLeft(mem, address, count, (int)totalShiftBits));
+
             ShiftLeftBigEndianInPlace(mem, address, count, (int)totalShiftBits);
-        }
-
-
-
-        private static uint ReadBigEndian(MemoryController mem, uint baseAddr, byte count)
-        {
-            // Returns up to 32-bit worth of big-endian bytes. If count>4, only the least significant 4 bytes are used.
-            // (This keeps behavior deterministic without depending on BigInteger.)
-            uint result = 0;
-            int start = Math.Max(0, count - 4);
-            for (int i = start; i < count; i++)
-            {
-                result = (result << 8) | mem.Get8bitFromRAM(baseAddr + (uint)i);
-            }
-            return result;
         }
 
         private static void ShiftLeftBigEndianInPlace(MemoryController mem, uint baseAddr, byte count, int shift)
@@ -817,6 +822,36 @@ namespace Continuum93.Emulator.Execution
 
         private static byte ReadRegIndex(MemoryController mem) => (byte)(mem.Fetch() & 0x1F);
         private static byte ReadFloatRegIndex(MemoryController mem) => (byte)(mem.Fetch() & 0x0F);
+
+        private static bool AnyDiscardedBitsLeft(MemoryController mem, uint baseAddr, byte countBytes, int shiftBits)
+        {
+            int byteShift = shiftBits / 8;
+            int bitShift = shiftBits % 8;
+
+            // 1. Check entire discarded bytes at the MSB end (start of the array)
+            for (int i = 0; i < byteShift; i++)
+            {
+                // For big-endian, the most significant bytes are at the lowest addresses
+                if (mem.Get8bitFromRAM(baseAddr + (uint)i) != 0)
+                    return true;
+            }
+
+            if (bitShift == 0)
+                return false;
+
+            // 2. Check the partial bits in the next byte
+            int idx = byteShift;
+            if (idx >= countBytes)
+                return false;
+
+            byte b = mem.Get8bitFromRAM(baseAddr + (uint)idx);
+
+            // We care about the top 'bitShift' bits that will be pushed out to the left
+            // Example: if bitShift is 3, we mask the top 3 bits: 11100000 (0xE0)
+            byte mask = (byte)(0xFF << (8 - bitShift));
+
+            return (b & mask) != 0;
+        }
 
         public static void Process(Computer computer)
         {
