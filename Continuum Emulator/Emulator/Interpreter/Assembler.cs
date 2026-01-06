@@ -256,7 +256,9 @@ namespace Continuum93.Emulator.Interpreter
             // These require some light normalization of numeric argument “general forms”
             // (e.g. nnn -> n/nn/nnn/nnnn depending on destination width) so the lookup
             // matches the GenericInitializer-registered variants.
-            if (Op == "LD" || Op == "ADD" || Op == "SUB" || Op == "DIV" || Op == "MOD" || Op == "MUL" || Op == "SL") // temporary
+            if (Op == "LD" || Op == "ADD" || Op == "SUB"
+                || Op == "DIV" || Op == "MOD" || Op == "MUL"
+                || Op == "SL" || Op == "SR") // temporary
             {
                 if (Arguments.Count == 2)
                 {
