@@ -1,5 +1,4 @@
-﻿using Continuum93.Emulator;
-using Continuum93.Emulator.CPU;
+﻿using Continuum93.Emulator.CPU;
 using Continuum93.Emulator.RAM;
 using Continuum93.Tools;
 using System;

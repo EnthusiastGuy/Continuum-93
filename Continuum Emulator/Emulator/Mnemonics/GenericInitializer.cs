@@ -33,6 +33,9 @@ namespace Continuum93.Emulator.Mnemonics
             InitInstruction("SR", Mnem.SR);
             InitInstruction("RL", Mnem.RL);
             InitInstruction("RR", Mnem.RR);
+
+            InitInstruction("SET", Mnem.SET);
+            InitInstruction("RES", Mnem.RES);
         }
 
         private static void InitInstruction(string oper, byte opCode)
@@ -313,6 +316,9 @@ namespace Continuum93.Emulator.Mnemonics
             opCodeDefinition.Add("SR", Mnem.SR);
             opCodeDefinition.Add("RL", Mnem.RL);
             opCodeDefinition.Add("RR", Mnem.RR);
+
+            opCodeDefinition.Add("SET", Mnem.SET);
+            opCodeDefinition.Add("RES", Mnem.RES);
 
             opCodeDefinition.Add("MOD", Mnem.MOD);
             // more opcodes as needed
