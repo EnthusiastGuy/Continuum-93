@@ -258,7 +258,7 @@ namespace Continuum93.Emulator.Interpreter
             // matches the GenericInitializer-registered variants.
             if (Op == "LD" || Op == "ADD" || Op == "SUB"
                 || Op == "DIV" || Op == "MOD" || Op == "MUL"
-                || Op == "SL" || Op == "SR") // temporary
+                || Op == "SL" || Op == "SR" || Op == "RL" || Op == "RR") // temporary
             {
                 if (Arguments.Count == 2)
                 {
