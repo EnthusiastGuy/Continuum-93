@@ -7,7 +7,7 @@ namespace ExecutionTests
     public class TestEXEC_BIT
     {
         [Fact]
-        public void TestEXEC_RES_r_n()
+        public void TestEXEC_BIT_r_n()
         {
             Assembler cp = new();
             using Computer computer = new();
@@ -42,7 +42,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void TestEXEC_RES_r_r()
+        public void TestEXEC_BIT_r_r()
         {
             Assembler cp = new();
             using Computer computer = new();
@@ -78,7 +78,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void TestEXEC_RES_rr_n()
+        public void TestEXEC_BIT_rr_n()
         {
             Assembler cp = new();
             using Computer computer = new();
@@ -112,7 +112,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void TestEXEC_RES_rr_r()
+        public void TestEXEC_BIT_rr_r()
         {
             Assembler cp = new();
             using Computer computer = new();
@@ -148,7 +148,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void TestEXEC_RES_rrr_n()
+        public void TestEXEC_BIT_rrr_n()
         {
             Assembler cp = new();
             using Computer computer = new();
@@ -182,7 +182,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void TestEXEC_RES_rrr_r()
+        public void TestEXEC_BIT_rrr_r()
         {
             Assembler cp = new();
             using Computer computer = new();
@@ -218,7 +218,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void TestEXEC_RES_rrrr_n()
+        public void TestEXEC_BIT_rrrr_n()
         {
             Assembler cp = new();
             using Computer computer = new();
@@ -252,7 +252,7 @@ namespace ExecutionTests
         }
 
         [Fact]
-        public void TestEXEC_RES_rrrr_r()
+        public void TestEXEC_BIT_rrrr_r()
         {
             Assembler cp = new();
             using Computer computer = new();

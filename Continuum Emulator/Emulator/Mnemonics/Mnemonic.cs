@@ -771,12 +771,13 @@ namespace Continuum93.Emulator.Mnemonics
         {
             GenericInitializer.Initialize();    // Prototype
 
+            
 
             OperatorsInitSDIV.Initialize();
             OperatorsInitSMUL.Initialize();
             OperatorsInitRETIF.Initialize();
             
-            OperatorsInitBIT.Initialize();
+            
 
             OperatorsInitAND.Initialize();
             OperatorsInitOR.Initialize();

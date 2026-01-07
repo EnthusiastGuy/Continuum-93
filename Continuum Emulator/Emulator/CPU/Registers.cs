@@ -461,7 +461,7 @@ namespace Continuum93.Emulator.CPU
             Set32BitRegister(index, (uint)(rVal & ~(1 << value)));
         }
 
-        // BIT
+        // BIT - to be obsolete soon
         public void Test8BitBit(byte index, byte value)
         {
             _computer.CPU.FLAGS.SetValueByIndexFast(0, (_gpDataFlat[bankOffset + index] & 1 << value) != 0);    // Z flag
@@ -483,6 +483,36 @@ namespace Continuum93.Emulator.CPU
         {
             uint rVal = Get32BitRegister(index);
             _computer.CPU.FLAGS.SetValueByIndexFast(0, (rVal & 1 << value) != 0);    // Z flag
+        }
+
+        // BIT (value-based helpers for ExBIT: test a bit in a supplied value, flags only)
+        public void Test8BitValue(byte value, byte bitPosition)
+        {
+            // 8-bit positions are 0..7
+            bitPosition &= 0x07;
+            _computer.CPU.FLAGS.SetValueByIndexFast(0, (value & (1 << bitPosition)) != 0);
+        }
+
+        public void Test16BitValue(ushort value, byte bitPosition)
+        {
+            // 16-bit positions are 0..15
+            bitPosition &= 0x0F;
+            _computer.CPU.FLAGS.SetValueByIndexFast(0, (value & (1u << bitPosition)) != 0);
+        }
+
+        public void Test24BitValue(uint value, byte bitPosition)
+        {
+            // 24-bit positions are 0..23; ensure 24-bit clean
+            bitPosition &= 0x17; // 0b10111 => 0..23
+            value &= 0xFFFFFFu;
+            _computer.CPU.FLAGS.SetValueByIndexFast(0, (value & (1u << bitPosition)) != 0);
+        }
+
+        public void Test32BitValue(uint value, byte bitPosition)
+        {
+            // 32-bit positions are 0..31
+            bitPosition &= 0x1F;
+            _computer.CPU.FLAGS.SetValueByIndexFast(0, (value & (1u << bitPosition)) != 0);
         }
 
         // AND
