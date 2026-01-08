@@ -461,10 +461,10 @@ namespace Continuum93.Emulator.CPU
             Set32BitRegister(index, (uint)(rVal & ~(1 << value)));
         }
 
-        // BIT - to be obsolete soon
+        // BIT
         public void Test8BitBit(byte index, byte value)
         {
-            _computer.CPU.FLAGS.SetValueByIndexFast(0, (_gpDataFlat[bankOffset + index] & 1 << value) != 0);    // Z flag
+            _computer.CPU.FLAGS.SetValueByIndexFast(0, (_gpDataFlat[bankOffset + index] & (1 << value)) != 0);    // Z flag
         }
 
         public void Test16BitBit(byte index, byte value)

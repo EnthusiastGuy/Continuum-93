@@ -61,7 +61,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.A = 0x10;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4000, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -74,7 +74,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.A = 0x10;
-                    c.MEMC.Set8bitToRAM(0x4004, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4004, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -88,7 +88,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4003, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -102,7 +102,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4005, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -116,7 +116,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4007, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -130,7 +130,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5000, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -144,7 +144,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5004, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5004, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -159,7 +159,7 @@ namespace ExecutionTests
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5003, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -174,7 +174,7 @@ namespace ExecutionTests
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5005, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -189,7 +189,7 @@ namespace ExecutionTests
                     c.CPU.REGS.A = 0x10;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5007, 0x04);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -211,7 +211,7 @@ namespace ExecutionTests
         public void BIT_rr_nn() // Ok
         {
             RunTest(
-                "BIT AB,4",
+                "BIT AB,12",
                 c => c.CPU.REGS.AB = 0x1000,
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -224,7 +224,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.AB = 0x1000;
-                    c.CPU.REGS.BC = 4;
+                    c.CPU.REGS.BC = 12;
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -237,7 +237,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.AB = 0x1000;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4000, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -250,7 +250,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.AB = 0x1000;
-                    c.MEMC.Set8bitToRAM(0x4004, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4004, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -264,7 +264,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4003, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -278,7 +278,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4005, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -292,7 +292,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4007, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -306,7 +306,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5000, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -320,7 +320,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5004, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5004, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -335,7 +335,7 @@ namespace ExecutionTests
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5003, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -350,7 +350,7 @@ namespace ExecutionTests
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5005, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -365,7 +365,7 @@ namespace ExecutionTests
                     c.CPU.REGS.AB = 0x1000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5007, 12);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -378,7 +378,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.AB = 0x1000;
-                    c.CPU.FREGS.SetRegister(0, 4.0f);
+                    c.CPU.FREGS.SetRegister(0, 12.0f);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -387,7 +387,7 @@ namespace ExecutionTests
         public void BIT_rrr_nnn() // Ok
         {
             RunTest(
-                "BIT ABC,16",
+                "BIT ABC,20",
                 c => c.CPU.REGS.ABC = 0x100000,
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -400,7 +400,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABC = 0x100000;
-                    c.CPU.REGS.BCD = 16;
+                    c.CPU.REGS.BCD = 20;
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -413,7 +413,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABC = 0x100000;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4000, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -426,7 +426,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABC = 0x100000;
-                    c.MEMC.Set8bitToRAM(0x4010, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4010, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -440,7 +440,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4003, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -454,7 +454,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4005, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -468,7 +468,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4007, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -482,7 +482,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5000, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -496,7 +496,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5010, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5010, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -511,7 +511,7 @@ namespace ExecutionTests
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5003, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -526,7 +526,7 @@ namespace ExecutionTests
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5005, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -541,7 +541,7 @@ namespace ExecutionTests
                     c.CPU.REGS.ABC = 0x100000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5007, 20);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -554,7 +554,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABC = 0x100000;
-                    c.CPU.FREGS.SetRegister(0, 16.0f);
+                    c.CPU.FREGS.SetRegister(0, 20.0f);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -563,7 +563,7 @@ namespace ExecutionTests
         public void BIT_rrrr_nn() // Ok
         {
             RunTest(
-                "BIT ABCD,24",
+                "BIT ABCD,28",
                 c => c.CPU.REGS.ABCD = 0x10000000,
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -576,7 +576,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
-                    c.CPU.REGS.EFGH = 24;
+                    c.CPU.REGS.EFGH = 28;
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -589,7 +589,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4000, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -602,7 +602,7 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
-                    c.MEMC.Set8bitToRAM(0x4018, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4018, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -616,7 +616,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4003, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -630,7 +630,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4005, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -644,7 +644,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x4007, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -658,7 +658,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5000, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -672,7 +672,7 @@ namespace ExecutionTests
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5018, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5018, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -687,7 +687,7 @@ namespace ExecutionTests
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5003, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -702,7 +702,7 @@ namespace ExecutionTests
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5005, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -717,7 +717,7 @@ namespace ExecutionTests
                     c.CPU.REGS.ABCD = 0x10000000;
                     c.CPU.REGS.QRS = 0x5000;
                     c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x10);
+                    c.MEMC.Set8bitToRAM(0x5007, 28);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
         }
@@ -730,717 +730,9 @@ namespace ExecutionTests
                 c =>
                 {
                     c.CPU.REGS.ABCD = 0x10000000;
-                    c.CPU.FREGS.SetRegister(0, 24.0f);
+                    c.CPU.FREGS.SetRegister(0, 28.0f);
                 },
                 c => Assert.True(c.CPU.FLAGS.IsZero()));
-        }
-
-        #endregion
-
-        #region BIT tests with bit set (should not set zero flag)
-
-        [Fact]
-        public void BIT_r_n_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,3",
-                c => c.CPU.REGS.A = 0x08,
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_r_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,B",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.B = 3;
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_InnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(0x4000)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Innn_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(0x4000+3)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Innn_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(0x4000+X)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Innn_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(0x4000+WX)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Innn_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(0x4000+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_IrrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(QRS)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Irrr_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(QRS+3)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Irrr_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(QRS+X)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Irrr_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(QRS+WX)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_Irrr_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,(QRS+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_r_fr_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT A,F0",
-                c =>
-                {
-                    c.CPU.REGS.A = 0x08;
-                    c.CPU.FREGS.SetRegister(0, 3.0f);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_nn_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,3",
-                c => c.CPU.REGS.AB = 0x0800,
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_r_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,BC",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.BC = 3;
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_InnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(0x4000)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Innn_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(0x4000+3)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Innn_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(0x4000+X)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Innn_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(0x4000+WX)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Innn_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(0x4000+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_IrrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(QRS)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Irrr_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(QRS+3)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Irrr_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(QRS+X)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Irrr_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(QRS+WX)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_Irrr_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,(QRS+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rr_fr_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT AB,F0",
-                c =>
-                {
-                    c.CPU.REGS.AB = 0x0800;
-                    c.CPU.FREGS.SetRegister(0, 3.0f);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_nnn_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,16",
-                c => c.CPU.REGS.ABC = 0x00010000,
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_r_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,BCD",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.BCD = 16;
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_InnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(0x4000)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Innn_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(0x4000+16)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.MEMC.Set8bitToRAM(0x4010, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Innn_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(0x4000+X)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Innn_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(0x4000+WX)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Innn_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(0x4000+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_IrrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(QRS)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Irrr_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(QRS+16)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5010, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Irrr_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(QRS+X)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Irrr_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(QRS+WX)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_Irrr_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,(QRS+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrr_fr_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABC,F0",
-                c =>
-                {
-                    c.CPU.REGS.ABC = 0x00010000;
-                    c.CPU.FREGS.SetRegister(0, 16.0f);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_nn_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,24",
-                c => c.CPU.REGS.ABCD = 0x01000000,
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_r_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,EFGH",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.EFGH = 24;
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_InnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(0x4000)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.MEMC.Set8bitToRAM(0x4000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Innn_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(0x4000+24)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.MEMC.Set8bitToRAM(0x4018, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Innn_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(0x4000+X)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x4003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Innn_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(0x4000+WX)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x4005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Innn_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(0x4000+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x4007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_IrrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(QRS)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5000, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Irrr_nnnI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(QRS+24)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.MEMC.Set8bitToRAM(0x5018, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Irrr_rI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(QRS+X)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.X = 3;
-                    c.MEMC.Set8bitToRAM(0x5003, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Irrr_rrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(QRS+WX)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.WX = 5;
-                    c.MEMC.Set8bitToRAM(0x5005, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_Irrr_rrrI_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,(QRS+VWX)",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.REGS.QRS = 0x5000;
-                    c.CPU.REGS.VWX = 7;
-                    c.MEMC.Set8bitToRAM(0x5007, 0x08);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
-        }
-
-        [Fact]
-        public void BIT_rrrr_fr_set() // Ok - bit is set, so Z flag should be cleared
-        {
-            RunTest(
-                "BIT ABCD,F0",
-                c =>
-                {
-                    c.CPU.REGS.ABCD = 0x01000000;
-                    c.CPU.FREGS.SetRegister(0, 24.0f);
-                },
-                c => Assert.False(c.CPU.FLAGS.IsZero()));
         }
 
         #endregion
