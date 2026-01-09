@@ -13,39 +13,21 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin CRTGeometryDistortionShader.fx
-#/importer:EffectImporter
-#/processor:EffectProcessor
-#/processorParam:DebugMode=Auto
-#/build:CRTGeometryDistortionShader.fx
-
-#begin DefaultEffect.fx
-#/importer:EffectImporter
-#/processor:EffectProcessor
-#/processorParam:DebugMode=Auto
-#/build:DefaultEffect.fx
-
 #begin InterlaceShader.fx
-#/importer:EffectImporter
-#/processor:EffectProcessor
-#/processorParam:DebugMode=Auto
-#/build:InterlaceShader.fx
-
-#begin MonochromeShader.fx
-#/importer:EffectImporter
-#/processor:EffectProcessor
-#/processorParam:DebugMode=Auto
-#/build:MonochromeShader.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:InterlaceShader.fx
 
 #begin PaperShader.fx
-#/importer:EffectImporter
-#/processor:EffectProcessor
-#/processorParam:DebugMode=Auto
-#/build:PaperShader.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:PaperShader.fx
 
-#begin TestEffect.fx
-#/importer:EffectImporter
-#/processor:EffectProcessor
-#/processorParam:DebugMode=Auto
-#/build:TestEffect.fx
+#begin Shaders/CrtEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/CrtEffect.fx
 

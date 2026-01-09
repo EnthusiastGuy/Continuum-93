@@ -10,7 +10,10 @@ namespace Continuum93.Emulator
     {
         private static GraphicsDeviceManager _graphicsDeviceManager;
         private static SpriteBatch _spriteBatch;
+        
         public static Effect InterlaceEffect;
+        public static Effect CrtEffect;
+
         private static Texture2D _pixelTexture;
         private static Game _game;
 
@@ -134,12 +137,38 @@ namespace Continuum93.Emulator
                 ? SamplerState.PointClamp
                 : SamplerState.LinearClamp;
 
+
+            // Effect testing
+            
+            // Set params:
+            var fx = CrtEffect;
+            fx.Parameters["SourceSize"]?.SetValue(new Vector2(width, height));
+            fx.Parameters["OutputSize"]?.SetValue(new Vector2(device.Viewport.Width, device.Viewport.Height));
+
+            // Tuning
+            fx.Parameters["Curvature"]?.SetValue(0.005f);
+            fx.Parameters["Bleed"]?.SetValue(0.3f);                 // pixels
+            fx.Parameters["ScanlineIntensity"]?.SetValue(0.25f);
+            fx.Parameters["Vignette"]?.SetValue(0.20f);
+            fx.Parameters["CornerRadius"]?.SetValue(0.06f);
+            fx.Parameters["CornerFeather"]?.SetValue(0.022f);
+
+            // Optional
+            fx.Parameters["NoiseIntensity"]?.SetValue(0.01f);        // try 0.03f if you want a tiny bit
+
+
+
+
+
+
+
             Begin(
                 SpriteSortMode.Deferred,
                 BlendState.Opaque,
                 sampler,
                 DepthStencilState.None,
-                RasterizerState.CullNone
+                RasterizerState.CullNone,
+                fx
             );
 
             _spriteBatch.Draw(
