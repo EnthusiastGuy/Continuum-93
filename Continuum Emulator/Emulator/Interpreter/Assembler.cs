@@ -259,7 +259,8 @@ namespace Continuum93.Emulator.Interpreter
             if (Op == "LD" || Op == "ADD" || Op == "SUB"
                 || Op == "DIV" || Op == "MOD" || Op == "MUL"
                 || Op == "SL" || Op == "SR" || Op == "RL" || Op == "RR"
-                || Op == "SET" || Op == "RES" || Op == "BIT") // temporary
+                || Op == "SET" || Op == "RES" || Op == "BIT"
+                || Op == "AND") // temporary
             {
                 if (Arguments.Count == 2)
                 {
