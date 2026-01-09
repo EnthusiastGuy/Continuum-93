@@ -79,7 +79,8 @@ namespace Continuum93
 
         protected override void LoadContent()
         {
-            Renderer.InterlaceEffect = Content.Load<Effect>("InterlaceShader");
+            //Renderer.InterlaceEffect = Content.Load<Effect>("InterlaceShader");
+            Renderer.PhosphorEffect = Content.Load<Effect>("Shaders/PhosphorDecay");
             //Watcher.WatchDirectoryOfFile(SettingsManager.GetSettingValue("bootProgram"));
             Renderer.CrtEffect = Content.Load<Effect>("Shaders/CrtEffect");
             Renderer.CrtEffect.Parameters["TextureSize"]?.SetValue(new Vector2(Constants.V_WIDTH, Constants.V_HEIGHT));

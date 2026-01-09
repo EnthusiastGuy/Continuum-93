@@ -14,8 +14,31 @@ namespace Continuum93.Emulator
         public static Effect InterlaceEffect;
         public static Effect CrtEffect;
 
+        // Phosphor effect
+        static RenderTarget2D _phosphorA;
+        static RenderTarget2D _phosphorB;
+        static bool _phosphorInit;
+        public static Effect PhosphorEffect;
+        public static bool UsePhosphor = true;
+
+        public static float PhosphorDecay = 0.75f;  // Tune: 0.85..0.97
+
         private static Texture2D _pixelTexture;
         private static Game _game;
+
+        public static void EnsurePhosphorTargets(GraphicsDevice device, int w, int h)
+        {
+            if (_phosphorA != null && _phosphorA.Width == w && _phosphorA.Height == h)
+                return;
+
+            _phosphorA?.Dispose();
+            _phosphorB?.Dispose();
+
+            _phosphorA = new RenderTarget2D(device, w, h, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.DiscardContents);
+            _phosphorB = new RenderTarget2D(device, w, h, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.DiscardContents);
+
+            _phosphorInit = false;
+        }
 
         public static void RegisterGraphicsDeviceManager(GraphicsDeviceManager gdm, Game game)
         {
@@ -140,6 +163,9 @@ namespace Continuum93.Emulator
 
             // Effect testing
 
+            if (UsePhosphor)
+                projection = ApplyPhosphor(projection, width, height);
+
             // Set params:
             int vpW = device.Viewport.Width;
             int vpH = device.Viewport.Height;
@@ -169,10 +195,6 @@ namespace Continuum93.Emulator
 
 
 
-
-
-
-
             Begin(
                 SpriteSortMode.Deferred,
                 BlendState.Opaque,
@@ -192,6 +214,47 @@ namespace Continuum93.Emulator
             End();
         }
 
+        static Texture2D ApplyPhosphor(Texture2D currentFrame, int w, int h)
+        {
+            var device = _graphicsDeviceManager.GraphicsDevice;
+
+            EnsurePhosphorTargets(device, w, h);
+
+            // First frame: start history as the current frame (avoids a ramp-up)
+            if (!_phosphorInit)
+            {
+                device.SetRenderTarget(_phosphorA);
+                device.Clear(Color.Black);
+
+                _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone);
+                _spriteBatch.Draw(currentFrame, new Rectangle(0, 0, w, h), Color.White);
+                _spriteBatch.End();
+
+                device.SetRenderTarget(null);
+                _phosphorInit = true;
+                return _phosphorA;
+            }
+
+            // Ping-pong: write into B using A as history
+            device.SetRenderTarget(_phosphorB);
+            device.Clear(Color.Black);
+
+            var fx = PhosphorEffect;
+            fx.Parameters["HistoryTexture"]?.SetValue(_phosphorA);
+            fx.Parameters["Decay"]?.SetValue(PhosphorDecay);
+            fx.Parameters["CurrentGain"]?.SetValue(1.0f);
+
+            _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone, fx);
+            _spriteBatch.Draw(currentFrame, new Rectangle(0, 0, w, h), Color.White);
+            _spriteBatch.End();
+
+            device.SetRenderTarget(null);
+
+            // Swap
+            (_phosphorA, _phosphorB) = (_phosphorB, _phosphorA);
+
+            return _phosphorA;
+        }
 
         public static Rectangle GetDestinationRectangle(int sourceWidth, int sourceHeight)
         {

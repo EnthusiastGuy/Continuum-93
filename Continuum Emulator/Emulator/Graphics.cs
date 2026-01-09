@@ -60,6 +60,10 @@ namespace Continuum93.Emulator
                 false,
                 Renderer.GetGraphicsDevice().PresentationParameters.BackBufferFormat
             );
+
+            Renderer.EnsurePhosphorTargets(Renderer.GetGraphicsDevice(),
+                (int)Constants.V_WIDTH,
+                (int)Constants.V_HEIGHT);
         }
 
         private void UpdateVideoInfrastructure()
