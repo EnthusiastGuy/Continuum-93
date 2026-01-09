@@ -139,19 +139,30 @@ namespace Continuum93.Emulator
 
 
             // Effect testing
-            
+
             // Set params:
+            int vpW = device.Viewport.Width;
+            int vpH = device.Viewport.Height;
+
             var fx = CrtEffect;
             fx.Parameters["SourceSize"]?.SetValue(new Vector2(width, height));
-            fx.Parameters["OutputSize"]?.SetValue(new Vector2(device.Viewport.Width, device.Viewport.Height));
+            fx.Parameters["OutputSize"]?.SetValue(new Vector2(vpW, vpH));
+
+            float edgePx = 2.0f; // to test 1.5..3.5
+            float edgeFeather = edgePx / MathF.Min(vpW, vpH);
 
             // Tuning
+            fx.Parameters["EdgeFeather"]?.SetValue(edgeFeather);
+
             fx.Parameters["Curvature"]?.SetValue(0.005f);
             fx.Parameters["Bleed"]?.SetValue(0.3f);                 // pixels
             fx.Parameters["ScanlineIntensity"]?.SetValue(0.25f);
             fx.Parameters["Vignette"]?.SetValue(0.20f);
             fx.Parameters["CornerRadius"]?.SetValue(0.06f);
             fx.Parameters["CornerFeather"]?.SetValue(0.022f);
+
+            fx.Parameters["BorderGlow"]?.SetValue(1.0f);
+            fx.Parameters["BorderColor"]?.SetValue(new Vector3(0.02f, 0.02f, 0.025f));
 
             // Optional
             fx.Parameters["NoiseIntensity"]?.SetValue(0.01f);        // try 0.03f if you want a tiny bit

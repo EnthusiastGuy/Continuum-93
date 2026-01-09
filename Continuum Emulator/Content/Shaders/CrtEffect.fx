@@ -1,16 +1,3 @@
-// CrtEffect.fx - CRT post effect built on your working SpriteTexture-based shader template.
-// Works with Reach (vs_4_0_level_9_1 / ps_4_0_level_9_1) and OpenGL (vs_3_0 / ps_3_0).
-//
-// Features (single pass):
-// - mild curvature
-// - mild RGB bleed (3 taps)
-// - scanlines
-// - subtle vignette
-// - rounded corners + feather
-// - optional tiny noise (very cheap)
-//
-// Parameters are optional; sensible defaults are provided here.
-
 #if OPENGL
     #define SV_POSITION POSITION
     #define VS_SHADERMODEL vs_3_0
@@ -39,24 +26,31 @@ struct VertexShaderOutput
     float2 TextureCoordinates : TEXCOORD0;
 };
 
-// ===== Params you set from C# (defaults here) =====
-float2 SourceSize = float2(320.0, 180.0);   // emulated buffer size
-float2 OutputSize = float2(1280.0, 720.0);  // backbuffer size
+// ===== Params (set from C#; defaults here) =====
+float2 SourceSize = float2(320.0, 180.0);
+float2 OutputSize = float2(1280.0, 720.0);
 
 float  Curvature = 0.12;         // 0..0.25
-float  Bleed = 1.0;              // pixels (0..2)
+float  Bleed = 1.0;              // pixels
 float  ScanlineIntensity = 0.35; // 0..1
 float  Vignette = 0.20;          // 0..1
 
 float  CornerRadius = 0.06;      // half-height units (0..~0.2)
 float  CornerFeather = 0.012;    // softness (0..~0.05)
 
-float  NoiseIntensity = 0.0;     // 0..0.1 (optional)
+// Feather along the entire border (UV units).
+// Set from C# as: edgePx / min(OutputW, OutputH)
+float  EdgeFeather = 0.003;      // ~2px at 720p
+
+// “Not pitch black” outside the tube area (within the drawn quad)
+float  BorderGlow = 1.0;         // 0..1
+float3 BorderColor = float3(0.02, 0.02, 0.025); // very dark bluish gray
+
+float  NoiseIntensity = 0.0;     // optional tiny noise (0..0.08)
 
 static const float PI = 3.14159265;
-static const float Epsilon = 1e-8;
 
-// Very cheap noise (1 sin, 1 dot). Keep intensity low.
+// cheap noise
 float rand_1_05(in float2 uv)
 {
     float n = sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453;
@@ -69,7 +63,6 @@ float2 WarpUV(float2 uv)
     float2 p = uv * 2.0 - 1.0; // [-1..1]
     float aspect = OutputSize.x / max(OutputSize.y, 1.0);
 
-    // Aspect-correct radius for nicer curvature.
     p.x *= aspect;
     float r2 = dot(p, p);
     p *= (1.0 + Curvature * r2);
@@ -78,7 +71,7 @@ float2 WarpUV(float2 uv)
     return p * 0.5 + 0.5;
 }
 
-// Rounded rectangle mask in half-height units (half-height=1, half-width=aspect).
+// Rounded rectangle mask in half-height units.
 float RoundedMask(float2 uv)
 {
     float2 p = uv * 2.0 - 1.0;
@@ -88,57 +81,61 @@ float RoundedMask(float2 uv)
     float2 halfSize = float2(aspect, 1.0);
     float r = CornerRadius;
 
-    // Signed distance to rounded box (uses length; ok on ps_3_0/9_1).
     float2 q = abs(sp) - (halfSize - r);
     float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 
-    // Feathered edge
     return 1.0 - smoothstep(0.0, max(CornerFeather, 1e-5), dist);
+}
+
+// Feather across the entire border (also gracefully handles uv outside [0..1])
+float EdgeMask(float2 uv)
+{
+    // distance to closest edge in UV; goes negative if outside [0..1]
+    float2 d = min(uv, 1.0 - uv);
+    float m = min(d.x, d.y);
+    return smoothstep(0.0, max(EdgeFeather, 1e-6), m);
 }
 
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
-    float2 uv = input.TextureCoordinates;
-
-    // Warp
+    float2 uv  = input.TextureCoordinates;
     float2 wuv = WarpUV(uv);
 
-    // In-bounds mask (prevents sampling edge smear after warp)
-    float2 inside = step(0.0, wuv) * step(wuv, 1.0);
-    float inBounds = inside.x * inside.y;
+    // Sample safely (don’t pull black from outside the texture after warp)
+    float2 suv = saturate(wuv);
 
     float2 texel = 1.0 / max(SourceSize, 1.0);
 
-    // Mild RGB bleed (3 taps)
+    // RGB bleed (3 taps)
     float2 o = float2(Bleed * texel.x, 0.0);
-
-    float r = tex2D(SpriteTextureSampler, wuv - o).r;
-    float g = tex2D(SpriteTextureSampler, wuv).g;
-    float b = tex2D(SpriteTextureSampler, wuv + o).b;
-
-    float3 col = float3(r, g, b);
+    float3 col;
+    col.r = tex2D(SpriteTextureSampler, suv - o).r;
+    col.g = tex2D(SpriteTextureSampler, suv).g;
+    col.b = tex2D(SpriteTextureSampler, suv + o).b;
 
     // Scanlines locked to source Y
-    float y = wuv.y * SourceSize.y;
+    float y = suv.y * SourceSize.y;
     float scan = 0.85 + 0.15 * sin(y * PI);
     col *= lerp(1.0, scan, ScanlineIntensity);
 
-    // Vignette in screen space (use warped UV so it "bows" with curvature)
+    // Vignette (use warped coords so it “bows” with curvature)
     float2 p = wuv * 2.0 - 1.0;
     col *= saturate(1.0 - Vignette * dot(p, p));
 
     // Optional tiny noise
     if (NoiseIntensity > 0.0)
     {
-        float n = rand_1_05(wuv * SourceSize);
-        col += (n - 0.5) * NoiseIntensity;
-        col = saturate(col);
+        float n = rand_1_05(suv * SourceSize);
+        col = saturate(col + (n - 0.5) * NoiseIntensity);
     }
 
-    // Rounded corners (in warped space so corners follow curvature)
-    float alpha = RoundedMask(wuv) * inBounds;
+    // Combine corner mask + straight-edge feather
+    float tube = RoundedMask(wuv) * EdgeMask(wuv);
 
-    return float4(col, 1.0) * input.Color * alpha;
+    // Instead of hard black outside, blend to a very dark “tube glow”
+    float3 outCol = lerp(BorderColor, col, tube);
+
+    return float4(outCol, 1.0) * input.Color;
 }
 
 technique SpriteDrawing
