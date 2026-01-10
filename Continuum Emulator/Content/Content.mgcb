@@ -37,3 +37,15 @@
 /processorParam:DebugMode=Auto
 /build:Shaders/PhosphorDecay.fx
 
+#begin Shaders/Scale2x.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/Scale2x.fx
+
+#begin Shaders/VhsEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/VhsEffect.fx
+

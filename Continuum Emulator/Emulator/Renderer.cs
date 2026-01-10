@@ -17,9 +17,21 @@ namespace Continuum93.Emulator
         // Phosphor effect
         static RenderTarget2D _phosphorA;
         static RenderTarget2D _phosphorB;
+        static RenderTarget2D _scale2xRT;
+        static RenderTarget2D _vhsRT;
+
+        static uint _vhsRng = 0x12345678u;
+        static uint _vhsFrame = 0;
+
         static bool _phosphorInit;
         public static Effect PhosphorEffect;
+        public static Effect Scale2xEffect;
+        public static Effect VhsEffect;
+
         public static bool UsePhosphor = true;
+        public static bool UseGreenMonitor = false;
+        public static bool UseScale2x = false;
+        public static bool UseVhs = false;
 
         public static float PhosphorDecay = 0.75f;  // Tune: 0.85..0.97
 
@@ -39,6 +51,19 @@ namespace Continuum93.Emulator
 
             _phosphorInit = false;
         }
+
+        static void EnsureVhsTarget(GraphicsDevice device, int w, int h)
+        {
+            if (_vhsRT != null && _vhsRT.Width == w && _vhsRT.Height == h)
+                return;
+
+            _vhsRT?.Dispose();
+            _vhsRT = new RenderTarget2D(
+                device, w, h, false,
+                SurfaceFormat.Color, DepthFormat.None,
+                0, RenderTargetUsage.DiscardContents);
+        }
+
 
         public static void RegisterGraphicsDeviceManager(GraphicsDeviceManager gdm, Game game)
         {
@@ -144,9 +169,30 @@ namespace Continuum93.Emulator
             // Clear everything first so we get the black bars.
             device.Clear(Color.Black);
 
+            
+
+
+            // Effect testing
+
+            if (UsePhosphor)
+                projection = ApplyPhosphor(projection, width, height);
+
+            int srcW = width;
+            int srcH = height;
+
+            if (UseVhs)
+                projection = ApplyVhs(projection, width, height, (float)GameTimePlus.GetTotalSeconds());
+
+            if (UseScale2x)
+            {
+                projection = ApplyScale2x(projection, width, height);
+                srcW = width * 2;
+                srcH = height * 2;
+            }
+
             // Use the shared helper so everyone agrees on this rect
             Rectangle destRect = GetDestinationRectangle(width, height);
-            Rectangle srcRect = new(0, 0, width, height);
+            Rectangle srcRect = new(0, 0, srcW, srcH);
 
             // Actual scale being used horizontally (same vertically because of aspect)
             float scale = (float)destRect.Width / width;
@@ -160,18 +206,12 @@ namespace Continuum93.Emulator
                 ? SamplerState.PointClamp
                 : SamplerState.LinearClamp;
 
-
-            // Effect testing
-
-            if (UsePhosphor)
-                projection = ApplyPhosphor(projection, width, height);
-
             // Set params:
             int vpW = device.Viewport.Width;
             int vpH = device.Viewport.Height;
 
             var fx = CrtEffect;
-            fx.Parameters["SourceSize"]?.SetValue(new Vector2(width, height));
+            fx.Parameters["SourceSize"]?.SetValue(new Vector2(srcW, srcH));
             fx.Parameters["OutputSize"]?.SetValue(new Vector2(vpW, vpH));
 
             float edgePx = 2.0f; // to test 1.5..3.5
@@ -179,6 +219,8 @@ namespace Continuum93.Emulator
 
             // Tuning
             fx.Parameters["EdgeFeather"]?.SetValue(edgeFeather);
+
+            fx.Parameters["ScanlineScale"]?.SetValue(UseScale2x ? 0.5f : 1.0f);
 
             fx.Parameters["Curvature"]?.SetValue(0.005f);
             fx.Parameters["Bleed"]?.SetValue(0.3f);                 // pixels
@@ -188,7 +230,19 @@ namespace Continuum93.Emulator
             fx.Parameters["CornerFeather"]?.SetValue(0.022f);
 
             fx.Parameters["BorderGlow"]?.SetValue(1.0f);
-            fx.Parameters["BorderColor"]?.SetValue(new Vector3(0.02f, 0.02f, 0.025f));
+            fx.Parameters["BorderColor"]?.SetValue(
+                UseGreenMonitor
+                    ? new Vector3(0.005f, 0.02f, 0.006f)   // dim green tube edge
+                    : new Vector3(0.02f, 0.02f, 0.025f)
+            );
+
+            fx.Parameters["Monochrome"]?.SetValue(UseGreenMonitor ? 1.0f : 0.0f);
+            fx.Parameters["MonoGamma"]?.SetValue(0.95f);
+            fx.Parameters["MonoGain"]?.SetValue(1.45f);
+
+            // A classic “green phosphor” vibe; tweak to taste
+            fx.Parameters["MonoTint"]?.SetValue(new Vector3(0.25f, 1.05f, 0.35f));
+            fx.Parameters["MonoGamma"]?.SetValue(1.65f);
 
             // Optional
             fx.Parameters["NoiseIntensity"]?.SetValue(0.01f);        // try 0.03f if you want a tiny bit
@@ -255,6 +309,104 @@ namespace Continuum93.Emulator
 
             return _phosphorA;
         }
+
+        static void EnsureHq2xTarget(GraphicsDevice device, int w, int h)
+        {
+            int tw = w * 2;
+            int th = h * 2;
+
+            if (_scale2xRT != null && _scale2xRT.Width == tw && _scale2xRT.Height == th)
+                return;
+
+            _scale2xRT?.Dispose();
+            _scale2xRT = new RenderTarget2D(
+                device, tw, th, false,
+                SurfaceFormat.Color, DepthFormat.None,
+                0, RenderTargetUsage.DiscardContents);
+        }
+
+        static Texture2D ApplyScale2x(Texture2D src, int w, int h)
+        {
+            var device = _graphicsDeviceManager.GraphicsDevice;
+
+            EnsureHq2xTarget(device, w, h);
+
+            device.SetRenderTarget(_scale2xRT);
+            device.Clear(Color.Black);
+
+            var fx = Scale2xEffect;
+            fx.Parameters["SourceSize"]?.SetValue(new Vector2(w, h));
+            fx.Parameters["OutputSize"]?.SetValue(new Vector2(w * 2, h * 2));
+
+            _spriteBatch.Begin(
+                SpriteSortMode.Deferred,
+                BlendState.Opaque,
+                SamplerState.PointClamp,        // important
+                DepthStencilState.None,
+                RasterizerState.CullNone,
+                fx);
+
+            _spriteBatch.Draw(src, new Rectangle(0, 0, w * 2, h * 2), Color.White);
+            _spriteBatch.End();
+
+            device.SetRenderTarget(null);
+
+            return _scale2xRT;
+        }
+
+        static Texture2D ApplyVhs(Texture2D src, int w, int h, float timeSeconds)
+        {
+            var device = _graphicsDeviceManager.GraphicsDevice;
+
+            EnsureVhsTarget(device, w, h);
+
+            device.SetRenderTarget(_vhsRT);
+            device.Clear(Color.Black);
+
+            var fx = VhsEffect;
+            fx.Parameters["SourceSize"]?.SetValue(new Vector2(w, h));
+
+            // Good defaults (tweak live)
+            fx.Parameters["Strength"]?.SetValue(0.25f);
+            fx.Parameters["ChromaShift"]?.SetValue(0.25f);
+            fx.Parameters["LumaSmear"]?.SetValue(0.3f);
+            fx.Parameters["Jitter"]?.SetValue(0.05f);
+            fx.Parameters["Wobble"]?.SetValue(0.12f);
+            fx.Parameters["Noise"]?.SetValue(0.22f);
+            fx.Parameters["Dropouts"]?.SetValue(0.10f);
+            fx.Parameters["HeadSwitch"]?.SetValue(0.35f);
+
+            fx.Parameters["Frame"]?.SetValue(_vhsFrame++);
+
+            var seed = new Vector2(Next01(), Next01());
+            fx.Parameters["NoiseSeed"]?.SetValue(seed);
+
+            fx.Parameters["Time"]?.SetValue((float)timeSeconds);
+
+            _spriteBatch.Begin(
+                SpriteSortMode.Deferred,
+                BlendState.Opaque,
+                SamplerState.LinearClamp, // VHS is inherently soft
+                DepthStencilState.None,
+                RasterizerState.CullNone,
+                fx);
+
+            _spriteBatch.Draw(src, new Rectangle(0, 0, w, h), Color.White);
+            _spriteBatch.End();
+
+            device.SetRenderTarget(null);
+            return _vhsRT;
+        }
+
+        static float Next01()
+        {
+            // xorshift32
+            _vhsRng ^= _vhsRng << 13;
+            _vhsRng ^= _vhsRng >> 17;
+            _vhsRng ^= _vhsRng << 5;
+            return (_vhsRng & 0x00FFFFFFu) / 16777216f; // [0..1)
+        }
+
 
         public static Rectangle GetDestinationRectangle(int sourceWidth, int sourceHeight)
         {

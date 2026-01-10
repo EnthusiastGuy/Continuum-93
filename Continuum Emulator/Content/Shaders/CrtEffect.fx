@@ -46,6 +46,15 @@ float  EdgeFeather = 0.003;      // ~2px at 720p
 float  BorderGlow = 1.0;         // 0..1
 float3 BorderColor = float3(0.02, 0.02, 0.025); // very dark bluish gray
 
+// Monochrome “green monitor” mode
+float Monochrome = 0.0; // 0 = normal, 1 = full green
+float3 MonoTint = float3(0.20, 1.00, 0.35); // phosphor green tint
+float MonoGamma = 1.65; // >1 = darker mids, <1 = brighter mids
+float MonoGain = 1.65; // overall brightness boost in mono mode
+
+float ScanlineScale = 1.0;
+
+
 float  NoiseIntensity = 0.0;     // optional tiny noise (0..0.08)
 
 static const float PI = 3.14159265;
@@ -114,7 +123,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     col.b = tex2D(SpriteTextureSampler, suv + o).b;
 
     // Scanlines locked to source Y
-    float y = suv.y * SourceSize.y;
+    float y = suv.y * (SourceSize.y * ScanlineScale);
     float scan = 0.85 + 0.15 * sin(y * PI);
     col *= lerp(1.0, scan, ScanlineIntensity);
 
@@ -132,8 +141,38 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     // Combine corner mask + straight-edge feather
     float tube = RoundedMask(wuv) * EdgeMask(wuv);
 
+    // --- Green monitor conversion (applied to the image area only) ---
+    if (Monochrome > 0.0)
+    {
+    // Luma
+        float l = dot(col, float3(0.299, 0.587, 0.114));
+        l = saturate(l + l * l * 0.25); // lifts bright parts more than dark parts
+    // Simple “phosphor response” curve
+        l = pow(saturate(l), MonoGamma);
+
+        float3 mono = l * MonoTint;
+
+    // Blend normal -> mono
+        col = lerp(col, mono, saturate(Monochrome));
+    }
+
+    
     // Instead of hard black outside, blend to a very dark “tube glow”
     float3 outCol = lerp(BorderColor, col, tube);
+    
+    if (Monochrome > 0.0)
+    {
+        float l = dot(col, float3(0.299, 0.587, 0.114));
+
+    // Gentler response curve (lower gamma = brighter mids)
+        l = pow(saturate(l), MonoGamma);
+
+    // Boost brightness, clamp
+        l = saturate(l * MonoGain);
+
+        float3 mono = l * MonoTint;
+        col = lerp(col, mono, saturate(Monochrome));
+    }
 
     return float4(outCol, 1.0) * input.Color;
 }
