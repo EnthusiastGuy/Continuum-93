@@ -57,12 +57,12 @@ namespace Continuum93.Emulator.Mnemonics
 
             Mnem.AddPrimeOp("AND", Mnem.AND, "Logical AND",
                 ["Performs a logical AND operation on the first operand ({0}) against the second operand ({1})"]);
-            Mnem.AddPrimeOp("AND16", Mnem.AND16, "Logical AND 16-bit",
-                ["Performs a logical AND operation on the first operand ({0}) against the second operand ({1})"]);
-            Mnem.AddPrimeOp("AND24", Mnem.AND24, "Logical AND 24 bit",
-                ["Performs a logical AND operation on the first operand ({0}) against the second operand ({1})"]);
-            Mnem.AddPrimeOp("AND32", Mnem.AND32, "Logical AND 32 bit",
-                ["Performs a logical AND operation on the first operand ({0}) against the second operand ({1})"]);
+            //Mnem.AddPrimeOp("AND16", Mnem.AND16, "Logical AND 16-bit",
+            //    ["Performs a logical AND operation on the first operand ({0}) against the second operand ({1})"]);
+            //Mnem.AddPrimeOp("AND24", Mnem.AND24, "Logical AND 24 bit",
+            //    ["Performs a logical AND operation on the first operand ({0}) against the second operand ({1})"]);
+            //Mnem.AddPrimeOp("AND32", Mnem.AND32, "Logical AND 32 bit",
+            //    ["Performs a logical AND operation on the first operand ({0}) against the second operand ({1})"]);
             Mnem.AddPrimeOp("OR", Mnem.OR, "Logical OR",
                 ["Performs a logical OR operation on the first operand ({0}) against the second operand ({1})"]);
             Mnem.AddPrimeOp("OR16", Mnem.OR16, "Logical OR 16-bit",

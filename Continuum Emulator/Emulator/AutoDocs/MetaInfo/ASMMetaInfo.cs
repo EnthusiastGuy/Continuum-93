@@ -126,7 +126,7 @@ namespace Continuum93.Emulator.AutoDocs.MetaInfo
             ));
 
             MetaData.Add(ASMMeta.Create(
-                new List<string>() { "AND", "AND16", "AND24", "AND32" },
+                new List<string>() { "AND" },
                 "Takes each bit in operand1 and operand2, performs the logical AND operation on each pair of bits, and stores the result back in operand1. The logical AND operation follows the basic rule: if both bits are 1, the result is 1; otherwise, the result is 0.",
                 "Clearing Specific Bits: By using an appropriate mask (where you want to clear bits, set mask bits to 0), you can clear specific bits in a register or memory location. Bit Masking: To extract specific bits from a value, you can use the AND instruction with a mask that has 1s in the positions of interest. Setting Flags and Conditions: In conditions where certain flags are represented as bits, AND can be used to check the status of these flags. Optimizations: In some scenarios, AND can be used for certain optimizations, like ensuring a number is even (by ANDing with a specific value).",
                 "AND[bits] operand1, operand2"

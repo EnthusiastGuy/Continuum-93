@@ -152,7 +152,7 @@ namespace Continuum93.Emulator.Interpreter
             "POP", "POP16", "POP24", "POP32",
             "VCL", "VDL",
             "LDF", "LDREGS", "STREGS",
-            "AND", "AND16", "AND24", "AND32",
+            "AND",
             "OR", "OR16", "OR24", "OR32",
             "XOR", "XOR16", "XOR24", "XOR32",
             "NAND", "NAND16", "NAND24", "NAND32",

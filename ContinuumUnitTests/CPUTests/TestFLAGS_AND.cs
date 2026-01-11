@@ -1,376 +1,346 @@
 ﻿using Continuum93.Emulator.Interpreter;
 using Continuum93.Emulator;
+using Xunit;
 
-namespace CPUTests
+namespace CPUTests;
+
+public class AndInstructionTests
 {
+    // ----------------------------
+    // Harness (line-safe)
+    // ----------------------------
 
-    public class TestFLAGS_AND
+    private static string Program(params string[] lines)
+        => string.Join("\n", lines) + "\n";
+
+    private static Computer Run(params string[] lines)
     {
-        [Fact]
-        public void TestFLAG_AND_CARRY_RESET()
+        Assembler a = new();
+        a.Build(Program(lines));
+
+        var computer = new Computer();
+        computer.LoadMem(a.GetCompiledCode());
+        computer.Run();
+        return computer;
+    }
+
+    private static void AssertCarryReset(Computer c)
+        => Assert.False(c.CPU.FLAGS.GetValueByName("C"));
+
+    private static void AssertZero(Computer c, bool expected)
+        => Assert.Equal(expected, c.CPU.FLAGS.GetValueByName("Z"));
+
+    private static readonly string[] SetCarryWithAdd =
+    [
+        "LD A, 0x80",
+        "ADD A, 0xFF", // should set carry
+    ];
+
+    // Utility to prepend a snippet (like SetCarryWithAdd) to a program
+    private static string[] Prepend(string[] prefix, params string[] lines)
+    {
+        var result = new string[prefix.Length + lines.Length];
+        Array.Copy(prefix, 0, result, 0, prefix.Length);
+        Array.Copy(lines, 0, result, prefix.Length, lines.Length);
+        return result;
+    }
+
+    // ----------------------------
+    // 1) Carry must reset after AND
+    // ----------------------------
+
+    public static object[][] CarryResetCases =>
+    [
+        // 8-bit register destinations
+        new object[] { "AND A, imm8",
+            Prepend(SetCarryWithAdd,
+                "AND A, 0xFF",
+                "BREAK")
+        },
+        new object[] { "AND A, A",
+            Prepend(SetCarryWithAdd,
+                "AND A, A",
+                "BREAK")
+        },
+        new object[] { "AND A, r8",
+            Prepend(SetCarryWithAdd,
+                "LD E, 0xFF",
+                "AND A, E",
+                "BREAK")
+        },
+
+        // 16-bit reg destinations (AB)
+        new object[] { "AND AB, imm16",
+            Prepend(SetCarryWithAdd,
+                "AND AB, 0xFFFF",
+                "BREAK")
+        },
+        new object[] { "AND AB, AB",
+            Prepend(SetCarryWithAdd,
+                "AND AB, AB",
+                "BREAK")
+        },
+        new object[] { "AND AB, rr16",
+            Prepend(SetCarryWithAdd,
+                "LD EF, 0xFFFF",
+                "AND AB, EF",
+                "BREAK")
+        },
+
+        // 24-bit reg destinations (ABC)
+        new object[] { "AND ABC, imm24",
+            Prepend(SetCarryWithAdd,
+                "AND ABC, 0xFFFFFF",
+                "BREAK")
+        },
+        new object[] { "AND ABC, ABC",
+            Prepend(SetCarryWithAdd,
+                "AND ABC, ABC",
+                "BREAK")
+        },
+        new object[] { "AND ABC, rrr24",
+            Prepend(SetCarryWithAdd,
+                "LD EFG, 0xFFFFFF",
+                "AND ABC, EFG",
+                "BREAK")
+        },
+
+        // 32-bit reg destinations (ABCD)
+        new object[] { "AND ABCD, imm32",
+            Prepend(SetCarryWithAdd,
+                "AND ABCD, 0xFFFFFFFF",
+                "BREAK")
+        },
+        new object[] { "AND ABCD, ABCD",
+            Prepend(SetCarryWithAdd,
+                "AND ABCD, ABCD",
+                "BREAK")
+        },
+        new object[] { "AND ABCD, rrrr32",
+            Prepend(SetCarryWithAdd,
+                "LD EFGH, 0xFFFFFFFF",
+                "AND ABCD, EFGH",
+                "BREAK")
+        },
+
+        // Memory destination scalar widths (immediate forms you already use)
+        new object[] { "AND (ptr), imm8 width=1",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "AND (BCD), 0xFF, 1",
+                "BREAK")
+        },
+        new object[] { "AND (ptr), imm16 width=2",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "AND (BCD), 0xFFFF, 2",
+                "BREAK")
+        },
+        new object[] { "AND (ptr), imm24 width=3",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "AND (BCD), 0xFFFFFF, 3",
+                "BREAK")
+        },
+        new object[] { "AND (ptr), imm32 width=4",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "AND (BCD), 0xFFFFFFFF, 4",
+                "BREAK")
+        },
+
+        // Memory destination scalar from registers (r/rr/rrr/rrrr)
+        new object[] { "AND (ptr), r8",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD E, 0xFF",
+                "AND (BCD), E",
+                "BREAK")
+        },
+        new object[] { "AND (ptr), rr16",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD EF, 0xFFFF",
+                "AND (BCD), EF",
+                "BREAK")
+        },
+        new object[] { "AND (ptr), rrr24",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD EFG, 0xFFFFFF",
+                "AND (BCD), EFG",
+                "BREAK")
+        },
+        new object[] { "AND (ptr), rrrr32",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD EFGH, 0xFFFFFFFF",
+                "AND (BCD), EFGH",
+                "BREAK")
+        },
+
+        // Register destination AND from memory (if supported by your assembler)
+        // These were in ExAND; keep them if your syntax matches. :contentReference[oaicite:0]{index=0}
+        new object[] { "AND A, (ptr)",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD (BCD), 0xFF",
+                "AND A, (BCD)",
+                "BREAK")
+        },
+        new object[] { "AND AB, (ptr)",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD (BCD), 0xFFFF, 2",
+                "AND AB, (BCD)",
+                "BREAK")
+        },
+        new object[] { "AND ABC, (ptr)",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD (BCD), 0xFFFFFF, 3",
+                "AND ABC, (BCD)",
+                "BREAK")
+        },
+        new object[] { "AND ABCD, (ptr)",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD (BCD), 0xFFFFFFFF, 4",
+                "AND ABCD, (BCD)",
+                "BREAK")
+        },
+
+        // Block immediate mask (count != 1..4 distinguishes from scalar width in your encoding)
+        new object[] { "AND block imm32 (count=8)",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 20000",
+                "LD (BCD), 0xFFFFFFFF, 4",
+                "LD R, 4",
+                "ADD BCD, R",
+                "LD (BCD), 0xFFFFFFFF, 4",
+                "LD BCD, 20000",
+                "AND (BCD), 0x0F0F0F0F, 8",
+                "BREAK")
+        },
+
+        // Block immediate mask with repeat (if your assembler supports it)
+        new object[] { "AND block imm32 repeat=2 (count=4)",
+            Prepend(SetCarryWithAdd,
+                "LD BCD, 21000",
+                "LD (BCD), 0xFFFFFFFF, 4",
+                "LD R, 4",
+                "ADD BCD, R",
+                "LD (BCD), 0xFFFFFFFF, 4",
+                "LD BCD, 21000",
+                "AND (BCD), 0x00FF00FF, 4, 2",
+                "BREAK")
+        },
+    ];
+
+    [Theory]
+    [MemberData(nameof(CarryResetCases))]
+    public void And_resets_carry(string name, string[] programLines)
+    {
+        using var c = Run(programLines);
+        AssertCarryReset(c);
+    }
+
+    // ----------------------------
+    // 2) Zero flag behavior
+    // ----------------------------
+
+    public static object[][] ZeroFlagCases =>
+    [
+        new object[] { "A non-zero => Z=0",
+            new[] { "LD A, 0x80", "AND A, 0xFF", "BREAK" }, false },
+
+        new object[] { "A & 0 => Z=1",
+            new[] { "LD A, 0x80", "AND A, 0", "BREAK" }, true },
+
+        new object[] { "A & r(0) => Z=1",
+            new[] { "LD A, 0x80", "LD E, 0", "AND A, E", "BREAK" }, true },
+
+        new object[] { "AB & 0 => Z=1",
+            new[] { "LD AB, 0x1234", "AND AB, 0", "BREAK" }, true },
+
+        new object[] { "ABC & 0 => Z=1",
+            new[] { "LD ABC, 0x123456", "AND ABC, 0", "BREAK" }, true },
+
+        new object[] { "ABCD & 0 => Z=1",
+            new[] { "LD ABCD, 0x12345678", "AND ABCD, 0", "BREAK" }, true },
+
+        new object[] { "mem8 -> zero => Z=1",
+            new[] { "LD BCD, 20000", "LD (BCD), 0x80", "AND (BCD), 0, 1", "BREAK" }, true },
+
+        new object[] { "mem16 -> zero => Z=1",
+            new[] { "LD BCD, 20000", "LD (BCD), 0xFFFF, 2", "AND (BCD), 0, 2", "BREAK" }, true },
+
+        // Register destination from memory (if supported) :contentReference[oaicite:1]{index=1}
+        new object[] { "A & (ptr=0) => Z=1",
+            new[] { "LD A, 0xFF", "LD BCD, 20000", "LD (BCD), 0", "AND A, (BCD)", "BREAK" }, true },
+    ];
+
+    [Theory]
+    [MemberData(nameof(ZeroFlagCases))]
+    public void And_sets_zero_flag_correctly(string name, string[] programLines, bool expectedZ)
+    {
+        using var c = Run(programLines);
+        AssertZero(c, expectedZ);
+    }
+
+    // ----------------------------
+    // 3) Result correctness
+    // ----------------------------
+
+    public static object[][] ResultCases =>
+    [
+        new object[]
         {
-            Assembler cp = new();
-            using Computer computer = new();
-
-            cp.Build(@"
-                LD A,0x80
-                ADD A, 0xFF ; Set carry
-                AND A, 0xFF
-                JP NC, .Ok1
-                LD X, 1
-                BREAK
-            .Ok1
-                LD A,0x80
-                ADD A, 0xFF
-                AND A, A
-                JP NC, .Ok2
-                LD X, 2
-                BREAK
-            .Ok2
-                LD A,0x80
-                ADD A, 0xFF
-                AND AB, 0xFFFF
-                JP NC, .Ok3
-                LD X, 3
-                BREAK
-            .Ok3
-                LD A,0x80
-                ADD A, 0xFF
-                AND AB, AB
-                JP NC, .Ok4
-                LD X, 4
-                BREAK
-            .Ok4
-                LD A,0x80
-                ADD A, 0xFF
-                AND ABC, 0xFFFFFF
-                JP NC, .Ok5
-                LD X, 5
-                BREAK
-            .Ok5
-                LD A,0x80
-                ADD A, 0xFF
-                AND ABC, ABC
-                JP NC, .Ok6
-                LD X, 6
-                BREAK
-            .Ok6
-                LD A,0x80
-                ADD A, 0xFF
-                AND ABCD, 0xFFFFFFFF
-                JP NC, .Ok7
-                LD X, 7
-                BREAK
-            .Ok7
-                LD A,0x80
-                ADD A, 0xFF
-                AND ABCD, ABCD
-                JP NC, .Ok8
-                LD X, 8
-                BREAK
-            .Ok8
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                AND (BCD), 0xFF
-                JP NC, .Ok9
-                LD X, 9
-                BREAK
-            .Ok9
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                AND16 (BCD), 0xFFFF
-                JP NC, .Ok10
-                LD X, 10
-                BREAK
-            .Ok10
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                AND24 (BCD), 0xFFFFFF
-                JP NC, .Ok11
-                LD X, 11
-                BREAK
-            .Ok11
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                AND32 (BCD), 0xFFFFFFFF
-                JP NC, .Ok12
-                LD X, 12
-                BREAK
-            .Ok12
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                LD E, 0xFF
-                AND (BCD), E
-                JP NC, .Ok13
-                LD X, 13
-                BREAK
-            .Ok13
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                LD EF, 0xFFFF
-                AND (BCD), EF
-                JP NC, .Ok14
-                LD X, 14
-                BREAK
-            .Ok14
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                LD EFG, 0xFFFFFF
-                AND (BCD), EFG
-                JP NC, .Ok15
-                LD X, 15
-                BREAK
-            .Ok15
-                LD A,0x80
-                ADD A, 0xFF
-                LD BCD, 20000
-                LD EFGH, 0xFFFFFFFF
-                AND (BCD), EFGH
-                JP NC, .Ok16
-                LD X, 16
-                BREAK
-            .Ok16
-                BREAK
-
-            ");
-
-            byte[] compiled = cp.GetCompiledCode();
-
-            computer.LoadMem(compiled);
-            computer.Run();
-
-            //Assert.False(computer.CPU.FLAGS.GetValueByName("C"));
-            Assert.Equal(0, computer.CPU.REGS.X);
-        }
-
-        [Fact]
-        public void TestFLAG_AND_ZERO()
+            "A = 0x7F & 0x0F => 0x0F",
+            Prepend(SetCarryWithAdd,
+                "AND A, 0x0F",
+                "BREAK"),
+            (Action<Computer>)(c => Assert.Equal((byte)0x0F, c.CPU.REGS.A))
+        },
+        new object[]
         {
-            Assembler cp = new();
-            using Computer computer = new();
+            "AB = 0x00FF & 0x0F0F => 0x000F",
+            new[] { "LD AB, 0x00FF", "AND AB, 0x0F0F", "BREAK" },
+            (Action<Computer>)(c => Assert.Equal((ushort)0x000F, c.CPU.REGS.AB))
+        },
+        new object[]
+        {
+            "mem8: 0xF0 & 0x0F => 0x00",
+            new[] { "LD BCD, 20000", "LD (BCD), 0xF0", "AND (BCD), 0x0F, 1", "BREAK" },
+            (Action<Computer>)(c => Assert.Equal((byte)0x00, c.MEMC.Get8bitFromRAM(20000)))
+        },
+        new object[]
+        {
+            "block imm32 count=8 masks all bytes",
+            new[]
+            {
+                "LD BCD, 20000",
+                "LD (BCD), 0xFFFFFFFF, 4",
+                "LD R, 4",
+                "ADD BCD, R",
+                "LD (BCD), 0xFFFFFFFF, 4",
+                "LD BCD, 20000",
+                "AND (BCD), 0x0F0F0F0F, 8",
+                "BREAK"
+            },
+            (Action<Computer>)(c =>
+            {
+                for (int i = 0; i < 8; i++)
+                    Assert.Equal((byte)0x0F, c.MEMC.Get8bitFromRAM(20000u + (uint)i));
+            })
+        },
+    ];
 
-            cp.Build(@"
-                LD A,0x80
-                AND A, 0xFF
-                JP NZ, .OkNotZero1
-                LD X, 1
-                BREAK
-            .OkNotZero1
-                AND A, 0
-                JP Z, .OkZero1
-                LD X, 2
-                BREAK
-            .OkZero1
-                LD A,0x80
-                AND A, A
-                JP NZ, .OkNotZero2
-                LD X, 3
-                BREAK
-            .OkNotZero2
-                LD R, 0
-                AND A, R
-                JP Z, .OkZero2
-                LD X, 4
-                BREAK
-            .OkZero2
-                LD A,0x80
-                AND AB, 0xFFFF
-                JP NZ, .OkNotZero3
-                LD X, 5
-                BREAK
-            .OkNotZero3
-                AND AB, 0
-                JP Z, .OkZero3
-                LD X, 6
-                BREAK
-            .OkZero3
-                LD A,0x80
-                AND AB, AB
-                JP NZ, .OkNotZero4
-                LD X, 7
-                BREAK
-            .OkNotZero4
-                LD CD, 0
-                AND AB, CD
-                JP Z, .OkZero4
-                LD X, 8
-            .OkZero4
-                LD A,0x80
-                AND ABC, 0xFFFFFF
-                JP NZ, .OkNotZero5
-                LD X, 9
-                BREAK
-            .OkNotZero5
-                AND ABC, 0
-                JP Z, .OkZero5
-                LD X, 10
-                BREAK
-            .OkZero5
-                LD A,0x80
-                AND ABC, ABC
-                JP NZ, .OkNotZero6
-                LD X, 11
-                BREAK
-            .OkNotZero6
-                LD DEF, 0
-                AND ABC, DEF
-                JP Z, .OkZero6
-                LD X, 12
-                BREAK
-            .OkZero6
-                LD A,0x80
-                AND ABCD, 0xFFFFFFFF
-                JP NZ, .OkNotZero7
-                LD X, 13
-                BREAK
-            .OkNotZero7
-                AND ABC, 0
-                JP Z, .OkZero7
-                LD X, 14
-                BREAK
-            .OkZero7
-                LD A,0x80
-                AND ABCD, ABCD
-                JP NZ, .OkNotZero8
-                LD X, 15
-                BREAK
-            .OkNotZero8
-                LD EFGH, 0
-                AND ABCD, EFGH
-                JP Z, .OkZero8
-                LD X, 16
-                BREAK
-            .OkZero8
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                AND (BCD), 0xFF
-                JP NZ, .OkNotZero9
-                LD X, 17
-                BREAK
-            .OkNotZero9
-                AND (BCD), 0
-                JP Z, .OkZero9
-                LD X, 18
-                BREAK
-            .OkZero9
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                AND16 (BCD), 0xFFFF
-                JP NZ, .OkNotZero10
-                LD X, 19
-                BREAK
-            .OkNotZero10
-                AND16 (BCD), 0
-                JP Z, .OkZero10
-                LD X, 20
-                BREAK
-            .OkZero10
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                AND24 (BCD), 0xFFFFFF
-                JP NZ, .OkNotZero11
-                LD X, 21
-                BREAK
-            .OkNotZero11
-                AND24 (BCD), 0
-                JP Z, .OkZero11
-                LD X, 22
-                BREAK
-            .OkZero11
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                AND32 (BCD), 0xFFFFFFFF
-                JP NZ, .OkNotZero12
-                LD X, 23
-                BREAK
-            .OkNotZero12
-                AND32 (BCD), 0
-                JP Z, .OkZero12
-                LD X, 24
-                BREAK
-            .OkZero12
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                LD E, 0xFF
-                AND (BCD), E
-                JP NZ, .OkNotZero13
-                LD X, 25
-                BREAK
-            .OkNotZero13
-                LD E, 0
-                AND (BCD), E
-                JP Z, .OkZero13
-                LD X, 26
-                BREAK
-            .OkZero13
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                LD EF, 0xFFFF
-                AND (BCD), EF
-                JP NZ, .OkNotZero14
-                LD X, 27
-                BREAK
-            .OkNotZero14
-                LD EF, 0
-                AND (BCD), EF
-                JP Z, .OkZero14
-                LD X, 28
-                BREAK
-            .OkZero14
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                LD EFG, 0xFFFFFF
-                AND (BCD), EFG
-                JP NZ, .OkNotZero15
-                LD X, 29
-                BREAK
-            .OkNotZero15
-                LD EFG, 0
-                AND (BCD), EFG
-                JP Z, .OkZero15
-                LD X, 30
-                BREAK
-            .OkZero15
-                LD A,0x80
-                LD BCD, 20000
-                LD (BCD), 0x80, 1
-                LD EFGH, 0xFFFFFFFF
-                AND (BCD), EFGH
-                JP NZ, .OkNotZero16
-                LD X, 31
-                BREAK
-            .OkNotZero16
-                LD EFGH, 0
-                AND (BCD), EFGH
-                JP Z, .OkZero16
-                LD X, 32
-                BREAK
-            .OkZero16
-                BREAK
-
-            ");
-
-            byte[] compiled = cp.GetCompiledCode();
-
-            computer.LoadMem(compiled);
-            computer.Run();
-
-            //Assert.False(computer.CPU.FLAGS.GetValueByName("C"));
-            Assert.Equal(0, computer.CPU.REGS.X);
-        }
+    [Theory]
+    [MemberData(nameof(ResultCases))]
+    public void And_produces_expected_result(string name, string[] programLines, Action<Computer> assert)
+    {
+        using var c = Run(programLines);
+        assert(c);
     }
 }

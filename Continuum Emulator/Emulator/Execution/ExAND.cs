@@ -569,6 +569,7 @@ namespace Continuum93.Emulator.Execution
                     var mem = cpu.MEMC;
                     var regs = cpu.CPU.REGS;
                     var fregs = cpu.CPU.FREGS;
+                    var flags = cpu.CPU.FLAGS;
 
                     uint address = group.AddressResolver(mem, regs);
                     byte fIndex = ReadFloatRegIndex(mem);
@@ -580,6 +581,9 @@ namespace Continuum93.Emulator.Execution
                     bits &= mask;
 
                     mem.SetFloatToRam(address, FloatPointUtils.UintToFloat(bits));
+
+                    flags.ClearCarry();
+                    flags.SetZero(bits == 0);
                 };
             }
         }
@@ -594,14 +598,19 @@ namespace Continuum93.Emulator.Execution
             {
                 var mem = cpu.MEMC;
                 var fregs = cpu.CPU.FREGS;
+                var flags = cpu.CPU.FLAGS;
 
                 byte dest = ReadFloatRegIndex(mem);
                 byte src = ReadFloatRegIndex(mem);
 
                 uint db = FloatPointUtils.FloatToUint(fregs.GetRegister(dest));
                 uint sb = FloatPointUtils.FloatToUint(fregs.GetRegister(src));
+                uint result = db & sb;
 
-                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(db & sb));
+                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(result));
+
+                flags.ClearCarry();
+                flags.SetZero(result == 0);
             };
 
             // AND fr, nnnn
@@ -609,12 +618,18 @@ namespace Continuum93.Emulator.Execution
             {
                 var mem = cpu.MEMC;
                 var fregs = cpu.CPU.FREGS;
+                var flags = cpu.CPU.FLAGS;
 
                 byte dest = ReadFloatRegIndex(mem);
                 uint imm32 = mem.Fetch32();
 
                 uint db = FloatPointUtils.FloatToUint(fregs.GetRegister(dest));
-                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(db & imm32));
+                uint result = db & imm32;
+
+                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(result));
+
+                flags.ClearCarry();
+                flags.SetZero(result == 0);
             };
 
             // AND fr, r / rr / rrr / rrrr  (zero-extended mask)
@@ -623,14 +638,19 @@ namespace Continuum93.Emulator.Execution
                 var mem = cpu.MEMC;
                 var regs = cpu.CPU.REGS;
                 var fregs = cpu.CPU.FREGS;
+                var flags = cpu.CPU.FLAGS;
 
                 byte dest = ReadFloatRegIndex(mem);
                 byte src = ReadRegIndex(mem);
 
                 uint db = FloatPointUtils.FloatToUint(fregs.GetRegister(dest));
                 uint mask = regs.Get8BitRegister(src);
+                uint result = db & mask;
 
-                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(db & mask));
+                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(result));
+
+                flags.ClearCarry();
+                flags.SetZero(result == 0);
             };
 
             table[Instructions._fr_rr] = cpu =>
@@ -638,14 +658,19 @@ namespace Continuum93.Emulator.Execution
                 var mem = cpu.MEMC;
                 var regs = cpu.CPU.REGS;
                 var fregs = cpu.CPU.FREGS;
+                var flags = cpu.CPU.FLAGS;
 
                 byte dest = ReadFloatRegIndex(mem);
                 byte src = ReadRegIndex(mem);
 
                 uint db = FloatPointUtils.FloatToUint(fregs.GetRegister(dest));
                 uint mask = regs.Get16BitRegister(src);
+                uint result = db & mask;
 
-                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(db & mask));
+                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(result));
+
+                flags.ClearCarry();
+                flags.SetZero(result == 0);
             };
 
             table[Instructions._fr_rrr] = cpu =>
@@ -653,14 +678,19 @@ namespace Continuum93.Emulator.Execution
                 var mem = cpu.MEMC;
                 var regs = cpu.CPU.REGS;
                 var fregs = cpu.CPU.FREGS;
+                var flags = cpu.CPU.FLAGS;
 
                 byte dest = ReadFloatRegIndex(mem);
                 byte src = ReadRegIndex(mem);
 
                 uint db = FloatPointUtils.FloatToUint(fregs.GetRegister(dest));
                 uint mask = regs.Get24BitRegister(src) & 0xFFFFFFu;
+                uint result = db & mask;
 
-                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(db & mask));
+                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(result));
+
+                flags.ClearCarry();
+                flags.SetZero(result == 0);
             };
 
             table[Instructions._fr_rrrr] = cpu =>
@@ -668,14 +698,19 @@ namespace Continuum93.Emulator.Execution
                 var mem = cpu.MEMC;
                 var regs = cpu.CPU.REGS;
                 var fregs = cpu.CPU.FREGS;
+                var flags = cpu.CPU.FLAGS;
 
                 byte dest = ReadFloatRegIndex(mem);
                 byte src = ReadRegIndex(mem);
 
                 uint db = FloatPointUtils.FloatToUint(fregs.GetRegister(dest));
                 uint mask = regs.Get32BitRegister(src);
+                uint result = db & mask;
 
-                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(db & mask));
+                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(result));
+
+                flags.ClearCarry();
+                flags.SetZero(result == 0);
             };
 
             // AND fr, (memFloat) via shared address resolvers
@@ -699,14 +734,19 @@ namespace Continuum93.Emulator.Execution
                 var mem = cpu.MEMC;
                 var regs = cpu.CPU.REGS;
                 var fregs = cpu.CPU.FREGS;
+                var flags = cpu.CPU.FLAGS;
 
                 byte dest = ReadFloatRegIndex(mem);
                 uint addr = resolver(mem, regs);
 
                 uint db = FloatPointUtils.FloatToUint(fregs.GetRegister(dest));
                 uint sb = FloatPointUtils.FloatToUint(mem.GetFloatFromRAM(addr));
+                uint result = db & sb;
 
-                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(db & sb));
+                fregs.SetRegister(dest, FloatPointUtils.UintToFloat(result));
+
+                flags.ClearCarry();
+                flags.SetZero(result == 0);
             };
         }
 
@@ -716,9 +756,12 @@ namespace Continuum93.Emulator.Execution
         private static void AndBlockImmediate(Computer cpu, uint address, uint imm32, byte count, uint repeat)
         {
             var mem = cpu.MEMC;
+            var flags = cpu.CPU.FLAGS;
 
             if (count == 0) count = 1;
             if (repeat == 0) repeat = 1;
+
+            bool allZero = true;
 
             for (uint block = 0; block < repeat; block++)
             {
@@ -730,17 +773,26 @@ namespace Continuum93.Emulator.Execution
 
                     byte b = mem.Get8bitFromRAM(a);
                     byte m = (byte)((imm32 >> (8 * (i & 3))) & 0xFF); // repeat 4-byte pattern (little-endian)
-                    mem.Set8bitToRAM(a, (byte)(b & m));
+                    byte result = (byte)(b & m);
+                    mem.Set8bitToRAM(a, result);
+
+                    if (result != 0) allZero = false;
                 }
             }
+
+            flags.ClearCarry();
+            flags.SetZero(allZero);
         }
 
         private static void AndBlockMemToMem(Computer cpu, uint destAddress, uint srcAddress, byte count, uint repeat)
         {
             var mem = cpu.MEMC;
+            var flags = cpu.CPU.FLAGS;
 
             if (count == 0) count = 1;
             if (repeat == 0) repeat = 1;
+
+            bool allZero = true;
 
             for (uint block = 0; block < repeat; block++)
             {
@@ -754,10 +806,16 @@ namespace Continuum93.Emulator.Execution
 
                     byte d = mem.Get8bitFromRAM(da);
                     byte s = mem.Get8bitFromRAM(sa);
+                    byte result = (byte)(d & s);
 
-                    mem.Set8bitToRAM(da, (byte)(d & s));
+                    mem.Set8bitToRAM(da, result);
+
+                    if (result != 0) allZero = false;
                 }
             }
+
+            flags.ClearCarry();
+            flags.SetZero(allZero);
         }
 
         // -------------------------
