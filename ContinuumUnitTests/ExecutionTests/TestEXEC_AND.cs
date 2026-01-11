@@ -296,7 +296,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    "AND (ABC), 0b00111100",
+                    "AND (ABC), 0b00111100, 1",
                     "BREAK"
                 )
             );
@@ -323,7 +323,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    "AND16 (ABC), 0b0011110000111100",
+                    "AND (ABC), 0b0011110000111100, 2",
                     "BREAK"
                 )
             );
@@ -350,7 +350,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    "AND24 (ABC), 0b001111000011110000111100",
+                    "AND (ABC), 0b001111000011110000111100, 3",
                     "BREAK"
                 )
             );
@@ -377,7 +377,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    "AND32 (ABC), 0b00111100001111000011110000111100",
+                    "AND (ABC), 0b00111100001111000011110000111100, 4",
                     "BREAK"
                 )
             );
@@ -630,7 +630,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    $"AND ({address}), 0b00111100",
+                    $"AND ({address}), 0b00111100, 1",
                     "BREAK"
                 )
             );
@@ -655,7 +655,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    $"AND16 ({address}), 0b0011110000111100",
+                    $"AND ({address}), 0b0011110000111100, 2",
                     "BREAK"
                 )
             );
@@ -680,7 +680,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    $"AND24 ({address}), 0b001111000011110000111100",
+                    $"AND ({address}), 0b001111000011110000111100, 3",
                     "BREAK"
                 )
             );
@@ -705,7 +705,7 @@ namespace ExecutionTests
 
             cp.Build(
                 TUtils.GetFormattedAsm(
-                    $"AND32 ({address}), 0b00111100001111000011110000111100",
+                    $"AND ({address}), 0b00111100001111000011110000111100, 4",
                     "BREAK"
                 )
             );

@@ -84,8 +84,6 @@ namespace Continuum93.Emulator
 
         public static Rectangle GetScreenBounds()
         {
-            // However you access the Game instance:
-            // e.g. Service.Game, MainGame.Instance, etc.
             var windowBounds = _game.Window.ClientBounds;
             return windowBounds;
         }
