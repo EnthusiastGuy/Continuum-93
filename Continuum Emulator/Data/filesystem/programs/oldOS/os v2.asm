@@ -40,7 +40,7 @@
 		LD BCD, .CommandBuffer
 		DEC YZ
 		ADD BCD, YZ
-		LD (BCD), 0
+		LD (BCD), 0, 1
 		
 		INC X	;Refresh mark
 		

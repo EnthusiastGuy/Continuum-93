@@ -19,7 +19,8 @@ public class AndInstructionTests
         a.Build(Program(lines));
 
         var computer = new Computer();
-        computer.LoadMem(a.GetCompiledCode());
+        byte[] code = a.GetCompiledCode();
+        computer.LoadMem(code);
         computer.Run();
         return computer;
     }
@@ -184,7 +185,7 @@ public class AndInstructionTests
         new object[] { "AND A, (ptr)",
             Prepend(SetCarryWithAdd,
                 "LD BCD, 20000",
-                "LD (BCD), 0xFF",
+                "LD (BCD), 0xFF, 1",
                 "AND A, (BCD)",
                 "BREAK")
         },
@@ -270,14 +271,14 @@ public class AndInstructionTests
             new[] { "LD ABCD, 0x12345678", "AND ABCD, 0", "BREAK" }, true },
 
         new object[] { "mem8 -> zero => Z=1",
-            new[] { "LD BCD, 20000", "LD (BCD), 0x80", "AND (BCD), 0, 1", "BREAK" }, true },
+            new[] { "LD BCD, 20000", "LD (BCD), 0x80, 1", "AND (BCD), 0, 1", "BREAK" }, true },
 
         new object[] { "mem16 -> zero => Z=1",
             new[] { "LD BCD, 20000", "LD (BCD), 0xFFFF, 2", "AND (BCD), 0, 2", "BREAK" }, true },
 
         // Register destination from memory (if supported) :contentReference[oaicite:1]{index=1}
         new object[] { "A & (ptr=0) => Z=1",
-            new[] { "LD A, 0xFF", "LD BCD, 20000", "LD (BCD), 0", "AND A, (BCD)", "BREAK" }, true },
+            new[] { "LD A, 0xFF", "LD BCD, 20000", "LD (BCD), 0, 1", "AND A, (BCD)", "BREAK" }, true },
     ];
 
     [Theory]
@@ -311,7 +312,7 @@ public class AndInstructionTests
         new object[]
         {
             "mem8: 0xF0 & 0x0F => 0x00",
-            new[] { "LD BCD, 20000", "LD (BCD), 0xF0", "AND (BCD), 0x0F, 1", "BREAK" },
+            new[] { "LD BCD, 20000", "LD (BCD), 0xF0, 1", "AND (BCD), 0x0F, 1", "BREAK" },
             (Action<Computer>)(c => Assert.Equal((byte)0x00, c.MEMC.Get8bitFromRAM(20000)))
         },
         new object[]

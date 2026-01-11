@@ -3,115 +3,112 @@ Nr.     Instruction   Modes
     1   ABS           NONE                                              
     2   ADD           NONE                                              
     3   AND           NONE                                              
-    4   AND16         NONE                                              
-    5   AND24         NONE                                              
-    6   AND32         NONE                                              
-    7   BIT           NONE                                              
-    8   BREAK         NONE                                              
-    9   CALL          NONE                                              
-   10   CALLR         NONE                                              
-   11   CBR           (nnn); (rrr)                                      
-   12   CEIL          NONE                                              
-   13   COS           NONE                                              
-   14   CP            (rrr),(rrr)                                       
-   15   DEBUG         NONE                                              
-   16   DEC           (nnn); (rrr)                                      
-   17   DEC16         (nnn); (rrr)                                      
-   18   DEC24         (nnn); (rrr)                                      
-   19   DEC32         (nnn); (rrr)                                      
-   20   DIV           NONE                                              
-   21   DJNZ          NONE                                              
-   22   DJNZ16        NONE                                              
-   23   DJNZ24        NONE                                              
-   24   DJNZ32        NONE                                              
-   25   EX            NONE                                              
-   26   FIND          (rrr),(nnn); (rrr),(rrr)                          
-   27   FLOOR         NONE                                              
-   28   FREGS         (nnn); (rrr)                                      
-   29   GETBITS       NONE                                              
-   30   GETVAR        NONE                                              
-   31   HSB2RGB       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
-   32   HSL2RGB       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
-   33   IMPLY         NONE                                              
-   34   IMPLY16       NONE                                              
-   35   IMPLY24       NONE                                              
-   36   IMPLY32       NONE                                              
-   37   INC           (nnn); (rrr)                                      
-   38   INC16         (nnn); (rrr)                                      
-   39   INC24         (nnn); (rrr)                                      
-   40   INC32         (nnn); (rrr)                                      
-   41   INT           NONE                                              
-   42   INV           NONE                                              
-   43   INVF          NONE                                              
-   44   ISGN          NONE                                              
-   45   ISQR          (nnn); (rrr)                                      
-   46   JP            NONE                                              
-   47   JR            NONE                                              
-   48   LD            NONE                                              
-   49   LDF           (nnn); (rrr)                                      
-   50   LDREGS        NONE                                              
-   51   MAX           NONE                                              
-   52   MEMC          NONE                                              
-   53   MEMF          NONE                                              
-   54   MIN           NONE                                              
-   55   MOD           NONE                                              
-   56   MUL           NONE                                              
-   57   NAND          NONE                                              
-   58   NAND16        NONE                                              
-   59   NAND24        NONE                                              
-   60   NAND32        NONE                                              
-   61   NOP           NONE                                              
-   62   NOR           NONE                                              
-   63   NOR16         NONE                                              
-   64   NOR24         NONE                                              
-   65   NOR32         NONE                                              
-   66   OR            NONE                                              
-   67   OR16          NONE                                              
-   68   OR24          NONE                                              
-   69   OR32          NONE                                              
-   70   PLAY          NONE                                              
-   71   POP           (nnn); (rrr)                                      
-   72   POP16         (nnn); (rrr)                                      
-   73   POP24         (nnn); (rrr)                                      
-   74   POP32         (nnn); (rrr)                                      
-   75   POW           NONE                                              
-   76   PUSH          (nnn); (rrr)                                      
-   77   PUSH16        (nnn); (rrr)                                      
-   78   PUSH24        (nnn); (rrr)                                      
-   79   PUSH32        (nnn); (rrr)                                      
-   80   RAND          NONE                                              
-   81   REGS          (nnn); (rrr)                                      
-   82   RES           NONE                                              
-   83   RESF          NONE                                              
-   84   RET           NONE                                              
-   85   RETIF         NONE                                              
-   86   RGB2HSB       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
-   87   RGB2HSL       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
-   88   RL            NONE                                              
-   89   ROUND         NONE                                              
-   90   RR            NONE                                              
-   91   SCP           (rrr),(rrr)                                       
-   92   SDIV          NONE                                              
-   93   SET           NONE                                              
-   94   SETBITS       NONE                                              
-   95   SETF          NONE                                              
-   96   SETVAR        NONE                                              
-   97   SIN           NONE                                              
-   98   SL            NONE                                              
-   99   SMUL          NONE                                              
-  100   SQR           (nnn); (rrr)                                      
-  101   SR            NONE                                              
-  102   STREGS        NONE                                              
-  103   SUB           NONE                                              
-  104   TAN           NONE                                              
-  105   VCL           (nnn); (rrr)                                      
-  106   VDL           (nnn); (rrr)                                      
-  107   WAIT          NONE                                              
-  108   XNOR          NONE                                              
-  109   XNOR16        NONE                                              
-  110   XNOR24        NONE                                              
-  111   XNOR32        NONE                                              
-  112   XOR           NONE                                              
-  113   XOR16         NONE                                              
-  114   XOR24         NONE                                              
-  115   XOR32         NONE                                              
+    4   BIT           NONE                                              
+    5   BREAK         NONE                                              
+    6   CALL          NONE                                              
+    7   CALLR         NONE                                              
+    8   CBR           (nnn); (rrr)                                      
+    9   CEIL          NONE                                              
+   10   COS           NONE                                              
+   11   CP            (rrr),(rrr)                                       
+   12   DEBUG         NONE                                              
+   13   DEC           (nnn); (rrr)                                      
+   14   DEC16         (nnn); (rrr)                                      
+   15   DEC24         (nnn); (rrr)                                      
+   16   DEC32         (nnn); (rrr)                                      
+   17   DIV           NONE                                              
+   18   DJNZ          NONE                                              
+   19   DJNZ16        NONE                                              
+   20   DJNZ24        NONE                                              
+   21   DJNZ32        NONE                                              
+   22   EX            NONE                                              
+   23   FIND          (rrr),(nnn); (rrr),(rrr)                          
+   24   FLOOR         NONE                                              
+   25   FREGS         (nnn); (rrr)                                      
+   26   GETBITS       NONE                                              
+   27   GETVAR        NONE                                              
+   28   HSB2RGB       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
+   29   HSL2RGB       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
+   30   IMPLY         NONE                                              
+   31   IMPLY16       NONE                                              
+   32   IMPLY24       NONE                                              
+   33   IMPLY32       NONE                                              
+   34   INC           (nnn); (rrr)                                      
+   35   INC16         (nnn); (rrr)                                      
+   36   INC24         (nnn); (rrr)                                      
+   37   INC32         (nnn); (rrr)                                      
+   38   INT           NONE                                              
+   39   INV           NONE                                              
+   40   INVF          NONE                                              
+   41   ISGN          NONE                                              
+   42   ISQR          (nnn); (rrr)                                      
+   43   JP            NONE                                              
+   44   JR            NONE                                              
+   45   LD            NONE                                              
+   46   LDF           (nnn); (rrr)                                      
+   47   LDREGS        NONE                                              
+   48   MAX           NONE                                              
+   49   MEMC          NONE                                              
+   50   MEMF          NONE                                              
+   51   MIN           NONE                                              
+   52   MOD           NONE                                              
+   53   MUL           NONE                                              
+   54   NAND          NONE                                              
+   55   NAND16        NONE                                              
+   56   NAND24        NONE                                              
+   57   NAND32        NONE                                              
+   58   NOP           NONE                                              
+   59   NOR           NONE                                              
+   60   NOR16         NONE                                              
+   61   NOR24         NONE                                              
+   62   NOR32         NONE                                              
+   63   OR            NONE                                              
+   64   OR16          NONE                                              
+   65   OR24          NONE                                              
+   66   OR32          NONE                                              
+   67   PLAY          NONE                                              
+   68   POP           (nnn); (rrr)                                      
+   69   POP16         (nnn); (rrr)                                      
+   70   POP24         (nnn); (rrr)                                      
+   71   POP32         (nnn); (rrr)                                      
+   72   POW           NONE                                              
+   73   PUSH          (nnn); (rrr)                                      
+   74   PUSH16        (nnn); (rrr)                                      
+   75   PUSH24        (nnn); (rrr)                                      
+   76   PUSH32        (nnn); (rrr)                                      
+   77   RAND          NONE                                              
+   78   REGS          (nnn); (rrr)                                      
+   79   RES           NONE                                              
+   80   RESF          NONE                                              
+   81   RET           NONE                                              
+   82   RETIF         NONE                                              
+   83   RGB2HSB       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
+   84   RGB2HSL       (nnn),(nnn); (nnn),(rrr); (rrr),(nnn); (rrr),(rrr)
+   85   RL            NONE                                              
+   86   ROUND         NONE                                              
+   87   RR            NONE                                              
+   88   SCP           (rrr),(rrr)                                       
+   89   SDIV          NONE                                              
+   90   SET           NONE                                              
+   91   SETBITS       NONE                                              
+   92   SETF          NONE                                              
+   93   SETVAR        NONE                                              
+   94   SIN           NONE                                              
+   95   SL            NONE                                              
+   96   SMUL          NONE                                              
+   97   SQR           (nnn); (rrr)                                      
+   98   SR            NONE                                              
+   99   STREGS        NONE                                              
+  100   SUB           NONE                                              
+  101   TAN           NONE                                              
+  102   VCL           (nnn); (rrr)                                      
+  103   VDL           (nnn); (rrr)                                      
+  104   WAIT          NONE                                              
+  105   XNOR          NONE                                              
+  106   XNOR16        NONE                                              
+  107   XNOR24        NONE                                              
+  108   XNOR32        NONE                                              
+  109   XOR           NONE                                              
+  110   XOR16         NONE                                              
+  111   XOR24         NONE                                              
+  112   XOR32         NONE                                              

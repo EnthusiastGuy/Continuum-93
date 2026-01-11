@@ -16,7 +16,7 @@ namespace LabelsTests
             cp.Build(@$"
                 #ORG 0x000000
 
-                AND (.Data), 0b11100010
+                AND (.Data), 0b11100010, 1
                 BREAK
 
                 #ORG {dataAddress}
@@ -50,7 +50,7 @@ namespace LabelsTests
             cp.Build(@$"
                 #ORG 0x000000
 
-                AND16 (.Data), 0b1110001011100010
+                AND (.Data), 0b1110001011100010, 2
                 BREAK
 
                 #ORG {dataAddress}
@@ -83,7 +83,7 @@ namespace LabelsTests
             cp.Build(@$"
                 #ORG 0x000000
 
-                AND24 (.Data), 0b111000101110001011100010
+                AND (.Data), 0b111000101110001011100010, 3
                 BREAK
 
                 #ORG {dataAddress}
@@ -116,7 +116,7 @@ namespace LabelsTests
             cp.Build(@$"
                 #ORG 0x000000
 
-                AND32 (.Data), 0b11100010111000101110001011100010
+                AND (.Data), 0b11100010111000101110001011100010, 4
                 BREAK
 
                 #ORG {dataAddress}

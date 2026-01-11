@@ -1,5 +1,5 @@
 79 instructions found (vacant opcodes: 177)
-115 total variations
+112 total variations
 
  Opcode       Instruction
  Dec   Hex    (+ variations)                  
@@ -17,7 +17,7 @@
   10   0x0A   SET                             
   11   0x0B   RES                             
   12   0x0C   BIT                             
-  13   0x0D   AND, AND16, AND24, AND32        
+  13   0x0D   AND                             
   14   0x0E   OR, OR16, OR24, OR32            
   15   0x0F   XOR, XOR16, XOR24, XOR32        
   16   0x10   INV                             
