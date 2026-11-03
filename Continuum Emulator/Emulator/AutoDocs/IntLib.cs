@@ -38,6 +38,18 @@ namespace Continuum93.Emulator.AutoDocs
                 new IntParam(true, 1, "0x10", "ToggleFullscreen"),
                 new IntParam(false, 1, "", "1 if resulting state is fullscreen, 0 if not.")
             );
+            AddFunction("Machine", "SetHostCursorVisibility", "Shows or hides the host's mouse cursor over the emulator window (for software that draws its own cursor).",
+                new IntParam(true, 1, "0x00", "Machine"),
+                new IntParam(true, 1, "0x11", "SetHostCursorVisibility"),
+                new IntParam(true, 1, "", "0 to hide the host cursor, 1 to show it.")
+            );
+            AddFunction("Machine", "Build C", "Compiles a C source file and loads it in memory, like Build does for assembly.",
+                new IntParam(true, 1, "0x00", "Machine"),
+                new IntParam(true, 1, "0xC2", "BuildC"),
+                new IntParam(true, 3, "", "the source address (in RAM) of the null terminated string which represents the C source file path."),
+                new IntParam(false, 3, "", "the address to the program's entry point or 0xFFFFFF if it failed."),
+                new IntParam(false, 1, "", "the number of errors (capped to 255) that the compile process produced.")
+            );
 
             AddFunction("Machine", "ShutDown", "Issues a shutdown command that should exit the emulator.",
                 new IntParam(true, 1, "0x00", "Machine"),

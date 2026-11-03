@@ -21,6 +21,7 @@ namespace Continuum93.ServiceModule.Controls
 
                 if (!wasServiceMode && Service.STATE.ServiceMode)
                 {
+                    KeyboardStateExt.ClearState();       // the program sees no keys held while the service UI is open
                     Machine.COMPUTER?.MEMC.ActivityTracker.Clear();
                     if (Machine.COMPUTER != null)
                     {

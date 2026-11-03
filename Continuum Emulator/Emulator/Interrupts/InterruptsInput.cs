@@ -109,15 +109,23 @@ namespace Continuum93.Emulator.Interrupts
             byte rMY = computer.CPU.REGS.GetNextRegister(regId, 3);
             byte rMS = computer.CPU.REGS.GetNextRegister(regId, 5);
 
-            Point xy = InputMouse.GetRelativeMousePos();
+            ushort mx = 0, my = 0;
+            byte buttons = 0;
+            try
+            {
+                // Mouse state returns buttons as such:
+                // bit 7 ------ 6 ------ 5 ------ 4 ------ 3 ------ 2 ------ 1 ------ 0
+                //    N.A.     N.A.     N.A.     N.A.     N.A.   MBUTTON  RBUTTON  LBUTTON
+                InputMouse.ReadMachineMouse(out mx, out my, out buttons);
+            }
+            catch (Exception)
+            {
+                // No window yet (or running headless, e.g. in tests): report a mouse at 0,0 with no buttons
+            }
 
-            computer.CPU.REGS.Set16BitRegister(rMX, (ushort)(xy.X / WindowManager.GetClientXRatio()));
-            computer.CPU.REGS.Set16BitRegister(rMY, (ushort)(xy.Y / WindowManager.GetClientYRatio()));
-
-            // Mouse state returns buttons as such:
-            // bit 7 ------ 6 ------ 5 ------ 4 ------ 3 ------ 2 ------ 1 ------ 0
-            //    N.A.     N.A.     N.A.     N.A.     N.A.   MBUTTON  RBUTTON  LBUTTON
-            computer.CPU.REGS.Set8BitRegister(rMS, InputMouse.GetMouseButtonsState());
+            computer.CPU.REGS.Set16BitRegister(rMX, mx);
+            computer.CPU.REGS.Set16BitRegister(rMY, my);
+            computer.CPU.REGS.Set8BitRegister(rMS, buttons);
         }
 
         public static void HandleMouseStateChanged(byte regId, Computer computer)

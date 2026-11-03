@@ -97,6 +97,78 @@ namespace Continuum93.Emulator.Interrupts
             computer.CPU.REGS.Set8BitRegister(eRegister, errors);
         }
 
+        /// <summary>
+        /// Build C (INT 0x00, function 0xC2). Same register contract as Build (0xC0): the 24-bit register after the
+        /// function register points to the path of a .c file; on return it holds the run address (0xFFFFFF on failure)
+        /// and the 8-bit register 4 positions after the function register holds the error count.
+        /// #include "file" is resolved relative to the directory of the including file.
+        /// </summary>
+        public static void BuildC(byte regId, Computer computer)
+        {
+            byte nRegister = computer.CPU.REGS.GetNextRegister(regId, 1);
+            uint pathAddress = computer.CPU.REGS.Get24BitRegister(nRegister);
+            byte errorReg = computer.CPU.REGS.GetNextRegister(regId, 4);
+
+            string filePath = Path.Combine(DataConverter.GetCrossPlatformPath(Constants.FS_ROOT), DataConverter.GetCrossPlatformPath(computer.MEMC.GetStringAt(pathAddress)));
+            CompileLog.Reset();
+
+            if (!FileManager.FileExists(filePath))
+            {
+                computer.CPU.REGS.Set24BitRegister(nRegister, 0xFFFFFF);
+                computer.CPU.REGS.Set8BitRegister(errorReg, 1);
+                return;
+            }
+
+            string dirPath = Path.GetDirectoryName(filePath);
+            string fileName = Path.GetFileName(filePath);
+            string debugDir = Path.Combine(dirPath, "debug");
+            Directory.CreateDirectory(debugDir);
+
+            var cCompiler = new Compilers.C93C.CCompiler
+            {
+                IncludeResolver = (name, includingFile) =>
+                {
+                    string baseDir = includingFile == fileName || string.IsNullOrEmpty(Path.GetDirectoryName(includingFile))
+                        ? dirPath
+                        : Path.Combine(dirPath, Path.GetDirectoryName(includingFile));
+                    string candidate = Path.Combine(baseDir, DataConverter.GetCrossPlatformPath(name));
+                    return File.Exists(candidate) ? File.ReadAllText(candidate) : null;
+                }
+            };
+
+            string assemblyCode = cCompiler.Compile(FileManager.ReadFile(filePath), fileName);
+            File.WriteAllText(Path.Combine(debugDir, fileName + ".c.log"), cCompiler.Log);
+
+            if (cCompiler.Errors > 0)
+            {
+                computer.CPU.REGS.Set8BitRegister(errorReg, (byte)Math.Min(cCompiler.Errors, 255));
+                computer.CPU.REGS.Set24BitRegister(nRegister, 0xFFFFFF);
+                return;
+            }
+
+            string generatedPath = Path.Combine(debugDir, fileName + ".generated.asm");
+            File.WriteAllText(generatedPath, assemblyCode);
+
+            Assembler assembler = new();
+            assembler.Build(assemblyCode, generatedPath);
+            File.WriteAllText(Path.Combine(debugDir, fileName + ".log"), CompileLog.GetLog());
+            assembler.FullSource = "";
+
+            List<CodeBlock> cBlocks = assembler.BlockManager.GetBlocks();
+            if (cBlocks.Count == 0 || assembler.Errors > 0)
+            {
+                computer.CPU.REGS.Set24BitRegister(nRegister, 0xFFFFFF);
+                computer.CPU.REGS.Set8BitRegister(errorReg, (byte)Math.Max(1, Math.Min(assembler.Errors, 255)));
+                return;
+            }
+
+            foreach (CodeBlock cBlock in cBlocks)
+                computer.LoadMemAt(cBlock.Start, cBlock.Data);
+
+            computer.CPU.REGS.Set24BitRegister(nRegister, assembler.GetRunAddress());
+            computer.CPU.REGS.Set8BitRegister(errorReg, 0);
+        }
+
         public static void ShutDown()
         {
             State.ShutDownRequested = true;

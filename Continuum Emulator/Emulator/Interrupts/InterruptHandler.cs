@@ -1,6 +1,7 @@
 ﻿using Continuum93.Emulator;
 using Continuum93.Emulator.Interrupts;
 using Continuum93.Emulator.Interrupts.FileSystem;
+using Continuum93.Emulator.States;
 
 namespace Continuum93.Emulator.Interrupts
 {
@@ -73,6 +74,11 @@ namespace Continuum93.Emulator.Interrupts
                         InterruptsMachine.ToggleFullscreen(regId, computer);
                         return;
                     }
+                case 0x11:  // Set host cursor visibility (next register: 0 hidden, 1 visible)
+                    {
+                        State.HostCursorRequest = computer.CPU.REGS.Get8BitRegister(computer.CPU.REGS.GetNextRegister(regId, 1)) != 0 ? 1 : 0;
+                        return;
+                    }
                 case 0x20:  // ShutDown
                     {
                         InterruptsMachine.ShutDown();
@@ -86,6 +92,11 @@ namespace Continuum93.Emulator.Interrupts
                 case 0xC1:  // Build BASIC
                     {
                         InterruptsMachine.BuildBasic(regId, computer);
+                        return;
+                    }
+                case 0xC2:  // Build C
+                    {
+                        InterruptsMachine.BuildC(regId, computer);
                         return;
                     }
                 case 0xF0:  // Get CPU designation by input frequency

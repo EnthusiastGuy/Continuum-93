@@ -23,6 +23,31 @@ namespace Continuum93.Emulator.Run
 
             Assembler assembler = new();
             string asmSource = FileManager.ReadFile(asmFile);
+
+            // C boot programs (e.g. the dual-boot loader) are compiled to assembly first
+            if (Path.GetExtension(asmFile).Equals(".c", System.StringComparison.OrdinalIgnoreCase))
+            {
+                var cCompiler = new Compilers.C93C.CCompiler
+                {
+                    IncludeResolver = (name, includingFile) =>
+                    {
+                        string candidate = Path.Combine(dirPath, Path.GetDirectoryName(includingFile) ?? "", name);
+                        if (!File.Exists(candidate))
+                            candidate = Path.Combine(dirPath, name);
+                        return File.Exists(candidate) ? File.ReadAllText(candidate) : null;
+                    }
+                };
+                asmSource = cCompiler.Compile(asmSource, fileName);
+                File.WriteAllText(Path.Combine(dirPath, "debug", fileName + ".c.log"), cCompiler.Log);
+                if (cCompiler.Errors > 0)
+                {
+                    Log.WriteLine($"Boot program {fileName} failed to compile: {cCompiler.ErrorList[0]}");
+                    return;
+                }
+                asmFile = Path.Combine(dirPath, "debug", fileName + ".generated.asm");
+                File.WriteAllText(asmFile, asmSource);
+            }
+
             assembler.Build(asmSource, asmFile);
 
             string log = CompileLog.GetLog();

@@ -28,6 +28,44 @@ namespace Continuum93.Emulator.Controls
             return new Point(mouseState.X, mouseState.Y);
         }
 
+        private static ushort _lastMachineX, _lastMachineY;
+
+        /// <summary>
+        /// The mouse as the emulated machine sees it: position in machine pixels (480 x 270) and buttons.
+        /// Normally the machine screen fills the window. In service mode it is shown inside the service UI's
+        /// Emulator window: there the pointer is mapped into that viewport, and while it is elsewhere (over the
+        /// debugger windows) the machine keeps the last position and sees no buttons, so clicks meant for the
+        /// service UI do not leak into the running program.
+        /// </summary>
+        public static void ReadMachineMouse(out ushort x, out ushort y, out byte buttons)
+        {
+            Point p = GetRelativeMousePos();
+            buttons = GetMouseButtonsState();
+
+            if (ServiceModule.Service.STATE.ServiceMode)
+            {
+                var window = ServiceModule.ServiceGraphics.EmulatorWindow;
+                Rectangle view = window != null && window.Visible
+                    ? window.GetViewportRect((int)Constants.V_WIDTH, (int)Constants.V_HEIGHT)
+                    : Rectangle.Empty;
+
+                if (view.Width <= 0 || view.Height <= 0 || !view.Contains(p))
+                {
+                    x = _lastMachineX;
+                    y = _lastMachineY;
+                    buttons = 0;
+                    return;
+                }
+
+                x = _lastMachineX = (ushort)((p.X - view.X) * (int)Constants.V_WIDTH / view.Width);
+                y = _lastMachineY = (ushort)((p.Y - view.Y) * (int)Constants.V_HEIGHT / view.Height);
+                return;
+            }
+
+            x = _lastMachineX = (ushort)(p.X / Window.WindowManager.GetClientXRatio());
+            y = _lastMachineY = (ushort)(p.Y / Window.WindowManager.GetClientYRatio());
+        }
+
         public static byte GetMouseButtonsState()
         {
             if (SettingsManager.GetBoleanSettingsValue("disableMouse"))
