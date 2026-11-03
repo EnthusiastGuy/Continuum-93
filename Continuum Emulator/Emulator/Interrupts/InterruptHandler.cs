@@ -88,6 +88,11 @@ namespace Continuum93.Emulator.Interrupts
                         InterruptsMachine.BuildBasic(regId, computer);
                         return;
                     }
+                case 0xC2:  // Build C
+                    {
+                        InterruptsMachine.BuildC(regId, computer);
+                        return;
+                    }
                 case 0xF0:  // Get CPU designation by input frequency
                     {
                         InterruptsMachine.GetCPUDesignationByFrequency(regId, computer);
