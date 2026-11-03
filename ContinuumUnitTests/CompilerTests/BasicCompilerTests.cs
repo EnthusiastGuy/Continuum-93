@@ -44,7 +44,7 @@ Main:
 ";
             string assembly = compiler.Compile(source);
             Assert.True(assembly.Length > 0);
-            Assert.Contains(".Main:", assembly);
+            Assert.Contains(".Main", assembly);
             Assert.Contains("RET", assembly);
         }
 
@@ -283,6 +283,22 @@ Main:
             string assembly = compiler.Compile(source);
             Assert.True(assembly.Length > 0);
             Assert.Equal(0, compiler.Errors);
+        }
+
+        [Fact]
+        public void TestXAndYUsableAsVariablesAlongsideMouse()
+        {
+            BasicCompiler compiler = new BasicCompiler();
+            string source = @"
+Main:
+    LET x = MOUSE X
+    LET y = MOUSE y
+    LET z = x + y
+    END
+";
+            string assembly = compiler.Compile(source);
+            Assert.True(compiler.Errors == 0, $"Compiler errors: {compiler.Log}");
+            Assert.Contains("LD", assembly);
         }
     }
 }

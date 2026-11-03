@@ -864,12 +864,14 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         {
             int line = Current().Line;
             // MOUSE already consumed by Match in ParsePrimary
-            if (Match(TokenType.X))
+            if (IsIdentifier("X"))
             {
+                Advance();
                 return new MouseXNode { Line = line };
             }
-            else if (Match(TokenType.Y))
+            else if (IsIdentifier("Y"))
             {
+                Advance();
                 return new MouseYNode { Line = line };
             }
             else if (Match(TokenType.BUTTON))
@@ -972,13 +974,26 @@ namespace Continuum93.Emulator.Compilers.C93Basic
 
         private ExpressionNode ParseExpression()
         {
-            return ParseLogicalOr();
+            return ParseLogicalImply();
+        }
+
+        // IMPLY binds loosest of all logical operators
+        private ExpressionNode ParseLogicalImply()
+        {
+            ExpressionNode expr = ParseLogicalOr();
+            while (Match(TokenType.IMPLY))
+            {
+                Token op = _tokens[_position - 1];
+                ExpressionNode right = ParseLogicalOr();
+                expr = new BinaryExpressionNode { Left = expr, Operator = op.Type, Right = right, Line = expr.Line };
+            }
+            return expr;
         }
 
         private ExpressionNode ParseLogicalOr()
         {
             ExpressionNode expr = ParseLogicalXor();
-            while (Match(TokenType.OR))
+            while (Match(TokenType.OR, TokenType.NOR))
             {
                 Token op = _tokens[_position - 1];
                 ExpressionNode right = ParseLogicalXor();
@@ -990,7 +1005,7 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         private ExpressionNode ParseLogicalXor()
         {
             ExpressionNode expr = ParseLogicalAnd();
-            while (Match(TokenType.XOR))
+            while (Match(TokenType.XOR, TokenType.XNOR))
             {
                 Token op = _tokens[_position - 1];
                 ExpressionNode right = ParseLogicalAnd();
@@ -1002,7 +1017,7 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         private ExpressionNode ParseLogicalAnd()
         {
             ExpressionNode expr = ParseComparison();
-            while (Match(TokenType.AND))
+            while (Match(TokenType.AND, TokenType.NAND))
             {
                 Token op = _tokens[_position - 1];
                 ExpressionNode right = ParseComparison();
@@ -1302,6 +1317,8 @@ namespace Continuum93.Emulator.Compilers.C93Basic
         private Token Advance() => _tokens[_position++];
         private Token Previous() => _position >= 2 ? _tokens[_position - 2] : _tokens[0];
         private Token Peek() => _position < _tokens.Count - 1 ? _tokens[_position + 1] : _tokens[_tokens.Count - 1];
+        private bool IsIdentifier(string name) =>
+            Current().Type == TokenType.IDENTIFIER && string.Equals(Current().Value, name, StringComparison.OrdinalIgnoreCase);
 
         private bool Match(params TokenType[] types)
         {

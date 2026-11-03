@@ -192,7 +192,8 @@ Main:
             int slIndex = assembly.IndexOf("SL");
             if (slIndex > 0)
             {
-                string beforeSL = assembly.Substring(Math.Max(0, slIndex - 50), slIndex);
+                int start = Math.Max(0, slIndex - 50);
+                string beforeSL = assembly.Substring(start, slIndex - start);
                 Assert.DoesNotContain("LD EFGH, 2", beforeSL); // "Should not load literal 2 into register before SL"
             }
             

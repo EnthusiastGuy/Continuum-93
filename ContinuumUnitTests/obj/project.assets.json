@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "targets": {
     "net8.0": {
       "coverlet.collector/3.1.2": {
@@ -5927,24 +5927,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Blake\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\iRS\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\Continuum-93\\ContinuumUnitTests\\ContinuumUnitTests.csproj",
+      "projectUniqueName": "C:\\Projects\\Continuum-93\\ContinuumUnitTests\\ContinuumUnitTests.csproj",
       "projectName": "ContinuumUnitTests",
-      "projectPath": "D:\\Projects\\Continuum-93\\ContinuumUnitTests\\ContinuumUnitTests.csproj",
-      "packagesPath": "C:\\Users\\Blake\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\Continuum-93\\ContinuumUnitTests\\obj\\",
+      "projectPath": "C:\\Projects\\Continuum-93\\ContinuumUnitTests\\ContinuumUnitTests.csproj",
+      "packagesPath": "C:\\Users\\iRS\\.nuget\\packages\\",
+      "outputPath": "C:\\Projects\\Continuum-93\\ContinuumUnitTests\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Blake\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Users\\iRS\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -5957,10 +5952,11 @@
       },
       "frameworks": {
         "net8.0": {
+          "framework": "net8.0",
           "targetAlias": "net8.0",
           "projectReferences": {
-            "D:\\Projects\\Continuum-93\\Continuum Emulator\\Continuum Emulator.csproj": {
-              "projectPath": "D:\\Projects\\Continuum-93\\Continuum Emulator\\Continuum Emulator.csproj"
+            "C:\\Projects\\Continuum-93\\Continuum Emulator\\Continuum Emulator.csproj": {
+              "projectPath": "C:\\Projects\\Continuum-93\\Continuum Emulator\\Continuum Emulator.csproj"
             }
           }
         }
@@ -5975,10 +5971,11 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "10.0.400"
     },
     "frameworks": {
       "net8.0": {
+        "framework": "net8.0",
         "targetAlias": "net8.0",
         "dependencies": {
           "Microsoft.NET.Test.Sdk": {
@@ -6018,7 +6015,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.400/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

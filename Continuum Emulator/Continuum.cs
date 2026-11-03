@@ -32,6 +32,7 @@ namespace Continuum93
 
         public Continuum(string[] args)
         {
+            SettingsManager.LoadConfig();       // Must happen first: settings are read below and by Log
             Log.WriteLine("Continuum started.");
             Log.WriteLine("Loaded configuration file");
             if (args.Length > 0)
@@ -52,7 +53,6 @@ namespace Continuum93
 
         protected override void Initialize()
         {
-            SettingsManager.LoadConfig();       // This must be the very first thing done on startup
             WindowManager.Initialize(Window);
             Log.WriteLine("Initialized window manager");
             Renderer.InitializeSpriteBatch();

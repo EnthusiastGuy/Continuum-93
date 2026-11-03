@@ -46,8 +46,8 @@ namespace Continuum93.Emulator.Compilers.C93Basic
             { "INKEY", TokenType.INKEY },
             { "MOUSE", TokenType.MOUSE },
             { "BUTTON", TokenType.BUTTON },
-            { "X", TokenType.X },
-            { "Y", TokenType.Y },
+            // X and Y are deliberately not keywords so they remain usable as variable names;
+            // MOUSE X / MOUSE Y are recognized contextually in Parser.ParseMouse.
             { "LOAD", TokenType.LOAD },
             { "SAVE", TokenType.SAVE },
             { "OPEN", TokenType.OPEN },
