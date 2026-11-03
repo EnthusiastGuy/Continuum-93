@@ -20,6 +20,15 @@
   - **Theme system** supporting customizable color schemes;
   - **Window management** with drag, resize, show/hide, and taskbar integration;
   - **Automatic window size management** — main window size is saved when entering service mode and restored when exiting.
+- **Halcyon OS and dual boot**: Continuum now boots into a selector offering **Halcyon** (default, after a 3 second countdown) or the classic **Q OS**. Halcyon is a new visual desktop written in C and compiled on boot:
+  - four video layers with a palette-cycled backdrop (Aurora / Copper / Nebula), desktop icons, windows and an effects layer;
+  - windows with a side **control rail** (close / fold / zoom, vertical title; right-click swaps sides), **magnetic snapping** with guide lines, and **accordion folding** into a slim spine;
+  - apps: Drawers (file browser that runs `.asm`, `.c` and `.bas`), Reader, Pulse (system monitor), Calc, Sketch, Prefs (6 themes, saved) and About; menu bar, magnifying dock, notifications, zoom/ripple/spark effects and CRT transitions;
+  - programs run through the boot selector, and Halcyon resumes exactly where it was afterwards (it is rebuilt automatically if a program overwrote it). See `Docs/HALCYON.md`.
+- **C compiler**: added `#pragma c93 origin` / `#pragma c93 stack`, `.c` boot programs, and extended `continuum.h` (mouse, filesystem, PNG fonts, sprites, building and calling programs, fast copy/fill).
+- New machine interrupt `0x11` to show or hide the host mouse pointer; existing `init.cfg` files using the old Q OS boot default are upgraded to the boot selector.
+- Fixed: in Service Mode (F1) the host mouse pointer is always visible (even if the running program hid it), and the running program no longer receives clicks or key presses meant for the service UI; the mouse is mapped into the Emulator window when the pointer is over it.
+- Fixed: `DrawFilledRectangle` wrote past the bottom of the screen (crashing the machine on the last video page) and over-ran rows for negative x; reading the mouse no longer throws when no window exists.
 - **C98Basic compiler** (work in progress, not yet functional): Initial implementation of a BASIC-to-assembly compiler has been started, including lexer, parser, AST nodes, and code emitter components. The compiler architecture supports label-based program structure and is designed to compile BASIC source code to Continuum assembly. **Note: This feature is incomplete and not yet ready for use.**
 
 ## 2.1.212 — 25.10.2025

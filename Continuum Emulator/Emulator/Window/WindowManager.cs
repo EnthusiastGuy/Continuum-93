@@ -23,7 +23,13 @@ namespace Continuum93.Emulator.Window
             _gameWindow.TextInput += (object sender, TextInputEventArgs e) => InterruptsInput.TriggerKeyboardHandler(e.Character, e.Key, Machine.COMPUTER);
 
             _gameWindow.KeyUp += (object sender, InputKeyEventArgs e) => KeyboardStateExt.RegisterKeyUp(e.Key);
-            _gameWindow.KeyDown += (object sender, InputKeyEventArgs e) => KeyboardStateExt.RegisterKeyDown(e.Key);
+            // While the service UI is open, typing belongs to it, not to the running program (releases still go
+            // through so no key stays stuck)
+            _gameWindow.KeyDown += (object sender, InputKeyEventArgs e) =>
+            {
+                if (!Service.STATE.ServiceMode)
+                    KeyboardStateExt.RegisterKeyDown(e.Key);
+            };
 
             _gameWindow.AllowUserResizing = true;
         }

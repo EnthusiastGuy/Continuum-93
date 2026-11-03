@@ -161,6 +161,173 @@ static void c93_wait_ms(unsigned int ms)
         ;
 }
 
+/* Shows or hides video pages: bit i = page i visible. */
+static void c93_set_layers_visible(int mask)
+{
+    asm(""LD B, (QRS + 3)\nLD A, 0x31\nINT 0x01, A"");
+}
+
+/* Fast block copy / fill using the CPU's MEMC / MEMF instructions (n up to 16 MB). */
+static void c93_copy(void *dst, const void *src, unsigned int n)
+{
+    if (n) asm(""LD EFG, (QRS + 1)\nLD BCD, (QRS + 5)\nLD HIJ, (QRS + 9)\nMEMC BCD, EFG, HIJ"");
+}
+
+static void c93_fill(void *dst, int value, unsigned int n)
+{
+    if (n) asm(""LD BCD, (QRS + 1)\nLD EFG, (QRS + 9)\nLD H, (QRS + 7)\nMEMF BCD, EFG, H"");
+}
+
+/* Copies a w x h block of pixels (one byte each, row by row) from memory to a page; color 0 is transparent
+   except on page 0. */
+static void c93_draw_sprite(const void *pixels, int page, int x, int y, int w, int h)
+{
+    asm(""LD BCD, (QRS + 1)\nLD E, (QRS + 7)\nLD FG, (QRS + 10)\nLD HI, (QRS + 14)\nLD JK, (QRS + 18)\nLD LM, (QRS + 22)\nLD A, 0x10\nINT 0x01, A"");
+}
+
+/* Shows (1) or hides (0) the host's mouse cursor, for programs that draw their own pointer. */
+static void c93_set_host_cursor(int visible)
+{
+    asm(""LD B, (QRS + 3)\nLD A, 0x11\nINT 0x00, A"");
+}
+
+/* ---- Mouse ---- */
+
+static unsigned short __c93_mx, __c93_my;
+static unsigned char __c93_mb;
+
+/* Reads the mouse position in screen pixels; returns the buttons (bit 0 left, bit 1 right, bit 2 middle). */
+static int c93_read_mouse(int *x, int *y)
+{
+    asm(""LD A, 0x03\nINT 0x02, A\nLD (.c___c93_mx), BC\nLD (.c___c93_my), DE\nLD (.c___c93_mb), F"");
+    *x = (short)__c93_mx;
+    *y = (short)__c93_my;
+    return __c93_mb;
+}
+
+/* ---- Filesystem (paths are relative to the filesystem root, e.g. ""programs/demo/demo.c"") ---- */
+
+static unsigned char __c93_r24a[3], __c93_r24b[3], __c93_r8;
+static unsigned int __c93_r32;
+
+static unsigned int __c93_u24(const unsigned char *b) { return ((unsigned int)b[0] << 16) | ((unsigned int)b[1] << 8) | b[2]; }
+
+static int c93_file_exists(const char *path)
+{
+    asm(""LD BCD, (QRS + 1)\nLD A, 0x02\nINT 0x04, A\nLD (.c___c93_r8), A"");
+    return __c93_r8 != 0;
+}
+
+static int c93_dir_exists(const char *path)
+{
+    asm(""LD BCD, (QRS + 1)\nLD A, 0x03\nINT 0x04, A\nLD (.c___c93_r8), A"");
+    return __c93_r8 != 0;
+}
+
+/* Size in bytes of an existing file. */
+static unsigned int c93_file_size(const char *path)
+{
+    asm(""LD BCD, (QRS + 1)\nLD A, 0x20\nINT 0x04, A\nLD (.c___c93_r32), BCDE"");
+    return __c93_r32;
+}
+
+/* Loads a whole file into memory at dest. */
+static void c93_load_file(const char *path, void *dest)
+{
+    asm(""LD BCD, (QRS + 1)\nLD EFG, (QRS + 5)\nLD A, 0x07\nINT 0x04, A"");
+}
+
+/* Saves len bytes from src into a file. */
+static void c93_save_file(const char *path, const void *src, unsigned int len)
+{
+    asm(""LD BCD, (QRS + 1)\nLD EFG, (QRS + 5)\nLD HIJ, (QRS + 9)\nLD A, 0x06\nINT 0x04, A"");
+}
+
+/* Lists a directory into buffer as NUL-terminated names: all folders, an empty name, all files, an empty name.
+   Returns the number of entries or -1 if the directory does not exist; *folders receives the folder count. */
+static int c93_list_dir(const char *path, char *buffer, int *folders)
+{
+    asm(""LD BCD, (QRS + 1)\nLD EFG, (QRS + 5)\nLD A, 0x15\nINT 0x04, A\nLD (.c___c93_r24a), BCD\nLD (.c___c93_r24b), EFG"");
+    unsigned int total = __c93_u24(__c93_r24a);
+    if (total == 0xFFFFFF)
+        return -1;
+    *folders = (int)__c93_u24(__c93_r24b);
+    return (int)total;
+}
+
+/* ---- Fonts: .font files drawn natively by the video hardware ---- */
+
+/* Text flags for c93_text */
+#define C93_TEXT_MONOSPACE 1
+#define C93_TEXT_CENTER    8
+#define C93_TEXT_WRAP      16
+#define C93_TEXT_OUTLINE   32
+
+/* Loads a PNG font (a 16 x 6 grid of glyphs, e.g. ""fonts/ModernDOS 8x8.png"") into dest for c93_text.
+   Returns the size in bytes of the converted font. */
+static unsigned int c93_load_font(const char *path, void *dest)
+{
+    asm(""LD BCD, (QRS + 1)\nLD EFG, (QRS + 5)\nLD A, 0x40\nINT 0x04, A\nLD (.c___c93_r24a), ABC"");
+    return __c93_u24(__c93_r24a);
+}
+
+static unsigned short __c93_tw;
+
+/* Draws text with a loaded .font; returns the drawn width. outline_pattern selects the 8 neighbor directions
+   (0xFF = full outline) used when C93_TEXT_OUTLINE is set. */
+static int c93_text(int page, const void *font, int x, int y, int color, const char *text, int max_width,
+                    int flags, int outline_color, int outline_pattern)
+{
+    /* DrawText needs registers up to R, which overlaps the frame pointer: save it and read every argument first */
+    asm(""PUSH QRS\n""
+        ""LD BCD, (QRS + 5)\nLD EFG, (QRS + 21)\nLD HI, (QRS + 10)\nLD JK, (QRS + 14)\nLD L, (QRS + 19)\n""
+        ""LD M, (QRS + 3)\nLD NO, (QRS + 26)\nLD P, (QRS + 31)\nLD X, (QRS + 35)\nLD Y, (QRS + 39)\n""
+        ""LD Q, X\nLD R, Y\nLD A, 0x14\nINT 0x01, A\nPOP QRS\nLD (.c___c93_tw), AB"");
+    return __c93_tw;
+}
+
+/* Width in pixels of text in a loaded font, measured like c93_text reports it (each glyph plus 1 pixel spacing). */
+static int c93_text_width_font(const unsigned char *font, const char *text)
+{
+    int w = 0;
+    for (; *text; text++)
+    {
+        int c = (unsigned char)*text;
+        if (c >= 32 && c <= 127)
+            w += font[6 + c - 32] + 1;
+    }
+    return w;
+}
+
+static int c93_font_height(const unsigned char *font)
+{
+    return font[2];
+}
+
+/* ---- Programs ---- */
+
+#define C93_BUILD_ASM   0xC0
+#define C93_BUILD_BASIC 0xC1
+#define C93_BUILD_C     0xC2
+
+static unsigned char __c93_errors;
+
+/* Builds (assembles/compiles) a program file into memory. Returns its entry address, or -1 on failure;
+   *errors receives the number of errors. kind is C93_BUILD_ASM, C93_BUILD_BASIC or C93_BUILD_C. */
+static int c93_build(const char *path, int kind, int *errors)
+{
+    asm(""LD BCD, (QRS + 1)\nLD A, (QRS + 7)\nINT 0x00, A\nLD (.c___c93_r24a), BCD\nLD (.c___c93_errors), E"");
+    *errors = __c93_errors;
+    unsigned int adr = __c93_u24(__c93_r24a);
+    return adr == 0xFFFFFF ? -1 : (int)adr;
+}
+
+/* Calls machine code at address with every register saved and restored around the call. */
+static void c93_call(unsigned int address)
+{
+    asm(""LD XYZ, (QRS + 1)\nPUSH A, Z\nCALL XYZ\nPOP A, Z"");
+}
+
 /* ---- Text: a built-in 5x7 pixel font (space to 'Z'; lower case is drawn as upper case) ---- */
 
 /* 7 rows per glyph, 5 bits per row (bit 4 = leftmost pixel), for characters 32 ('' '') to 90 ('Z') */

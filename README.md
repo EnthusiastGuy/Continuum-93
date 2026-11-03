@@ -130,6 +130,17 @@ You can keep code split across multiple files; the OS can load and run your entr
 
 ---
 
+## Operating systems
+
+At power-on a boot selector offers two systems and starts **Halcyon** after 3 seconds:
+
+- **Halcyon** - a visual desktop with side-rail windows that snap together and fold away, a dock, a file
+  browser and small apps. It is written in C and compiled on the machine. See `Continuum Emulator/Docs/HALCYON.md`.
+- **Q OS** - the classic, minimal file browser described below.
+
+Programs can be written in assembly, BASIC or C (`Continuum Emulator/Docs/C_COMPILER.md`); both systems run
+`.asm` and `.c` files, and Halcyon also runs `.bas` files.
+
 ## Running your programs
 
 1. Launch Continuum93.

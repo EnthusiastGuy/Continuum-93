@@ -20,6 +20,7 @@ namespace Continuum93.Emulator.Controls
         public static void ClearState()
         {
             state = new bool[256];
+            pressedKeys = 0;
         }
 
         public static void RegisterKeyUp(Keys key)

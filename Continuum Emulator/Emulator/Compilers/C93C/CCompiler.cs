@@ -27,6 +27,9 @@ namespace Continuum93.Emulator.Compilers.C93C
 
         public uint CodeOrigin { get; set; } = CCodeGen.CodeOrigin;
 
+        /// <summary>Initial C stack pointer (the stack grows down from here).</summary>
+        public uint StackTop { get; set; } = CCodeGen.StackTop;
+
         public string Compile(string source, string fileName = "main.c")
         {
             ErrorList.Clear();
@@ -40,6 +43,7 @@ namespace Continuum93.Emulator.Compilers.C93C
                 if (ErrorList.Count > 0)
                     throw new CCompileAbort();
                 log.AppendLine($"Preprocessed {fileName}: {tokens.Count} tokens");
+                ApplyPragmas(pp);
 
                 var unit = new CTranslationUnit();
                 var parser = new CParser(tokens, ErrorList, unit);
@@ -55,7 +59,7 @@ namespace Continuum93.Emulator.Compilers.C93C
                 CheckProgram(unit, parser, fileName);
 
                 var gen = new CCodeGen(ErrorList, parser.LabelCounter);
-                GeneratedAssembly = gen.Generate(unit, CodeOrigin);
+                GeneratedAssembly = gen.Generate(unit, CodeOrigin, StackTop);
                 log.AppendLine($"Compiled {unit.Functions.Count} function(s), {unit.Globals.Count} global(s), {unit.Strings.Count} string literal(s)");
             }
             catch (CCompileAbort)
@@ -68,6 +72,26 @@ namespace Continuum93.Emulator.Compilers.C93C
             Log = log.ToString();
 
             return Errors == 0 ? GeneratedAssembly : "";
+        }
+
+        /// <summary>
+        /// "#pragma c93 origin N" places the program's code at address N; "#pragma c93 stack N" sets the initial
+        /// stack pointer. Used by system software (boot loader, OS) that must live outside the user program area.
+        /// </summary>
+        private void ApplyPragmas(CPreprocessor pp)
+        {
+            foreach (var (name, tok) in pp.Pragmas)
+            {
+                if (name != "origin" && name != "stack")
+                    continue;
+                if (tok.Kind != CTokenKind.Number || !CConstExpr.TryParseInt(tok.Text, out uint value, out _, out _) || value > 0xFFFFFF)
+                {
+                    ErrorList.Add(new CCompileError(tok.File, tok.Line, tok.Column, $"#pragma c93 {name} expects a 24-bit address"));
+                    throw new CCompileAbort();
+                }
+                if (name == "origin") CodeOrigin = value;
+                else StackTop = value;
+            }
         }
 
         private string ResolveInclude(string name, string includingFile)

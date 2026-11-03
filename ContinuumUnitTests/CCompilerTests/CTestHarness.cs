@@ -62,7 +62,8 @@ namespace ContinuumUnitTests.CCompilerTests
 
     public static class CTestHarness
     {
-        private const uint StubAddress = 0x001000;
+        // Caller stub: outside the system area (0-512K, where the OS is compiled) and the usual program area
+        private const uint StubAddress = 0x0FF000;
 
         /// <summary>Compiles, assembles and runs a C program; fails the test on any compile error or runaway program.</summary>
         public static CRunResult Run(string source, Dictionary<string, string>? includes = null, long maxSteps = 20_000_000, bool captureVideo = false)
@@ -74,7 +75,7 @@ namespace ContinuumUnitTests.CCompilerTests
             string asm = compiler.Compile(source);
             Assert.True(compiler.Errors == 0, "C compile errors:\n" + compiler.Log);
 
-            CompileLog.Reset();
+            // (CompileLog is shared static state: not reset here, so parallel assembler tests are not disturbed)
             var assembler = new Assembler();
             assembler.Build(asm);
             if (assembler.Errors > 0)
@@ -84,7 +85,7 @@ namespace ContinuumUnitTests.CCompilerTests
             }
 
             var stub = new Assembler();
-            stub.Build($"#ORG 0x{StubAddress:X6}\n    CALL 0x{CCodeGen.CodeOrigin:X6}\n    BREAK\n");
+            stub.Build($"#ORG 0x{StubAddress:X6}\n    CALL 0x{compiler.CodeOrigin:X6}\n    BREAK\n");   // origin may come from #pragma c93 origin
 
             using var computer = new Computer();
             computer.Clear();
@@ -109,7 +110,7 @@ namespace ContinuumUnitTests.CCompilerTests
             Assert.True(computer.CPU.REGS.SPR == sprBefore, $"Register stack unbalanced: SPR {computer.CPU.REGS.SPR} vs {sprBefore}");
             Assert.True(computer.CPU.REGS.SPC == spcBefore, $"Call stack unbalanced: SPC {computer.CPU.REGS.SPC} vs {spcBefore}");
             uint uvw = computer.CPU.REGS.Get24BitRegister((byte)('U' - 'A'));
-            Assert.True(uvw == CCodeGen.StackTop, $"C stack pointer not restored: 0x{uvw:X6}");
+            Assert.True(uvw == compiler.StackTop, $"C stack pointer not restored: 0x{uvw:X6}");
 
             var result = new CRunResult
             {
@@ -125,9 +126,10 @@ namespace ContinuumUnitTests.CCompilerTests
                 result.PaletteBuffer = computer.GRAPHICS.GetPalettesBuffer().ToArray();
             }
 
+            // Memory snapshot: from address 0 (the system area, e.g. the boot mailbox) to past the heap start
             uint heap = assembler.Stats.Labels[CCodeGen.HeapStartLabel];
-            uint end = Math.Min(heap + 0x20000, 0xFFFFFF);
-            result.SetMemory(CCodeGen.CodeOrigin, computer.GetMemFrom(CCodeGen.CodeOrigin, end - CCodeGen.CodeOrigin));
+            uint end = Math.Min(Math.Max(heap + 0x20000, 0x080000u), 0xFFFFFF);
+            result.SetMemory(0, computer.GetMemFrom(0, end));
             return result;
         }
 

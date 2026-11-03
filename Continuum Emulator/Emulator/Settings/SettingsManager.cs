@@ -9,11 +9,26 @@ namespace Continuum93.Emulator.Settings
         private static readonly string CONFIG_PATH = Path.Combine(AppContext.BaseDirectory, DataConverter.GetCrossPlatformPath("Data"), "init.cfg");
         private static Dictionary<string, string> _settings = [];
 
+        private const string LegacyBootProgram = "bootProgram=Data\\os\\q.asm";
+        private const string DefaultBootProgram = "bootProgram=Data\\os\\boot\\boot.c";
+
         public static void LoadConfig()
         {
             if (File.Exists(CONFIG_PATH))
             {
-                ParseConfig(File.ReadAllText(CONFIG_PATH));
+                string text = File.ReadAllText(CONFIG_PATH);
+
+                // Configurations created before the dual-boot selector booted straight into Q OS. Q OS is still
+                // one click away in the selector, so upgrade the untouched old default to the selector.
+                if (text.Contains(LegacyBootProgram))
+                {
+                    text = text.Replace(LegacyBootProgram, DefaultBootProgram)
+                               .Replace("# Points to the assembly source file that will be automatically loaded and ran on boot.",
+                                        "# Points to the source file (.asm or .c) that will be automatically loaded and ran on boot.");
+                    File.WriteAllText(CONFIG_PATH, text);
+                }
+
+                ParseConfig(text);
             }
             else
             {
@@ -29,8 +44,9 @@ namespace Continuum93.Emulator.Settings
                     "# Disables the mouse API (some linux based OSs need this for Continuum to run)." + Environment.NewLine +
                     "disableMouse=false" + Environment.NewLine + Environment.NewLine +
 
-                    "# Points to the assembly source file that will be automatically loaded and ran on boot." + Environment.NewLine +
-                    "bootProgram=Data\\os\\q.asm" + Environment.NewLine + Environment.NewLine +
+                    "# Points to the source file (.asm or .c) that will be automatically loaded and ran on boot." + Environment.NewLine +
+                    "# The default is the dual-boot selector (Halcyon or Q OS); use Data\\os\\q.asm to boot Q OS directly." + Environment.NewLine +
+                    DefaultBootProgram + Environment.NewLine + Environment.NewLine +
 
                     "# The port for the Continuum Tools to connect through." + Environment.NewLine +
                     "serverPort=21098" + Environment.NewLine + Environment.NewLine +

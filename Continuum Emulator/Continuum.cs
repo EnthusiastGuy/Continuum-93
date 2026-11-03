@@ -29,6 +29,7 @@ namespace Continuum93
         private readonly bool _mouseEnabled;
         private readonly bool _debugEnabled;
         private readonly bool _startFullscreen;
+        private bool _guestWantsHostCursor = true;
 
         public Continuum(string[] args)
         {
@@ -146,6 +147,17 @@ namespace Continuum93
             GameTimePlus.Update(gameTime);
 
             //UpdateAdmin();
+
+            // The guest may hide the host pointer (e.g. Halcyon draws its own), but the service UI always needs it
+            int cursorRequest = State.HostCursorRequest;
+            if (cursorRequest >= 0)
+            {
+                _guestWantsHostCursor = cursorRequest == 1;
+                State.HostCursorRequest = -1;
+            }
+            bool showCursor = _mouseEnabled && (_guestWantsHostCursor || Service.STATE.UseServiceView);
+            if (IsMouseVisible != showCursor)
+                IsMouseVisible = showCursor;
 
             if (State.FullScreenRequest)
             {

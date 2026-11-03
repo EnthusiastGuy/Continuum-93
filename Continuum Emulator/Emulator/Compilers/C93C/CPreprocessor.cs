@@ -37,6 +37,9 @@ namespace Continuum93.Emulator.Compilers.C93C
         private readonly HashSet<string> _pragmaOnce = [];
         private int _includeDepth;
 
+        /// <summary>Values of "#pragma c93 &lt;name&gt; &lt;value&gt;" directives (e.g. origin, stack).</summary>
+        public Dictionary<string, CToken> Pragmas { get; } = [];
+
         public CPreprocessor(Func<string, string, string> includeResolver, List<CCompileError> errors)
         {
             _includeResolver = includeResolver;
@@ -189,9 +192,12 @@ namespace Continuum93.Emulator.Compilers.C93C
                     Error(dirTok, "#error " + JoinTokens(args));
                     break;
                 case "warning":
+                    break;
                 case "pragma":
-                    if (dir == "pragma" && args.Count > 0 && args[0].Text == "once")
+                    if (args.Count > 0 && args[0].Text == "once")
                         _pragmaOnce.Add(file);
+                    else if (args.Count >= 3 && args[0].Text == "c93" && args[1].Kind == CTokenKind.Identifier)
+                        Pragmas[args[1].Text] = args[2];   // e.g. #pragma c93 origin 0x000000
                     break;
                 case "line":
                     break;

@@ -49,6 +49,18 @@ Not supported (rejected with a clear error): floating point, `long long`, passin
 (use pointers), defining variadic functions, bit-fields, designated initializers, compound literals,
 variable-length arrays.
 
+## Placing a program in memory
+
+Programs are compiled at `0x080000` with the C stack growing down from `0xE00000`. System software can choose
+its own layout with pragmas (both take a 24-bit address):
+
+```c
+#pragma c93 origin 0x070000     /* where the code and data are placed */
+#pragma c93 stack  0x07F000     /* initial stack pointer */
+```
+
+The boot selector and Halcyon use these to live in the 512 KB system area (see [HALCYON.md](HALCYON.md)).
+
 ## Built-in headers and library
 
 `stddef.h`, `stdint.h`, `stdbool.h`, `limits.h`, `string.h` (`mem*`, `str*`), `stdlib.h` (`malloc`, `calloc`,
@@ -88,6 +100,13 @@ int main(void)
 | `c93_draw_text(page, x, y, scale, color, text)`, `c93_text_width(text, scale)` | Built-in 5x7 font |
 | `c93_read_keys(state)`, `c93_key_down(state, key)`, `C93_KEY_*` | Keyboard |
 | `c93_millis()`, `c93_wait_ms(ms)` | Clock |
+| `c93_read_mouse(&x, &y)` | Mouse position in screen pixels; returns the buttons (bit 0 left, 1 right, 2 middle) |
+| `c93_set_layers_visible(mask)`, `c93_draw_sprite(pixels, page, x, y, w, h)` | Layer visibility; native blit of a w x h pixel block (0 = transparent) |
+| `c93_load_font(path, buffer)`, `c93_text(page, font, x, y, color, text, max_w, flags, outline_color, outline_pattern)`, `c93_text_width_font(font, text)`, `c93_font_height(font)` | Proportional PNG fonts drawn natively (e.g. `fonts/ModernDOS 8x8.png`), with centring, wrapping and outlines |
+| `c93_list_dir(path, buffer, &folders)`, `c93_file_exists`, `c93_dir_exists`, `c93_file_size`, `c93_load_file`, `c93_save_file` | Filesystem (paths relative to the filesystem root) |
+| `c93_build(path, kind, &errors)`, `c93_call(address)` | Build an `.asm`/`.bas`/`.c` program (`C93_BUILD_ASM/BASIC/C`) and call it with every register preserved |
+| `c93_copy(dst, src, n)`, `c93_fill(dst, value, n)` | Fast block copy / fill using the MEMC / MEMF instructions |
+| `c93_set_host_cursor(visible)` | Show or hide the host's mouse pointer (for programs drawing their own) |
 
 The screen is 480 x 270 (`C93_SCREEN_WIDTH`, `C93_SCREEN_HEIGHT`); colors are palette indexes and 0 is transparent.
 

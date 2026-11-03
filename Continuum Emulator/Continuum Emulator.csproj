@@ -653,6 +653,9 @@
     <None Update="Data\os\q.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\os\boot\*.c;Data\os\boot\*.h;Data\os\halcyon\*.c;Data\os\halcyon\*.h">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\sample-1.ogg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
