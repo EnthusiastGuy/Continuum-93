@@ -12,11 +12,11 @@
     <AssemblyName>Continuum93</AssemblyName>
     <RootNamespace>Continuum93</RootNamespace>
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
-    <Version>$(VersionPrefix)2.1.220</Version>
+    <Version>$(VersionPrefix)2.2.72</Version>
     <Copyright>Enthusiast guy</Copyright>
     <PackageProjectUrl>http://continuum-93.com</PackageProjectUrl>
-    <AssemblyVersion>2.1.220</AssemblyVersion>
-    <FileVersion>2.1.220</FileVersion>
+    <AssemblyVersion>2.2.72</AssemblyVersion>
+    <FileVersion>2.2.72</FileVersion>
     <EnableNETAnalyzers>False</EnableNETAnalyzers>
     <AnalysisLevel>none</AnalysisLevel>
     <ApplicationIcon>icons\Icon.ico</ApplicationIcon>
