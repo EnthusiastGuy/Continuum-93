@@ -5,6 +5,9 @@ Source: `Emulator/Compilers/C93C/`. Tests: `ContinuumUnitTests/CCompilerTests/`.
 
 ## Using it
 
+**From the OS**: select a `.c` file in the file browser and press Enter - the OS compiles it with *Build C* and
+runs it, exactly like an `.asm` file. Try `programs/neon-ricochet/neon-ricochet.c`, a brick-breaker written in C.
+
 **From a program** (interrupt `INT 0x00`, function `0xC2` - *Build C*), same register contract as *Build* (`0xC0`):
 
 ```asm
@@ -52,6 +55,41 @@ variable-length arrays.
 `free`, `abs`, `atoi`, `rand`, `srand`), `ctype.h`. The library is written in C and compiled with your program;
 only functions you use are emitted, and your own definition of a library function replaces it.
 `malloc` is a bump allocator starting after the program image; `free` does nothing.
+
+## Graphics, input and time: `continuum.h`
+
+```c
+#include <continuum.h>
+
+int main(void)
+{
+    unsigned char keys[32];
+    c93_set_video_pages(1);
+    c93_set_color(0, 1, 20, 10, 40);           /* palette entry 1 = dark purple */
+    c93_set_color(0, 2, 255, 220, 60);         /* palette entry 2 = yellow      */
+    c93_set_buffer_mode(0);                    /* present frames manually        */
+    do {
+        c93_clear(0, 1);
+        c93_fill_round_rect(0, 200, 120, 80, 30, 2, 6);
+        c93_draw_text(0, 210, 130, 2, 1, "HELLO");
+        c93_present(1);
+        c93_read_keys(keys);
+    } while (!c93_key_down(keys, C93_KEY_ESCAPE));
+    c93_set_buffer_mode(0xFF);
+    return 0;
+}
+```
+
+| Function | Purpose |
+|---|---|
+| `c93_set_video_pages(n)`, `c93_set_buffer_mode(mask)`, `c93_present(mask)` | Layers and manual (tear-free) frame presentation |
+| `c93_clear`, `c93_plot`, `c93_line`, `c93_rect`, `c93_fill_rect`, `c93_round_rect`, `c93_fill_round_rect`, `c93_ellipse`, `c93_fill_ellipse` | Drawing primitives (page, coordinates, palette color) |
+| `c93_palette(page)`, `c93_set_color(page, index, r, g, b)`, `c93_video_page(page)` | Direct palette / pixel memory access |
+| `c93_draw_text(page, x, y, scale, color, text)`, `c93_text_width(text, scale)` | Built-in 5x7 font |
+| `c93_read_keys(state)`, `c93_key_down(state, key)`, `C93_KEY_*` | Keyboard |
+| `c93_millis()`, `c93_wait_ms(ms)` | Clock |
+
+The screen is 480 x 270 (`C93_SCREEN_WIDTH`, `C93_SCREEN_HEIGHT`); colors are palette indexes and 0 is transparent.
 
 ## Machine model (ABI)
 

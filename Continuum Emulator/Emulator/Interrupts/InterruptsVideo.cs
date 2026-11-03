@@ -80,26 +80,22 @@ namespace Continuum93.Emulator.Interrupts
 
             uint videoAddr = computer.GRAPHICS.GetVideoPageAddress(pageValue);
 
-            for (uint y = 0; y < heightValue; y++)
+            // Clip against all four screen edges. Previously rows below the screen were written past the
+            // page (out of RAM for the last page) and a negative x could overrun into the next row.
+            int x0 = Math.Max((int)xValue, 0);
+            int x1 = Math.Min(xValue + widthValue, (int)Constants.V_WIDTH);
+            int y0 = Math.Max((int)yValue, 0);
+            int y1 = Math.Min(yValue + heightValue, (int)Constants.V_HEIGHT);
+            if (x1 <= x0 || y1 <= y0)
+                return;
+
+            for (int y = y0; y < y1; y++)
             {
-                if ((yValue + y) < 0)
-                    continue;
-
-                uint xOffset = (xValue < 0) ? (uint)Math.Abs(xValue) : 0;
-                ushort currentY = (ushort)(yValue + y);
-                int spriteRightEdge = xValue + widthValue;
-
-                // Check if the rectangle is partially or fully offscreen on the right
-                int visibleWidth = (int)Math.Min(widthValue - xOffset, Constants.V_WIDTH - xValue);
-
-                if (visibleWidth <= 0 || spriteRightEdge <= 0)
-                    continue;
-
                 Array.Fill(
                     computer.MEMC.RAM.Data,
                     colorValue,
-                    (int)(videoAddr + currentY * Constants.V_WIDTH + xValue + xOffset),
-                    visibleWidth
+                    (int)(videoAddr + y * Constants.V_WIDTH + x0),
+                    x1 - x0
                 );
             }
         }

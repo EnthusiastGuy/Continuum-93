@@ -15,8 +15,260 @@ namespace Continuum93.Emulator.Compilers.C93C
             "string.h" => StringH,
             "stdlib.h" => StdLib,
             "ctype.h" => CType,
+            "continuum.h" => Continuum,
             _ => null
         };
+
+        /// <summary>
+        /// Hardware access for Continuum 93: video (INT 0x01), input (INT 0x02) and clock (INT 0x00).
+        /// The wrappers read their arguments straight from the stack frame: argument i lives at (QRS + 4*i),
+        /// so its low byte is at (QRS + 4*i + 3) and its low 16 bits at (QRS + 4*i + 2).
+        /// Functions returning a value leave it in ABCD from the inline assembly.
+        /// </summary>
+        private const string Continuum = @"
+#ifndef __C93_CONTINUUM_H
+#define __C93_CONTINUUM_H
+
+#define C93_SCREEN_WIDTH 480
+#define C93_SCREEN_HEIGHT 270
+
+/* Key codes (letters and digits use their upper case ASCII codes, e.g. 'A', '7') */
+#define C93_KEY_BACKSPACE 8
+#define C93_KEY_TAB 9
+#define C93_KEY_ENTER 13
+#define C93_KEY_SHIFT 16
+#define C93_KEY_CONTROL 17
+#define C93_KEY_ESCAPE 27
+#define C93_KEY_SPACE 32
+#define C93_KEY_LEFT 37
+#define C93_KEY_UP 38
+#define C93_KEY_RIGHT 39
+#define C93_KEY_DOWN 40
+
+/* ---- Video. Pages (layers) are 0..7; colors are palette indexes, 0 is transparent. ---- */
+
+/* Sets how many video pages are rendered (1 - 8). Resets palettes. */
+static void c93_set_video_pages(int count)
+{
+    asm(""LD B, (QRS + 3)\nLD A, 0x02\nINT 0x01, A"");
+}
+
+/* Bit i = 1: page is presented automatically; 0: the program presents frames with c93_present(). */
+static void c93_set_buffer_mode(int auto_mask)
+{
+    asm(""LD B, (QRS + 3)\nLD A, 0x33\nINT 0x01, A"");
+}
+
+/* Copies the given pages (bit mask) to the display. Use with manual buffer mode for tear-free frames. */
+static void c93_present(int page_mask)
+{
+    asm(""LD A, (QRS + 3)\nVDL A"");
+}
+
+static void c93_clear(int page, int color)
+{
+    asm(""LD B, (QRS + 3)\nLD C, (QRS + 7)\nLD A, 0x05\nINT 0x01, A"");
+}
+
+static void c93_fill_rect(int page, int x, int y, int w, int h, int color)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD GH, (QRS + 14)\nLD IJ, (QRS + 18)\nLD K, (QRS + 23)\nLD A, 0x06\nINT 0x01, A"");
+}
+
+static void c93_rect(int page, int x, int y, int w, int h, int color)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD GH, (QRS + 14)\nLD IJ, (QRS + 18)\nLD K, (QRS + 23)\nLD A, 0x07\nINT 0x01, A"");
+}
+
+static void c93_fill_round_rect(int page, int x, int y, int w, int h, int color, int roundness)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD GH, (QRS + 14)\nLD IJ, (QRS + 18)\nLD K, (QRS + 23)\nLD L, (QRS + 27)\nLD A, 0x08\nINT 0x01, A"");
+}
+
+static void c93_round_rect(int page, int x, int y, int w, int h, int color, int roundness)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD GH, (QRS + 14)\nLD IJ, (QRS + 18)\nLD K, (QRS + 23)\nLD L, (QRS + 27)\nLD A, 0x09\nINT 0x01, A"");
+}
+
+static void c93_plot(int page, int x, int y, int color)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD G, (QRS + 15)\nLD A, 0x20\nINT 0x01, A"");
+}
+
+static void c93_line(int page, int x1, int y1, int x2, int y2, int color)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD GH, (QRS + 14)\nLD IJ, (QRS + 18)\nLD K, (QRS + 23)\nLD A, 0x21\nINT 0x01, A"");
+}
+
+static void c93_ellipse(int page, int x, int y, int rx, int ry, int color)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD GH, (QRS + 14)\nLD IJ, (QRS + 18)\nLD K, (QRS + 23)\nLD A, 0x22\nINT 0x01, A"");
+}
+
+static void c93_fill_ellipse(int page, int x, int y, int rx, int ry, int color)
+{
+    asm(""LD B, (QRS + 3)\nLD CD, (QRS + 6)\nLD EF, (QRS + 10)\nLD GH, (QRS + 14)\nLD IJ, (QRS + 18)\nLD K, (QRS + 23)\nLD A, 0x23\nINT 0x01, A"");
+}
+
+/* Address of a page's 256-entry palette (3 bytes per color: R, G, B). */
+static unsigned char *c93_palette(int page)
+{
+    asm(""LD B, (QRS + 3)\nLD A, 0x04\nINT 0x01, A\nLD A, 0"");
+}
+
+/* Address of a page's pixels (one byte per pixel, 480 x 270, row by row). */
+static unsigned char *c93_video_page(int page)
+{
+    asm(""LD B, (QRS + 3)\nLD A, 0x03\nINT 0x01, A\nLD A, 0"");
+}
+
+static void c93_set_color(int page, int index, int r, int g, int b)
+{
+    unsigned char *p = c93_palette(page) + index * 3;
+    p[0] = (unsigned char)r;
+    p[1] = (unsigned char)g;
+    p[2] = (unsigned char)b;
+}
+
+/* ---- Input ---- */
+
+/* Fills a 32-byte buffer with the state of all 256 keys (see c93_key_down). */
+static void c93_read_keys(unsigned char *state)
+{
+    asm(""LD BCD, (QRS + 1)\nLD A, 0x00\nINT 0x02, A"");
+}
+
+static int c93_key_down(const unsigned char *state, int key)
+{
+    return (state[(key >> 3) & 31] >> (7 - (key & 7))) & 1;
+}
+
+/* ---- Time ---- */
+
+static unsigned int __c93_clock_ms;
+
+/* Milliseconds since the machine started. */
+static unsigned int c93_millis(void)
+{
+    asm(""LD A, 0x03\nLD B, 0x00\nLD CDE, .c___c93_clock_ms\nINT 0x00, A"");
+    return __c93_clock_ms;
+}
+
+static void c93_wait_ms(unsigned int ms)
+{
+    unsigned int start = c93_millis();
+    while (c93_millis() - start < ms)
+        ;
+}
+
+/* ---- Text: a built-in 5x7 pixel font (space to 'Z'; lower case is drawn as upper case) ---- */
+
+/* 7 rows per glyph, 5 bits per row (bit 4 = leftmost pixel), for characters 32 ('' '') to 90 ('Z') */
+static const unsigned char __c93_font[59 * 7] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   /*   */
+    0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04,   /* ! */
+    0x0A, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00,   /* "" */
+    0x0A, 0x1F, 0x0A, 0x0A, 0x1F, 0x0A, 0x00,   /* # */
+    0x04, 0x0F, 0x14, 0x0E, 0x05, 0x1E, 0x04,   /* $ */
+    0x19, 0x1A, 0x02, 0x04, 0x08, 0x0B, 0x13,   /* % */
+    0x0C, 0x12, 0x14, 0x08, 0x15, 0x12, 0x0D,   /* & */
+    0x04, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,   /* ' */
+    0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02,   /* ( */
+    0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08,   /* ) */
+    0x00, 0x04, 0x15, 0x0E, 0x15, 0x04, 0x00,   /* * */
+    0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00,   /* + */
+    0x00, 0x00, 0x00, 0x00, 0x0C, 0x04, 0x08,   /* , */
+    0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00,   /* - */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C,   /* . */
+    0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10,   /* / */
+    0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E,   /* 0 */
+    0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E,   /* 1 */
+    0x0E, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1F,   /* 2 */
+    0x1F, 0x02, 0x04, 0x02, 0x01, 0x11, 0x0E,   /* 3 */
+    0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02,   /* 4 */
+    0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E,   /* 5 */
+    0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E,   /* 6 */
+    0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08,   /* 7 */
+    0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E,   /* 8 */
+    0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C,   /* 9 */
+    0x00, 0x0C, 0x0C, 0x00, 0x0C, 0x0C, 0x00,   /* : */
+    0x00, 0x0C, 0x0C, 0x00, 0x0C, 0x04, 0x08,   /* ; */
+    0x02, 0x04, 0x08, 0x10, 0x08, 0x04, 0x02,   /* < */
+    0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00,   /* = */
+    0x08, 0x04, 0x02, 0x01, 0x02, 0x04, 0x08,   /* > */
+    0x0E, 0x11, 0x01, 0x02, 0x04, 0x00, 0x04,   /* ? */
+    0x0E, 0x11, 0x01, 0x0D, 0x15, 0x15, 0x0E,   /* @ */
+    0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11,   /* A */
+    0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E,   /* B */
+    0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E,   /* C */
+    0x1C, 0x12, 0x11, 0x11, 0x11, 0x12, 0x1C,   /* D */
+    0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F,   /* E */
+    0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x10,   /* F */
+    0x0E, 0x11, 0x10, 0x17, 0x11, 0x11, 0x0F,   /* G */
+    0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11,   /* H */
+    0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E,   /* I */
+    0x07, 0x02, 0x02, 0x02, 0x02, 0x12, 0x0C,   /* J */
+    0x11, 0x12, 0x14, 0x18, 0x14, 0x12, 0x11,   /* K */
+    0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F,   /* L */
+    0x11, 0x1B, 0x15, 0x15, 0x11, 0x11, 0x11,   /* M */
+    0x11, 0x11, 0x19, 0x15, 0x13, 0x11, 0x11,   /* N */
+    0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E,   /* O */
+    0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x10,   /* P */
+    0x0E, 0x11, 0x11, 0x11, 0x15, 0x12, 0x0D,   /* Q */
+    0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11,   /* R */
+    0x0F, 0x10, 0x10, 0x0E, 0x01, 0x01, 0x1E,   /* S */
+    0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,   /* T */
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E,   /* U */
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x0A, 0x04,   /* V */
+    0x11, 0x11, 0x11, 0x15, 0x15, 0x15, 0x0A,   /* W */
+    0x11, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x11,   /* X */
+    0x11, 0x11, 0x11, 0x0A, 0x04, 0x04, 0x04,   /* Y */
+    0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F    /* Z */
+};
+
+/* Width in pixels of a string drawn with c93_draw_text at the given scale (glyphs advance 6 * scale). */
+static int c93_text_width(const char *text, int scale)
+{
+    int n = 0;
+    while (text[n])
+        n++;
+    return n > 0 ? n * 6 * scale - scale : 0;
+}
+
+/* Draws text with the built-in font; each font pixel becomes a scale x scale square.
+   Horizontal runs of pixels are merged into a single rectangle to keep drawing cheap. */
+static void c93_draw_text(int page, int x, int y, int scale, int color, const char *text)
+{
+    for (; *text; text++, x += 6 * scale)
+    {
+        int c = *text;
+        if (c >= 'a' && c <= 'z')
+            c -= 32;
+        if (c < 32 || c > 'Z')
+            continue;
+        const unsigned char *glyph = __c93_font + (c - 32) * 7;
+        for (int row = 0; row < 7; row++)
+        {
+            int bits = glyph[row];
+            int col = 0;
+            while (col < 5)
+            {
+                if (!(bits & (16 >> col)))
+                {
+                    col++;
+                    continue;
+                }
+                int start = col;
+                while (col < 5 && (bits & (16 >> col)))
+                    col++;
+                c93_fill_rect(page, x + start * scale, y + row * scale, (col - start) * scale, scale, color);
+            }
+        }
+    }
+}
+
+#endif
+";
 
         private const string StdDef = @"
 #ifndef __C93_STDDEF_H

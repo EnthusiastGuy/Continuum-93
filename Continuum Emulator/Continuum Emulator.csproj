@@ -338,6 +338,9 @@
     <None Update="Data\filesystem\programs\bubble-universe-demo\bubble-universe.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\filesystem\programs\neon-ricochet\neon-ricochet.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\filesystem\programs\Byte Seive\byteSeive.asm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

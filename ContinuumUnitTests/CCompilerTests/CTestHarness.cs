@@ -11,6 +11,8 @@ namespace ContinuumUnitTests.CCompilerTests
         public long Steps;
         public string Assembly = "";
         public Dictionary<string, uint> Labels = [];
+        public byte[] VideoBuffer = [];      // Presented frame (page 0 first), only when captureVideo is set
+        public byte[] PaletteBuffer = [];    // Presented palettes (768 bytes per page)
         private byte[] _ram = [];
         private uint _ramBase;
 
@@ -63,7 +65,7 @@ namespace ContinuumUnitTests.CCompilerTests
         private const uint StubAddress = 0x001000;
 
         /// <summary>Compiles, assembles and runs a C program; fails the test on any compile error or runaway program.</summary>
-        public static CRunResult Run(string source, Dictionary<string, string>? includes = null, long maxSteps = 20_000_000)
+        public static CRunResult Run(string source, Dictionary<string, string>? includes = null, long maxSteps = 20_000_000, bool captureVideo = false)
         {
             var compiler = new CCompiler();
             if (includes != null)
@@ -116,6 +118,12 @@ namespace ContinuumUnitTests.CCompilerTests
                 Assembly = asm,
                 Labels = new Dictionary<string, uint>(assembler.Stats.Labels)
             };
+
+            if (captureVideo)
+            {
+                result.VideoBuffer = computer.GRAPHICS.GetVideoBuffer().ToArray();
+                result.PaletteBuffer = computer.GRAPHICS.GetPalettesBuffer().ToArray();
+            }
 
             uint heap = assembler.Stats.Labels[CCodeGen.HeapStartLabel];
             uint end = Math.Min(heap + 0x20000, 0xFFFFFF);
